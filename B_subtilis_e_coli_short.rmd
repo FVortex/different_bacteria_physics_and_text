@@ -561,7 +561,7 @@ colvec_e.coli_bends <- c(rep(e.coli_proms_col, length(e.coli_proms)),rep(e.coli_
 #par(mfrow = c(2,1))
 ward_e.coli_proms_non_proms_bends %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_proms_non_proms_bends$labels), col = colvec_e.coli_bends) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_e.coli_proms_non_proms_bends$height)*.2) -> to_plot_e.coli_proms_non_proms_bends
 
-plot(to_plot_e.coli_proms_non_proms_bends)
+#plot(to_plot_e.coli_proms_non_proms_bends)
 
 
 b.subtilis_proms_non_proms_bends <- t(cbind(b.subtilis_proms_bends, b.subtilis_non_proms_bends))
@@ -576,7 +576,7 @@ colvec_b.subtilis_bends <- c(rep(b.subtilis_proms_col, length(b.subtilis_proms))
 #par(mfrow = c(2,1))
 ward_b.subtilis_proms_non_proms_bends %>% as.dendrogram %>% color_branches(k = length(ward_b.subtilis_proms_non_proms_bends$labels), col = colvec_b.subtilis_bends) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_b.subtilis_proms_non_proms_bends$height)*.2) -> to_plot_b.subtilis_proms_non_proms_bends
 
-plot(to_plot_b.subtilis_proms_non_proms_bends)
+#plot(to_plot_b.subtilis_proms_non_proms_bends)
 
 
 e.coli_b.subtilis_proms_bends <- t(cbind(e.coli_proms_bends, b.subtilis_proms_bends))
@@ -591,7 +591,7 @@ colvec_e.coli_b.subtilis_proms_bends <- c(rep(e.coli_proms_col, length(e.coli_pr
 #par(mfrow = c(2,1))
 ward_e.coli_b.subtilis_proms_bends %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_b.subtilis_proms_bends$labels), col = colvec_e.coli_b.subtilis_proms_bends) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_e.coli_b.subtilis_proms_bends$height)*.2) -> to_plot_e.coli_b.subtilis_proms_bends
 
-plot(to_plot_e.coli_b.subtilis_proms_bends)
+#plot(to_plot_e.coli_b.subtilis_proms_bends)
 
 ```
 
