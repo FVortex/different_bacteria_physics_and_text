@@ -1,0 +1,549 @@
+---
+title: "sidd_all_seq_types.Rmd"
+author: "Mikhail Orlov"
+date: '13 октября 2017 г '
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown SIDD for all sequence types
+Reading in E. coli K12 genome (GenBank Accesion U00096.2), creating reverse complement genome and tranformation genome into character form 
+
+```{r}
+library(seqinr)
+library(Biostrings)
+e.coli_U00096.2<-unlist(read.fasta('/home/jane/Документы/Misha/Lab/mol_a-16/Genome_to_dataset_pro_U00096.2.txt', seqonly = T))
+reverseComplement_e.coli_U00096.2<-as.character(reverseComplement(DNAString(e.coli_U00096.2)))
+
+load('/home/jane/Загрузки/spline_dataset_pro.Rdata')
+load('/home/jane/Загрузки/spline_dataset_notpro.Rdata')
+load('/home/jane/Загрузки/spline_dataset_gen.Rdata')
+load('/home/jane/Загрузки/spline_dataset_isl.Rdata')
+load('/home/jane/Загрузки/dataset_lowscore.Rdata')
+
+
+which.experimental <- which(sapply(dataset_pro, function(x) {(x$evidence == 'experimental')}))
+exptsss <- sapply(dataset_pro, function(x) {x$tss})[which.experimental]
+expstrands <- sapply(dataset_pro, function(x) {x$strand})[which.experimental]
+
+nottsss <- sapply(dataset_notpro, function(x) {x$tss})
+notstrands <- sapply(dataset_notpro, function(x) {x$strand})
+
+gentsss <- sapply(dataset_gen, function(x) {x$tss})
+genstrands <- sapply(dataset_gen, function(x) {x$strand})
+
+isltsss <- sapply(dataset_isl, function(x) {x$tss})
+islstrands <- sapply(dataset_isl, function(x) {x$strand})
+
+lowscoretsss <- sapply(dataset_lowscore, function(x) {x$tss}) #only some are to be used
+lowscorestrands <- sapply(dataset_lowscore, function(x) {x$strand})
+
+## a useful function: rev() for strings
+strReverse <- function(x)
+        sapply(lapply(strsplit(x, NULL), rev), paste, collapse="")
+
+expseqs <- c()
+for (i in seq_along(exptsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (exptsss[i]-1000), stop = (exptsss[i]+1000))
+    if (expstrands[i] == 'forward'){
+      expseqs <- c(expseqs, tmp)
+    }
+    else if (expstrands[i] == 'reverse'){
+      expseqs <- c(expseqs, strReverse(tmp))
+    }
+}
+
+notseqs <- c()
+for (i in seq_along(nottsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (nottsss[i]-1000), stop = (nottsss[i]+1000))
+    if (notstrands[i] == 'forward'){
+      notseqs <- c(notseqs, tmp)
+    }
+    else if (notstrands[i] == 'reverse'){
+      notseqs <- c(notseqs, strReverse(tmp))
+    }
+}
+
+genseqs <- c()
+for (i in seq_along(gentsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (gentsss[i]-1000), stop = (gentsss[i]+1000))
+    if (genstrands[i] == 'forward'){
+      genseqs <- c(genseqs, tmp)
+    }
+    else if (genstrands[i] == 'reverse'){
+      genseqs <- c(genseqs, strReverse(tmp))
+    }
+}
+
+
+islseqs <- c()
+for (i in seq_along(isltsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (isltsss[i]-1000), stop = (isltsss[i]+1000))
+    if (islstrands[i] == 'forward'){
+      islseqs <- c(islseqs, tmp)
+    }
+    else if (islstrands[i] == 'reverse'){
+      islseqs <- c(islseqs, strReverse(tmp))
+    }
+}
+
+
+
+lowscoreseqs <- c()
+for (i in seq_along(lowscoretsss)[1:2000]) {
+    tmp <- substr(e.coli_U00096.2, start = (lowscoretsss[i]-1000), stop = (lowscoretsss[i]+1000))
+    if (lowscorestrands[i] == 'forward'){
+      lowscoreseqs <- c(lowscoreseqs, tmp)
+    }
+    else if (lowscorestrands[i] == 'reverse'){
+      lowscoreseqs <- c(lowscoreseqs, strReverse(tmp))
+    }
+}
+
+
+
+```
+
+
+```{r Sequences statistics}
+
+list_seqs <- grep(pattern = '*seqs', x = ls(), value = T)
+
+
+list_gcs <- sapply(list_seqs, function(x) {GC(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+
+barplot(list_gcs)
+
+list_gc1 <- sapply(list_seqs, function(x) {GC1(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+list_gc2 <- sapply(list_seqs, function(x) {GC2(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+list_gc3 <- sapply(list_seqs, function(x) {GC3(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+
+par(mfrow = c(1,5),
+    mar = rep(1,4))
+for (i in seq_along(list_gc1)) {
+  barplot(c(list_gc1[i], list_gc2[i],list_gc3[i]), ylim = c(0.4,.55), main = names(list_gc1[i]))
+}
+
+#aug presence
+
+grepl(pattern = 'AGG', get(list_seqs[i]))
+
+library(stringr)
+
+# Count the number of 'a's in each element of string
+
+list_aug_occurences <- list()
+for (i in seq_along(list_seqs)) {
+  tmp <- sapply(get(list_seqs[i]), function (x) {str_count(x, pattern = 'TATAAT')})
+  names(tmp) <- NULL
+  list_aug_occurences[[i]] <- tmp
+}
+
+par(mfrow = c(1,5))
+sapply(list_aug_occurences, function(x) {barplot(unlist(x), ylim = c(0, 85))})
+
+barplot(list_aug_occurences[[1]])
+  number.of.AUG <- lapply(get(list_seqs[1]), function (x) {str_count(x, pattern = 'AUG')})
+number.of.AUG <- lapply(get(list_seqs[2]), function (x) {str_count(x, pattern = 'AAA')})
+
+q.data
+
+#plot(1:nchar(e.coli_U00096.2))
+```
+
+
+```{r Writing fastas}
+
+for (i in c('exppro', 'not', 'gen', 'isl', 'lowscore')){
+  unlink(paste0('/home/jane/Документы/Misha/mol_a_2018/fastas_', i, '/'), recursive = T)
+  dir.create(paste0('/home/jane/Документы/Misha/mol_a_2018/fastas_', i, '/'), recursive = T)
+  }
+
+
+for (i in seq_along(expseqs)){
+  write.fasta(sequences = expseqs[i], file.out = paste0('/home/jane/Документы/Misha/mol_a_2018/fastas_exppro/', 'expseqs_', i), names = NULL)
+}
+
+for (i in seq_along(notseqs)){
+    write.fasta(sequences = notseqs[i], file.out = paste0('/home/jane/Документы/Misha/mol_a_2018/fastas_not/', 'notseqs_', i), names = NULL)
+}
+
+for (i in seq_along(genseqs)){
+ 
+    write.fasta(sequences = genseqs[i], file.out = paste0('/home/jane/Документы/Misha/mol_a_2018/fastas_gen/', 'genseqs_', i), names = NULL)
+}
+
+
+for (i in seq_along(islseqs)){
+    write.fasta(sequences = islseqs[i], file.out = paste0('/home/jane/Документы/Misha/mol_a_2018/fastas_isl/', 'islseqs_', i), names = NULL)
+}
+
+for (i in seq_along(lowscoreseqs)){
+    write.fasta(sequences = lowscoreseqs[i], file.out = paste0('/home/jane/Документы/Misha/mol_a_2018/fastas_lowscore/', 'lowscoreseqs_', i), names = NULL)
+}
+```
+
+```{r OS dynamics calculation}
+
+
+dynchars<-function(seq, interval_size) {
+  if (missing(seq))
+    stop("Need to specify sequence (as a vector of chars)")
+  
+  if (missing(interval_size))
+    stop("Need to specify interval size")
+  
+  if(!is.character(seq))
+    stop("Sequence must be a character vector containing A, C, G, T letters only")
+  
+  seq<-toupper(seq)
+  seq<-c(seq, seq[2:(interval_size)])
+  
+  a<-3.4*10^(-10)
+  I<-c(7.6, 4.8, 8.2, 4.1)*10^(-44)
+  K<-c(227, 155, 220, 149)*10^(-20)
+  V<-c(2.09, 1.43, 3.12, 2.12)*10^(-20)
+  tau<-c(127, 99, 140, 84)
+  
+  csA<-cumsum(seq=='A') 
+  csT<-cumsum(seq=='T')
+  csG<-cumsum(seq=='G')
+  csC<-cumsum(seq=='C')
+  
+  countA = csA[interval_size:length(csA)]-c(0, csA[1:(length(csA)-interval_size)])
+  countT = csT[interval_size:length(csT)]-c(0, csT[1:(length(csT)-interval_size)])
+  countG = csG[interval_size:length(csG)]-c(0, csG[1:(length(csG)-interval_size)])
+  countC = csC[interval_size:length(csC)]-c(0, csC[1:(length(csC)-interval_size)])
+  
+  M<-cbind(countA, countT, countG, countC)/interval_size
+  M_comp<-cbind(countT, countA, countC, countG)/interval_size
+  M_comp<-apply(t(M_comp),1,rev) 
+  Is<-as.numeric(M%*%I)#! numeric conversion
+  Ks<-as.numeric(M%*%K)
+  Vs<-as.numeric(M%*%V)
+  
+  E01<-(8*(Ks*Vs)^0.5)* 6E23 / 4184
+  d1<-((Ks*a^2)/Vs)^(0.5)/a;
+  c1<-(Ks*a^2/Is)^0.5
+  m1<-E01/c1/6.011E-26
+  taus1<-as.numeric(M%*%tau) #!as.numeric conversion
+  gc1 = M[,3] + M[,4]
+  
+  Is<-as.numeric(M%*%I)#! numeric conversion
+  Ks<-as.numeric(M%*%K)
+  Vs<-as.numeric(M%*%V)
+  
+  
+  E02<- 8*(Ks*Vs)^0.5  * 6E23 / 4184;
+  d2<-((Ks*a^2)/Vs)^(0.5)/a;
+  c2<-(Ks*a^2/Is)^0.5;
+  m2<-E02/c2/6.011E-26;
+  taus2<-as.numeric(M_comp%*%tau)
+  gc2 = M_comp[,3] + M_comp[,4]
+  
+  dynchars_return<-list(E01=E01, d1=d1, c1=c1, m1=m1, taus1=taus1, gc1=gc1, E02=E02, d2=d2, c2=c2, m2=m2, taus2=taus2, gc2=gc2)
+  
+  return(dynchars_return)
+}
+
+```
+
+```{r SIDD}
+for (j in  c('exp', 'not', 'gen', 'isl', 'lowscore')){
+    tmp <- get(paste0(j, 'seqs'))
+     tmp3 <- c()
+      for (i in seq_along(get(paste0(j, 'seqs')))){
+   
+    tmp1 <- unlist(strsplit(tmp[i], split = ''))
+    tmp2 <- dynchars(tmp1, interval_size = 50)$E01[(1000-150):(1000+50)]
+    
+   
+    tmp3 <- cbind(tmp3, tmp2)
+    }
+  assign(paste0(j, '_e01'), value = tmp3)
+}
+
+par(mfrow = c(3,2))
+for (j in  c('exp', 'not', 'gen', 'isl', 'lowscore')){
+  print(range(get(paste0(j, '_e01'))))
+  #matplot(get(paste0(j, '_e01')), type = 'l')
+}
+```
+
+```{r, cache=T}
+library(seqinr)
+e.coli_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNPromoterData/master/Ecoli_prom.fa')
+
+e.coli_non_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNPromoterData/master/Ecoli_non_prom.fa')
+
+
+b.subtilis_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNPromoterData/master/Bacillus_prom.fa')
+
+b.subtilis_non_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNPromoterData/master/Bacillus_non_prom.fa')
+
+table(sapply(B.subtilis_proms, FUN = length))
+
+table(sapply(B.subtilis_non_proms, FUN = length))
+
+B.subtilis_proms_e01 <- sapply(B.subtilis_proms, function(x) {
+  dynchars(x, interval_size = 50)$E01
+})
+
+
+B.subtilis_non_proms_e01 <- sapply(B.subtilis_non_proms, function(x) {
+  dynchars(x, interval_size = 50)$E01
+})
+
+matplot(B.subtilis_proms_e01, type = 'l')
+matplot(B.subtilis_non_proms_e01, type = 'l')
+
+par(mfrow = c(1,3))
+ylim = c(190, 270)
+boxplot(as.numeric(B.subtilis_proms_e01), ylim = ylim)
+boxplot(as.numeric(B.subtilis_non_proms_e01), ylim =  ylim)
+boxplot(as.numeric(exp_e01), ylim = ylim)
+
+GC(unlist(B.subtilis_proms))
+GC(unlist(B.subtilis_non_proms))
+GC(unlist(strsplit(paste0(expseqs, collapse = ''), split = '')))
+GC(unlist(strsplit(paste0(notseqs, collapse = ''), split = '')))
+
+```
+
+```{r Reading in genbank genome to find out strain}
+library(ape)
+library(seqinr)
+B.subtilis_gb <- as.character(read.fasta('/home/jane/Документы/Misha/mol_a_2018/NC_000964.3_Bacillus_subtilis_subsp._subtilis_str._168 chromosome.fasta')$NC_000964.3)
+
+B.subtilis_gb <- as.character(read.fasta('/home/jane/Документы/Misha/mol_a_2018/NZ_CP010052.1_Bacillus_subtilis_subsp._subtilis_str._168.fasta')$NZ_CP010052.1)
+str(B.subtilis_gb)
+    
+```
+
+```{r Search for sequence from solovictor github}
+seq <- paste0((B.subtilis_proms$abnA), collapse = '')
+grep(seq, paste0(B.subtilis_gb, collapse = ''))
+
+library(rentrez)
+#search in nuccore
+entrez_db_searchable('nuccore')
+query <- "Bacillus subtilis [ORGN] AND complete genome [ALL]"#3000000:10000000 [SLEN]"
+web_env_search <- entrez_search(db="nuccore", query, use_history=TRUE)
+web_env_search
+
+list_Bs_seqs <- list()
+for (i in web_env_search$ids) {
+tmp <- entrez_fetch(db="nuccore", id=i, rettype="fasta", retmode = 'fasta')
+write.fasta(tmp, file = paste0('/home/jane/Документы/Misha/mol_a_2018/', substr(tmp, 0, 50)), as.string = F, names = F)
+
+tmp1 <- as.character(read.fasta(file = paste0('/home/jane/Документы/Misha/mol_a_2018/', substr(tmp, 0, 50)), as.string = F)[[2]])
+list_Bs_seqs <- c(list_Bs_seqs, paste0(tmp1, collapse = ''))
+}
+
+list_Bs_seqs[[1]]
+
+
+#str(fetched_seqs)
+#list_Bs_seqs_long_only <- list_Bs_seqs[which(sapply(list_Bs_seqs, nchar)>4000000)]
+grep(pattern = paste0(B.subtilis_proms$abnA, collapse = ''), x = list_Bs_seqs[[1]], ignore.case = T)
+
+
+length(list_Bs_seqs)
+number_of_hits_proms <- list()
+for (i in seq_along(B.subtilis_proms)){
+  tmp <- ((grep(pattern = paste0(B.subtilis_proms[[i]], collapse = ''), x = list_Bs_seqs, ignore.case = T))) #tmp indicates which genome have the seq
+  if (tmp == 0)
+  number_of_hits_proms[[i]] <-  tmp
+}
+which(sapply(number_of_hits_proms, length) == 1)
+#no 12
+tmp)>0
+
+number_of_hits_non_proms <- c()
+for (i in B.subtilis_non_proms)
+  number_of_hits_non_proms <- c(number_of_hits_non_proms, (length(grep(pattern = as.character(i), x = list_Bs_seqs, ignore.case = T))))
+number_of_hits_non_proms
+#no 12
+
+
+
+lapply(list_Bs_seqs_long_only, nchar)
+list_Bs_seqs_long_only_actg <- lapply(list_Bs_seqs_long_only, function(x) {
+  tmp <- gsub("\\", "", x, fixed=TRUE)
+  tmp <- gsub("n", "", x, fixed=TRUE)
+}
+
+
+
+Bs_id <- entrez_search(db="nuccore", term="Bacillus subtilis")
+#Oh, right. There is a genus and a subgenus name Drosophila...
+#how can we limit this search
+(tax_fields <- entrez_db_searchable("taxonomy"))
+#"RANK" loots promising
+tax_fields$RANK
+entrez_search(db="taxonomy", term="Drosophila & Genus[RANK]")
+```
+
+```{r DNA distance E. coli}
+library(ape)
+library(dendextend)
+#library(fastcluster)
+
+e.coli_proms_non_proms <- t(cbind(sapply(e.coli_proms, unlist), sapply(e.coli_non_proms, unlist)))
+
+b.subtilis_proms_non_proms <- t(cbind(sapply(b.subtilis_proms, unlist), sapply(b.subtilis_non_proms, unlist)))
+
+colvec_e.coli <- c(rep('orange', length(e.coli_proms)),
+            rep('darkred', length(e.coli_non_proms)))
+colvec_b.subtilis <- c(rep('darkgreen', length(b.subtilis_proms)),
+            rep('blue', length(b.subtilis_proms_non_proms)))
+
+#e.coli_proms_non_proms_tv_dist <- dist.dna(as.DNAbin(e.coli_proms_non_proms), model = 'raw', pairwise.deletion = T)
+
+#ward_e.coli_proms_non_proms_tv_dist <- hclust(e.coli_proms_non_proms_tv_dist, method = 'ward.D2')
+#or
+
+library(Biostrings)
+
+e.coli_proms_non_proms_strings <- apply(e.coli_proms_non_proms, 1, function(x) {paste0(x, collapse = '')})
+e.coli_proms_non_proms_DNAStringSet <- DNAStringSet(e.coli_proms_non_proms_strings)
+
+e.coli_proms_non_proms_stringdist <- stringDist(e.coli_proms_non_proms_DNAStringSet, method = 'levenshtein')
+
+
+ward_e.coli_proms_non_proms_stringdist <- hclust(e.coli_proms_non_proms_stringdist, method = 'ward.D2')
+
+
+ward_e.coli_proms_non_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_proms_non_proms_stringdist$labels), col = colvec_e.coli[order.dendrogram(ward_e.coli_proms_non_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_e.coli_proms_non_proms_stringdist$height)*0.2)-> dend_e.coli 
+plot(dend_e.coli, main = 'E. coli promoters and non-promoters: DNA Levenshtein distance')
+
+
+```
+
+```{r DNA distance b.subtilis}
+library(ape)
+library(dendextend)
+#library(fastcluster)
+
+b.subtilis_proms_non_proms <- t(cbind(sapply(b.subtilis_proms, unlist), sapply(b.subtilis_non_proms, unlist)))
+
+
+
+#b.subtilis_proms_non_proms_tv_dist <- dist.dna(as.DNAbin(b.subtilis_proms_non_proms), model = 'raw', pairwise.deletion = T)
+
+#ward_b.subtilis_proms_non_proms_tv_dist <- hclust(b.subtilis_proms_non_proms_tv_dist, method = 'ward.D2')
+#or
+
+library(Biostrings)
+
+b.subtilis_proms_non_proms_strings <- apply(b.subtilis_proms_non_proms, 1, function(x) {paste0(x, collapse = '')})
+b.subtilis_proms_non_proms_DNAStringSet <- DNAStringSet(b.subtilis_proms_non_proms_strings)
+
+b.subtilis_proms_non_proms_stringdist <- stringDist(b.subtilis_proms_non_proms_DNAStringSet, method = 'levenshtein')
+
+
+ward_b.subtilis_proms_non_proms_stringdist <- hclust(b.subtilis_proms_non_proms_stringdist, method = 'ward.D2')
+
+
+ward_b.subtilis_proms_non_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_b.subtilis_proms_non_proms_stringdist$labels), col = colvec_b.subtilis[order.dendrogram(ward_b.subtilis_proms_non_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_b.subtilis_proms_non_proms_stringdist$height)*0.2)-> dend_b.subtilis 
+
+par(mfrow = c (2,1))
+plot(dend_e.coli, main = 'E. coli promoters and non-promoters: DNA Levenshtein distance')
+plot(dend_b.subtilis, main = 'B. subtilis promoters and non-promoters: DNA Levenshtein distance')
+
+
+```
+
+
+```{r DNA distance promoters both bacteria}
+library(ape)
+library(dendextend)
+#library(fastcluster)
+
+e.coli_b.subtilis_proms <- t(cbind(sapply(e.coli_proms, unlist), sapply(b.subtilis_proms, unlist)))
+
+
+colvec_e.coli_b.subtilis_proms <- c(rep('orange', length(e.coli_proms)),
+            rep('darkgreen', length(b.subtilis_proms)))
+
+#e.coli_proms_non_proms_tv_dist <- dist.dna(as.DNAbin(e.coli_proms_non_proms), model = 'raw', pairwise.deletion = T)
+
+#ward_e.coli_proms_non_proms_tv_dist <- hclust(e.coli_proms_non_proms_tv_dist, method = 'ward.D2')
+#or
+
+library(Biostrings)
+
+e.coli_b.subtilis_proms_strings <- apply(e.coli_b.subtilis_proms, 1, function(x) {paste0(x, collapse = '')})
+e.coli_b.subtilis_proms_DNAStringSet <- DNAStringSet(e.coli_b.subtilis_proms_strings)
+
+e.coli_b.subtilis_proms_stringdist <- stringDist(e.coli_b.subtilis_proms_DNAStringSet, method = 'levenshtein')
+
+
+ward_e.coli_b.subtilis_proms_stringdist <- hclust(e.coli_b.subtilis_proms_stringdist, method = 'ward.D2')
+
+
+ward_e.coli_b.subtilis_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_b.subtilis_proms_stringdist$labels), col = colvec_e.coli_b.subtilis_proms[order.dendrogram(ward_e.coli_b.subtilis_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>%   raise.dendrogram(max(ward_e.coli_b.subtilis_proms_stringdist$height)*0.2) -> dend_e.coli_b.subtilis_proms
+plot(dend_e.coli, main = 'E. coli and B. subtilis promoters: DNA Levenshtein distance')
+
+
+```
+
+```{r DNA distance non_promoters both bacteria}
+library(ape)
+library(dendextend)
+#library(fastcluster)
+
+e.coli_b.subtilis_non_proms <- t(cbind(sapply(e.coli_non_proms, unlist), sapply(b.subtilis_non_proms, unlist)))
+
+
+colvec_e.coli_b.subtilis_non_proms <- c(rep('orange', length(e.coli_non_proms)),
+            rep('blue', length(b.subtilis_non_proms)))
+
+#e.coli_proms_non_proms_tv_dist <- dist.dna(as.DNAbin(e.coli_proms_non_proms), model = 'raw', pairwise.deletion = T)
+
+#ward_e.coli_proms_non_proms_tv_dist <- hclust(e.coli_proms_non_proms_tv_dist, method = 'ward.D2')
+#or
+
+library(Biostrings)
+
+e.coli_b.subtilis_non_proms_strings <- apply(e.coli_b.subtilis_non_proms, 1, function(x) {paste0(x, collapse = '')})
+e.coli_b.subtilis_non_proms_DNAStringSet <- DNAStringSet(e.coli_b.subtilis_non_proms_strings)
+
+e.coli_b.subtilis_non_proms_stringdist <- stringDist(e.coli_b.subtilis_non_proms_DNAStringSet, method = 'levenshtein')
+
+
+ward_e.coli_b.subtilis_non_proms_stringdist <- hclust(e.coli_b.subtilis_non_proms_stringdist, method = 'ward.D2')
+
+
+ward_e.coli_b.subtilis_non_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_b.subtilis_non_proms_stringdist$labels), col = colvec_e.coli[order.dendrogram(ward_e.coli_b.subtilis_non_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>%   raise.dendrogram(max(ward_e.coli_b.subtilis_non_proms_stringdist$height)*0.2) -> dend_e.coli_b.subtilis_non_proms 
+plot(dend_e.coli_b.subtilis_non_proms, main = 'E. coli and B. subtilis non-promoters: DNA Levenshtein distance')
+
+
+par(mfrow = c (2,1))
+plot(dend_e.coli_b.subtilis_proms, main = 'E. coli and B. subtilis promoters: DNA Levenshtein distance')
+plot(dend_e.coli_b.subtilis_non_proms, main = 'E. coli and B. subtilis non-promoters: DNA Levenshtein distance')
+
+
+```
+
+```{r oligos presented}
+
+library(ngram)
+
+ng_e.coli_proms<- ngram(paste0(unlist(e.coli_proms), collapse = ''), n = 6, sep = '')
+ng_e.coli_non_proms<- ngram(paste0(unlist(e.coli_non_proms), collapse = ''), n = 6, sep = '')
+
+
+ng_b.subtilis_proms<- ngram(paste0(unlist(b.subtilis_proms), collapse = ''), n = 6, sep = '')
+ng_b.subtilis_non_proms<- ngram(paste0(unlist(b.subtilis_non_proms), collapse = ''), n = 6, sep = '')
+
+get.phrasetable(ng_e.coli_proms)[1:10,]
+get.phrasetable(ng_e.coli_non_proms)[1:10,]
+get.phrasetable(ng_b.subtilis_proms)[1:10,]
+get.phrasetable(ng_b.subtilis_non_proms)[1:10,]
+
+```
+
