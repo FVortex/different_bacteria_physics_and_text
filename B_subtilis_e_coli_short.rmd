@@ -619,6 +619,18 @@ legend('center', lty = 1, col = cols_brew, legend = c('E. coli, promoters', 'E.c
  
 ```
 
+```{r assorted string distance - Levenshtein}
+#par(mfrow = c(4,1))
+cex.main = 1.5
+#par(mfrow = c(4,1))
+plot(to_plot_e.coli_proms_non_proms_stringdist, main ='E. coli promoter and non-promoter mixture (Levenshtein distance)', cex.main = cex.main)
+plot(to_plot_b.subtilis_proms_non_proms_stringdist, main ='B. subtilis promoter and non-promoter mixture (Levenshtein distance)', cex.main = cex.main)
+plot(to_plot_e.coli_b.subtilis_proms_stringdist, main ='E. coli and B. subtilis promoter mixture (Levenshtein distance)', cex.main = cex.main)
+plot(1, type="n", axes=F, xlab="", ylab="")
+legend('center', lty = 1, col = cols_brew, legend = c('E. coli, promoters', 'E.coli, non-promoters', 'B. subtilis, promoters', 'B. subtilis, non-promoters'), bty = 'n', ncol = 1, cex = 3, lwd = 3)
+ 
+```
+
 
 ```{r substring occurences}
 
