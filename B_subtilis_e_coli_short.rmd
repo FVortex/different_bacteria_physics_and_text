@@ -29,9 +29,14 @@ e.coli_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNProm
 
 e.coli_non_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNPromoterData/master/Ecoli_non_prom.fa')
 
+e.coli_proms_non_proms <- c(e.coli_proms, e.coli_non_proms)
+
 b.subtilis_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNPromoterData/master/Bacillus_prom.fa')
 
 b.subtilis_non_proms <- read.fasta('https://raw.githubusercontent.com/solovictor/CNNPromoterData/master/Bacillus_non_prom.fa')
+
+b.subtilis_proms_non_proms <- c(b.subtilis_proms, b.subtilis_non_proms)
+
 
 seqs <- grep('*_proms', ls(), value = T)
 
@@ -443,12 +448,35 @@ rep('blue', length(b.subtilis_non_proms)))
 
 library(Biostrings)
 
+#ec.oli
+e.coli_proms_non_proms_strings <- sapply(e.coli_proms_non_proms,  function(x) {paste0(x, collapse = '')})
+e.coli_proms_non_proms_DNAStringSet <- DNAStringSet(e.coli_proms_non_proms_strings)
+
+e.coli_proms_non_proms_stringdist <- stringDist(e.coli_proms_non_proms_DNAStringSet, method = 'levenshtein')
+
+#b.subtilis
+b.subtilis_proms_non_proms_strings <- apply(b.subtilis_proms_non_proms, 1, function(x) {paste0(x, collapse = '')})
+b.subtilis_proms_non_proms_DNAStringSet <- DNAStringSet(b.subtilis_proms_non_proms_strings)
+
+b.subtilis_proms_non_proms_stringdist <- stringDist(b.subtilis_proms_non_proms_DNAStringSet, method = 'levenshtein')
+
+#both
 e.coli_b.subtilis_non_proms_strings <- apply(e.coli_b.subtilis_non_proms, 1, function(x) {paste0(x, collapse = '')})
 e.coli_b.subtilis_non_proms_DNAStringSet <- DNAStringSet(e.coli_b.subtilis_non_proms_strings)
 
 e.coli_b.subtilis_non_proms_stringdist <- stringDist(e.coli_b.subtilis_non_proms_DNAStringSet, method = 'levenshtein')
 
-ward_e.coli_b.subtilis_non_proms_stringdist <- hclust(e.coli_b.subtilis_non_proms_stringdist, method = 'ward.D2')
+ward_e.coli_proms_non_proms_stringdist <- hclust(e.coli_proms_non_proms_stringdist, method = 'ward.D2')
+
+ward_e.coli_proms_non_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_proms_non_proms_stringdist$labels), col = colvec_e.coli_proms_non_proms[order.dendrogram(ward_e.coli_proms_non_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_e.coli_proms_non_proms_stringdist$height)*0.2) -> to_plot_e.coli_proms_non_proms_stringdist 
+
+
+ward_b.subtilis_proms_non_proms_stringdist <- hclust(b.subtilis_proms_non_proms_stringdist, method = 'ward.D2')
+
+ward_b.subtilis_proms_non_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_b.subtilis_proms_non_proms_stringdist$labels), col = colvec_b.subtilis_proms_non_proms[order.dendrogram(ward_b.subtilis_proms_non_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_b.subtilis_proms_non_proms_stringdist$height)*0.2) -> to_plot_b.subtilis_proms_non_proms_stringdist 
+
+
+ward_b.subtilis_proms_non_proms_stringdist <- hclust(b.subtilis_proms_non_proms_stringdist, method = 'ward.D2')
 
 ward_e.coli_b.subtilis_non_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_b.subtilis_non_proms_stringdist$labels), col = colvec_e.coli_b.subtilis_non_proms[order.dendrogram(ward_e.coli_b.subtilis_non_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_e.coli_b.subtilis_non_proms_stringdist$height)*0.2) -> to_plot_e.coli_b.subtilis_non_proms_stringdist 
 #plot(to_plot_e.coli_b.subtilis_non_proms_stringdist, main = 'E. coli and B. subtilis non-promoters: DNA Levenshtein distance')
