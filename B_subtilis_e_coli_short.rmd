@@ -713,3 +713,69 @@ fviz_pca_biplot(PCA13, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexa
 PCA13 <- prcomp(all_seqs_oligos_freq[,c(1:4)], scale = T)
 fviz_pca_biplot(PCA13, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
+```
+
+```{r E. coli promoters melting for different sigma values - genes}
+library(clusterProfiler)
+load('/home/jane/Загрузки/mydf_genes.rda')
+
+mydf_genes_split <- split(mydf_genes, mydf_genes$group)
+lapply(mydf_genes_split, nrow)  
+sapply(mydf_genes_split, function(x) {paste0(as.character(x$Entrez), collapse = ', ')})
+#compareCluster(Entrez~group, mydf_genes[1:148,], fun = 'enrichGO', OrgDb = "org.EcK12.eg.db")
+
+
+```
+
+```{r GO MF overrepresentaion test by panther. Dumb way}
+#diff_sigmas_panther_overrepresentaion_test <- list()
+for (i in levels(mydf_genes$group)) {
+   tmp <- read.table(paste0('/home/jane/Документы/Misha/mol_a_2018/panther_', i, '_mf_stat_test.txt'), header = T, skip =11, sep = '\t')
+  assign(paste0(i, '_panther_overrepresentaion_test'), tmp)
+
+}
+
+diff_sigmas_panther_overrepresentaion_test <- grep('*_panther_overrepresentaion_test', ls(), value = T)
+
+
+GO.molecular.function.complete <- sapply(diff_sigmas_panther_overrepresentaion_test, FUN = function(x){(get(x))$GO.molecular.function.complete})
+
+Client.Text.Box.Input..expected. <- sapply(diff_sigmas_panther_overrepresentaion_test, FUN = function(x){(get(x))$Client.Text.Box.Input..expected})
+
+
+#which mf made it to the top, max nrow in 2 member of the list
+which.max(sapply(GO.molecular.function.complete, length))
+GO.molecular.function.complete[[2]]
+
+par(mfrow = c(1,4),
+las=1, mar=c(10,0.5,0.5, 0.5))
+ylim = c(0, 125)
+for (i in seq_along(GO.molecular.function.complete)){
+barplot(Client.Text.Box.Input..expected.[[i]], names.arg =  substr(as.character(GO.molecular.function.complete[[i]]), 0, 15), las = 2, ylim = ylim)
+}
+
+all_levels <- levels(sapply(GO.molecular.function.complete, function(x) {x[[1]]}))
+
+new_df <- matrix(NA, ncol = length(GO.molecular.function.complete), nrow = length(all_levels))
+rownames(new_df) <- all_levels
+colnames(new_df) <- names(GO.molecular.function.complete)
+for (i in seq_along(GO.molecular.function.complete)){
+  nos <- which(all_levels %in% levels(GO.molecular.function.complete[[i]]) )
+  new_df[nos,i] <- Client.Text.Box.Input..expected.[[i]][nos]
+}
+
+
+View(new_df[1:16,]) #therest are empty cases
+
+par(mfrow = c(1,2))
+matplot(t(new_df[1:16,]), type = 'h', col = rainbow(16),  lty = 1:16, lwd = 4)
+plot(1, type="n", axes=F, xlab="", ylab="")
+legend('center', col = rainbow(16),  legend = substr(rownames(new_df[1:16,]),0,50), cex = .6, ncol = 1, lwd = 3,lty = 1:16)
+
+
+barplot(c(Client.Text.Box.Input..expected.[[1]], Client.Text.Box.Input..expected.[[2]]), names.arg =  substr(as.character(GO.molecular.function.complete[[1]]), 0, 15), las = 2, ylim = ylim)
+
+library(tidyr)
+df %>% spread(f2, v1, fill=0) %>% gather(f2, v1, -f1)
+```
+
