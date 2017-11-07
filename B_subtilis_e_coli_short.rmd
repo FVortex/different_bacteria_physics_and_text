@@ -768,12 +768,48 @@ for (i in seq_along(GO.molecular.function.complete)){
 View(new_df[1:16,]) #therest are empty cases
 
 par(mfrow = c(1,2))
-matplot(t(new_df[1:16,]), type = 'h', col = rainbow(16),  lty = 1:16, lwd = 4)
+matplot(t(new_df[1:16,]), type = 'l', col = rainbow(16),  lty = 1:16, lwd = 4)
 plot(1, type="n", axes=F, xlab="", ylab="")
 legend('center', col = rainbow(16),  legend = substr(rownames(new_df[1:16,]),0,50), cex = .6, ncol = 1, lwd = 3,lty = 1:16)
 
+mydata <- data.frame(Barplot1=new_df[,1], Barplot2=new_df[,2],
+Barplot3=new_df[,3], Barplot4=new_df[,4])
+barplot(as.matrix(mydata), main="Interesting", ylab="Total", beside=TRUE, col =terrain.colors(4))
+legend(13, 12, c("Label1","Label2","Label3","Label4","Label5"), cex=0.6,
+fill=terrain.colors(5))
 
-barplot(c(Client.Text.Box.Input..expected.[[1]], Client.Text.Box.Input..expected.[[2]]), names.arg =  substr(as.character(GO.molecular.function.complete[[1]]), 0, 15), las = 2, ylim = ylim)
+mydata <- c()
+for (i in 1:ncol(new_df)) {
+mydata <- rbind(mydata, new_df[,i])
+}
+
+Cols = rev(rep(heat.colors(4), 7))
+Cols16 <- Cols[1:16]
+mydata16 <- mydata[,1:16]
+par(mar = c(18,1,1,1))
+cex = 0.8
+barplot(as.matrix(mydata16), main="Functional overrepresentation test on molecular function (GO)", ylab="", names.arg = substr(colnames(mydata16), 0, 45), beside=TRUE, col = Cols16, las= 2, cex.names = cex)
+legend('topleft', c('Sigma = 0.05', 'Sigma = 0.06', 'Sigma = 0.07', 'Sigma = 0.08'), cex=cex,
+fill = Cols16, bty = 'n', ncol = 2)
+
+#as multiple barplots
+par(mar = c(18,1,1,1))
+cex = 0.8
+for (i in 1:ncol(mydata16)){
+
+}
+barplot(as.matrix(mydata16), main="Functional overrepresentation test on molecular function (GO)", ylab="", names.arg = substr(colnames(mydata16), 0, 45), beside=TRUE, col = Cols16, las= 2, cex.names = cex)
+legend('topleft', c('Sigma = 0.05', 'Sigma = 0.06', 'Sigma = 0.07', 'Sigma = 0.08'), cex=cex,
+fill = Cols16, bty = 'n', ncol = 2)
+#and then we can make the following in ggplot2:
+
+ggplot(mydata,aes(x=(1:nrow(mydata)), y = mydata$genes_004_005_panther_overrepresentaion_test))
+qplot(mydata$genes_004_005_panther_overrepresentaion_test, fill = rainbow(length(mydata$genes_004_005_panther_overrepresentaion_test)))
+
++
+facet_wrap(~variable) +
+geom_bar(aes(fill = factor(id)))
+barplot(c(Client.Text.Box.Input..expected.[[1]], Client.Text.Box.Input..expected.[[2]]), names.arg = substr(as.character(GO.molecular.function.complete[[1]]), 0, 15), las = 2, ylim = ylim)
 
 library(tidyr)
 df %>% spread(f2, v1, fill=0) %>% gather(f2, v1, -f1)
