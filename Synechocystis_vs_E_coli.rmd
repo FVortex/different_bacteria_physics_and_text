@@ -35,10 +35,22 @@ reverseComplement_e.coli_U00096.2_char<-unlist(strsplit(reverseComplement_e.coli
 
 ```
 
+Reading in Synechocystis sp. PCC6803 complete , creating reverse complement genome and tranformation genome into character form 
+```{r Reading in Synechocystis sp. PCC6803 complete genome, in supplementary noted genbank acession NC_000911.1}
+synechocystis_NC_000911.1 <- toupper(paste0(read.GenBank(access.nb = 'NC_000911.1', as.character = T)$NC_000911.1, collapse = ''))
+reverseComplement_synechocystis_NC_000911.1 <- as.character(reverseComplement(DNAString(synechocystis_NC_000911.1)))
+
+synechocystis_NC_000911.1_char<-unlist(strsplit(synechocystis_NC_000911.1, ''))
+reverseComplement_synechocystis_NC_000911.1<-unlist(strsplit(reverseComplement_synechocystis_NC_000911.1, ''))
+
+```
+
+
+
 Dynamical properties calculation from within R using octave script translated according to Grinevich et al., 2013
 Creating function for dynamical properties calculation
 
-```{r}
+```{r dynchars function }
 
 
 
@@ -103,6 +115,23 @@ return(dynchars_return)
   
 }
 ```
+
+```{r Overall characteristics for both bacteria}
+whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = 200)
+whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref =  1)
+whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = 200)
+whole_synechocystis_EP <- lseqspline1D(synechocystis_NC_000911.1, bound = c(1, nchar(synechocystis_NC_000911.1)), width = 1, ref =  1)
+
+par(mfrow = c(3,4))
+(rbind(sapply(whole_e.coli_dynchars, mean),
+sapply(whole_synechocystis_dynchars, mean)))
+
+summary(whole_e.coli_EP$mpot)
+summary(whole_synechocystis_EP$mpot)
+
+
+```
+
 
 ```{r}
 physdna <- function(seq, interval_size, bound = bound, ref = ref, width = width) {
@@ -184,6 +213,11 @@ physdna <- function(seq, interval_size, bound = bound, ref = ref, width = width)
 ```
 
 Calculation the properties for a given genome using sliding window 200 nt
+
+```{r Whole genome}
+
+```
+
 
 Loading data on sequences of different types (promoters, non-promoters, genes, islands, and lowscore) from .Rdata files (must be copied separetely)
 ```{r}
@@ -289,31 +323,6 @@ EP<-rbind(EPforward, EPreverse)
 ```
 
 
-Reading in Synechocystis sp. PCC6803 complete , creating reverse complement genome and tranformation genome into character form 
-```{r Reading in Synechocystis sp. PCC6803 complete genome, in supplementary noted genbank acession NC_000911.1}
-synechocystis_NC_000911.1 <- toupper(paste0(read.GenBank(access.nb = 'NC_000911.1', as.character = T)$NC_000911.1, collapse = ''))
-reverseComplement_synechocystis_NC_000911.1 <- as.character(reverseComplement(DNAString(synechocystis_NC_000911.1)))
-
-synechocystis_NC_000911.1_char<-unlist(strsplit(synechocystis_NC_000911.1, ''))
-reverseComplement_synechocystis_NC_000911.1<-unlist(strsplit(reverseComplement_synechocystis_NC_000911.1, ''))
-
-```
-
-```{r Overall characteristics for both bacteria}
-whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = 200)
-whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref =  1)
-whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = 200)
-whole_synechocystis_EP <- lseqspline1D(synechocystis_NC_000911.1, bound = c(1, nchar(synechocystis_NC_000911.1)), width = 1, ref =  1)
-
-par(mfrow = c(3,4))
-(rbind(sapply(whole_e.coli_dynchars, mean),
-sapply(whole_synechocystis_dynchars, mean)))
-
-summary(whole_e.coli_EP$mpot)
-summary(whole_synechocystis_EP$mpot)
-
-
-```
 
 
 ```{r Datasets from An experimentally anchored map of transcriptional start sites in the model cyanobacterium Synechocystis sp. PCC6803 Jan Mitschke, 2011}
