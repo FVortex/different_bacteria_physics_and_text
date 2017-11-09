@@ -467,7 +467,7 @@ plot(ward_synechocystis_e.coli_proms_stringdist, labels = NULL)
 
 colvec_synechocystis_e.coli_proms <- c(rep('darkgreen', length(synechocystis_proms$X1.TSS)),
 rep('orange', length(exp_tsss)))
-ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_synechocystis_e.coli_proms_stringdist$height), col = colvec_synechocystis_e.coli_proms[order.dendrogram(ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_synechocystis_e.coli_proms_stringdist$height)*0.2)%>% circlize_dendrogram(labels=F, dend_track_height = 0.95) -> to_plot_ward_synechocystis_e.coli_proms_stringdist
+ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_synechocystis_e.coli_proms_stringdist$order), col = colvec_synechocystis_e.coli_proms[order.dendrogram(ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_synechocystis_e.coli_proms_stringdist$height)*0.2)%>% circlize_dendrogram(labels=F, dend_track_height = 0.95) -> to_plot_ward_synechocystis_e.coli_proms_stringdist
 
 
 plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance')
