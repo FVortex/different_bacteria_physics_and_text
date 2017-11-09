@@ -277,7 +277,7 @@ to 5'-end for both strands
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
 ```{r E. coli promoters physics, cache=T} 
-for (i in c('E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse')) {
+for (i in c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse')) {
   assign(i, c())
 }
 zout<- -480:239
@@ -285,6 +285,8 @@ zout<- -480:239
 
 for (i in 1:length(exp_tsss)) {
   if (exp_strands[i]=='forward') {
+     seqsforward<-c(seqsforward, substr(e.coli_U00096.2, start = exp_tsss[i] - 150, stop = exp_tsss[i] + 50))
+                                    
     E01forward<-rbind(E01forward, whole_e.coli_dynchars$E01[as.numeric(exp_tsss[i]-150):(exp_tsss[i]+50)])
     #aeos2forward<-rbind(aeos2forward, matr1[(as.numericexp_tsss[i]-150):(as.numericexp_tsss[i]+50),2])
     d1forward<-rbind(d1forward, whole_e.coli_dynchars$d1[(as.numeric(exp_tsss[i])-150):(exp_tsss[i]+50)])
@@ -297,6 +299,7 @@ for (i in 1:length(exp_tsss)) {
                         p$mpot[p$x %in% zout])
     
      } else {
+    seqsreverse<-c(seqsreverse, substr(e.coli_U00096.2, start = exp_tsss[i] - 150, stop = exp_tsss[i] + 50))
     E01reverse<-rbind(E01reverse, whole_e.coli_dynchars$E02[(as.numeric(exp_tsss[i])-50):(as.numeric(exp_tsss[i])+150)])
     #aeos2reverse<-rbind(aeos2reverse, matr1[(as.numeric(exp_tsss[i])-50):(as.numeric(exp_tsss[i])+150),2])
     d1reverse<-rbind(d1reverse, whole_e.coli_dynchars$d2[(as.numeric(exp_tsss[i])-50):(as.numeric(exp_tsss[i])+150)])
@@ -316,6 +319,7 @@ for (i in 1:length(exp_tsss)) {
 
 
 #merging matrices for forward and reverse strands  together
+seqs <- c(seqsforward, seqsreverse)
 E01<-rbind(E01forward, E01reverse)
 #aeos2<-rbind(aeos2forward, aeos2reverse)
 d1<-rbind(d1forward, d1reverse)
@@ -365,7 +369,7 @@ Creating matrices of dynamical properties and GC-content for intervals [-150; 50
 ```{r Synechocystis proms physics, cache=T} 
 
 
-for (i in c('synechocystis_E01forward', 'synechocystis_E01reverse', 'synechocystis_d1forward', 'synechocystis_d1reverse', 'synechocystis_GCforward', 'synechocystis_GCreverse', 'synechocystis_EPforward', 'synechocystis_EPreverse')) {
+for (i in c('synechocystis_seqsforward', 'synechocystis_seqsreverse', 'synechocystis_E01forward', 'synechocystis_E01reverse', 'synechocystis_d1forward', 'synechocystis_d1reverse', 'synechocystis_GCforward', 'synechocystis_GCreverse', 'synechocystis_EPforward', 'synechocystis_EPreverse')) {
   assign(i, c())
 }
 zout<- -480:239
@@ -373,7 +377,7 @@ interval_size <- 50
 for (i in 1:length(synechocystis_proms$X1.TSS)) {
   if (synechocystis_proms$X4.strand[i]=='fwd') {
     
-    synechocystis_seqs1forward<-c(synechocystis_seqforward, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS - 150, stop = synechocystis_proms$X1.TSS + 50))
+    synechocystis_seqsforward<-c(synechocystis_seqsforward, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS - 150, stop = synechocystis_proms$X1.TSS + 50))
                                     
                                     
     synechocystis_E01forward<-rbind(synechocystis_E01forward,
@@ -388,7 +392,7 @@ dynchars(synechocystis_NC_000911.1_char[(synechocystis_proms$X1.TSS[i]-150):(syn
                         p$mpot[p$x %in% zout])
     
      } else  {
-    synechocystis_seqs1reverse<-c(synechocystis_seqreverse, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS - 50, stop = synechocystis_proms$X1.TSS + 150))
+    synechocystis_seqsreverse<-c(synechocystis_seqsreverse, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS - 50, stop = synechocystis_proms$X1.TSS + 150))
        
     synechocystis_E01reverse<-rbind(synechocystis_E01reverse,
 dynchars(synechocystis_NC_000911.1_char[(synechocystis_proms$X1.TSS[i]-50):(synechocystis_proms$X1.TSS[i]+150)], interval_size = interval_size)$E01)                       
@@ -409,6 +413,7 @@ dynchars(synechocystis_NC_000911.1_char[(synechocystis_proms$X1.TSS[i]-50):(syne
 
 
 #merging matrices for forward and reverse strands  together
+synechocystis_seqs<-c(synechocystis_seqsforward, synechocystis_seqsreverse)
 synechocystis_E01<-rbind(synechocystis_E01forward, synechocystis_E01reverse)
 #aeos2<-rbind(aeos2forward, aeos2reverse)
 synechocystis_d1<-rbind(synechocystis_d1forward, synechocystis_d1reverse)
@@ -450,21 +455,22 @@ for (i in c('E01', 'd1', 'GC', 'EP')){
 library(Biostrings)
 
 
-lapply(synechocystis_proms$X1.TSS, FUN = function(x){
-  substr(synechocystis_NC_000911.1, start = x - 150, stop = x + 50)
-}
-e.coli_b.subtilis_proms_strings <- apply(e.coli_b.subtilis_proms, 1, function(x) {paste0(x, collapse = '')})
-e.coli_b.subtilis_proms_DNAStringSet <- DNAStringSet(e.coli_b.subtilis_proms_strings)
 
-e.coli_b.subtilis_proms_stringdist <- stringDist(e.coli_b.subtilis_proms_DNAStringSet, method = 'levenshtein')
+synechocystis_e.coli_proms_strings <- sapply(c(synechocystis_seqs, seqs),  function(x) {paste0(x, collapse = '')})
+synechocystis_e.coli_proms_DNAStringSet <- DNAStringSet(synechocystis_e.coli_proms_strings)
 
-ward_e.coli_b.subtilis_proms_stringdist <- hclust(e.coli_b.subtilis_proms_stringdist, method = 'ward.D2')
+synechocystis_e.coli_proms_stringdist <- stringDist(synechocystis_e.coli_proms_DNAStringSet, method = 'levenshtein')
 
-colvec_e.coli_b.subtilis <- c(rep(e.coli_proms_col, length(e.coli_proms)),
-rep(b.subtilis_proms_col, length(b.subtilis_proms)))
-ward_e.coli_b.subtilis_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_e.coli_b.subtilis_proms_stringdist$labels), col = colvec_e.coli_b.subtilis[order.dendrogram(ward_e.coli_b.subtilis_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_e.coli_b.subtilis_proms_stringdist$height)*0.2)%>% circlize_dendrogram(labels=F, dend_track_height = 0.95) -> to_plot_e.coli_b.subtilis_proms_stringdist
-plot(to_plot_e.coli_b.subtilis_proms_stringdist, main = 'E. coli and B. subtilis promoters: DNA Levenshtein distance')
+ward_synechocystis_e.coli_proms_stringdist <- hclust(synechocystis_e.coli_proms_stringdist, method = 'ward.D2')
 
+plot(ward_synechocystis_e.coli_proms_stringdist, labels = NULL)
+
+colvec_synechocystis_e.coli_proms <- c(rep('darkgreen', length(synechocystis_proms$X1.TSS)),
+rep('orange', length(exp_tsss)))
+ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_synechocystis_e.coli_proms_stringdist$height), col = colvec_synechocystis_e.coli_proms[order.dendrogram(ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_synechocystis_e.coli_proms_stringdist$height)*0.2)%>% circlize_dendrogram(labels=F, dend_track_height = 0.95) -> to_plot_ward_synechocystis_e.coli_proms_stringdist
+
+
+plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance')
 ```
 
 ```{r substring occurences}
