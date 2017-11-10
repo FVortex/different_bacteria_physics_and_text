@@ -224,8 +224,8 @@ Calculation the properties for a given genome using sliding window 200 nt
 Loading data on sequences of different types (promoters, non-promoters, genes, islands, and lowscore) from .Rdata files (must be copied separetely)
 ```{r}
 
-# #load('/home/mikhail/Documents/Script_2016_all/spline_dataset_pro.Rdata')
-load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+load('/home/mikhail/Documents/Script_2016_all/spline_dataset_pro.Rdata')
+# #load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
 #load('spline_dataset_notpro.Rdata')
 #load('spline_dataset_gen.Rdata')
 #load('spline_dataset_isl.Rdata')
