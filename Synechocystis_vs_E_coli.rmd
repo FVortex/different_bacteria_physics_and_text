@@ -224,8 +224,8 @@ Calculation the properties for a given genome using sliding window 200 nt
 Loading data on sequences of different types (promoters, non-promoters, genes, islands, and lowscore) from .Rdata files (must be copied separetely)
 ```{r}
 
-load('/home/mikhail/Documents/Script_2016_all/spline_dataset_pro.Rdata')
-# #load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+# #load('/home/mikhail/Documents/Script_2016_all/spline_dataset_pro.Rdata')
+load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
 #load('spline_dataset_notpro.Rdata')
 #load('spline_dataset_gen.Rdata')
 #load('spline_dataset_isl.Rdata')
@@ -319,7 +319,7 @@ for (i in 1:length(exp_tsss)) {
 
 
 #merging matrices for forward and reverse strands  together
-seqs <- c(seqsforward, seqsreverse)
+seqs <- toupper(c(seqsforward, seqsreverse))
 E01<-rbind(E01forward, E01reverse)
 #aeos2<-rbind(aeos2forward, aeos2reverse)
 d1<-rbind(d1forward, d1reverse)
@@ -377,7 +377,7 @@ interval_size <- 50
 for (i in 1:length(synechocystis_proms$X1.TSS)) {
   if (synechocystis_proms$X4.strand[i]=='fwd') {
     
-    synechocystis_seqsforward<-c(synechocystis_seqsforward, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS - 150, stop = synechocystis_proms$X1.TSS + 50))
+    synechocystis_seqsforward<-c(synechocystis_seqsforward, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS[i] - 150, stop = synechocystis_proms$X1.TSS[i] + 50))
                                     
                                     
     synechocystis_E01forward<-rbind(synechocystis_E01forward,
@@ -392,7 +392,7 @@ dynchars(synechocystis_NC_000911.1_char[(synechocystis_proms$X1.TSS[i]-150):(syn
                         p$mpot[p$x %in% zout])
     
      } else  {
-    synechocystis_seqsreverse<-c(synechocystis_seqsreverse, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS - 50, stop = synechocystis_proms$X1.TSS + 150))
+    synechocystis_seqsreverse<-c(synechocystis_seqsreverse, substr(synechocystis_NC_000911.1, start = synechocystis_proms$X1.TSS[i] - 50, stop = synechocystis_proms$X1.TSS[i] + 150))
        
     synechocystis_E01reverse<-rbind(synechocystis_E01reverse,
 dynchars(synechocystis_NC_000911.1_char[(synechocystis_proms$X1.TSS[i]-50):(synechocystis_proms$X1.TSS[i]+150)], interval_size = interval_size)$E01)                       
@@ -413,7 +413,7 @@ dynchars(synechocystis_NC_000911.1_char[(synechocystis_proms$X1.TSS[i]-50):(syne
 
 
 #merging matrices for forward and reverse strands  together
-synechocystis_seqs<-c(synechocystis_seqsforward, synechocystis_seqsreverse)
+synechocystis_seqs<-toupper(c(synechocystis_seqsforward, synechocystis_seqsreverse))
 synechocystis_E01<-rbind(synechocystis_E01forward, synechocystis_E01reverse)
 #aeos2<-rbind(aeos2forward, aeos2reverse)
 synechocystis_d1<-rbind(synechocystis_d1forward, synechocystis_d1reverse)
@@ -463,7 +463,7 @@ synechocystis_e.coli_proms_stringdist <- stringDist(synechocystis_e.coli_proms_D
 
 ward_synechocystis_e.coli_proms_stringdist <- hclust(synechocystis_e.coli_proms_stringdist, method = 'ward.D2')
 
-plot(ward_synechocystis_e.coli_proms_stringdist, labels = NULL)
+plot(ward_synechocystis_e.coli_proms_stringdist, labels = F)
 
 colvec_synechocystis_e.coli_proms <- c(rep('darkgreen', length(synechocystis_proms$X1.TSS)),
 rep('orange', length(exp_tsss)))
@@ -475,13 +475,12 @@ plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Syn
 
 ```{r substring occurences}
 
-library(ngram)
 library(Biostrings)
 
 
 #better way to find oligos frequnces with biostrigs
 all_seqs_oligos_freq <- c()
-for (i in list(e.coli_proms, e.coli_non_proms, b.subtilis_proms, b.subtilis_non_proms)){
+for (i in list(synechocystis_seqs, seqs)){
   print(length(i))
   tmp <- DNAString(paste0(unlist(i), collapse = ''))
   
@@ -492,13 +491,13 @@ all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp
 
 
 
-colnames(all_seqs_oligos_freq) <- c('e.coli_proms', 'e.coli_non_proms', 'b.subtilis_proms', 'b.subtilis_non_proms')
+colnames(all_seqs_oligos_freq) <- c('Synechocystis promoters', 'E. coli promoters')
 View(all_seqs_oligos_freq)
 #phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
 
 
 par(mfrow = c(3,2))
-ylim = c (0, .005)
+ylim = range(all_seqs_oligos_freq)
 
 for (i in 1:ncol(all_seqs_oligos_freq)){
   barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
@@ -507,23 +506,17 @@ for (i in 1:ncol(all_seqs_oligos_freq)){
 ```
 
 ```{r hexamers occurences PCA, pca 1-2}
-PCA12 <- prcomp(all_seqs_oligos_freq[,c(1,2)], scale = T)
-library(factoextra)
-fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
-```
+PCA12 <- prcomp(all_seqs_oligos_freq[,1:2], scale = T)
+#library(factoextra)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
-```{r hexamers occurences PCA, pca 3-4}
-PCA34 <- prcomp(all_seqs_oligos_freq[,c(3,4)], scale = T)
-fviz_pca_biplot(PCA34, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+library(ggfortify)
+autoplot(PCA12,
+         shape = FALSE,
+         loadings = TRUE,
+         label = TRUE,
+         loadings.label = TRUE)+
+  theme_bw()
 ```
-
-```{r hexamers occurences PCA, pca 1-3}
-PCA13 <- prcomp(all_seqs_oligos_freq[,c(1,3)], scale = T)
-fviz_pca_biplot(PCA13, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
-```
-
-```{r hexamers occurences PCA, pca 1-4}
-PCA13 <- prcomp(all_seqs_oligos_freq[,c(1:4)], scale = T)
-fviz_pca_biplot(PCA13, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
 ```
