@@ -26,6 +26,7 @@ library(caret)
 library(Biostrings)
 library(ape)
 library(reldna)
+library(dendextend)
 ```
 Reading in E. coli K12 genome (GenBank Accesion U00096.2), creating reverse complement genome and tranformation genome into character form 
 ```{r Reading in E. coli genome}
@@ -118,7 +119,7 @@ return(dynchars_return)
 }
 ```
 
-```{r Overall characteristics for both bacteria, cache=T}
+```{r Overall characteristics for both bacteria, cache=TRUE}
 whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = 200)
 whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref =  1)
 whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = 200)
@@ -276,7 +277,7 @@ to 5'-end for both strands
 
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
-```{r E. coli promoters physics, cache=T} 
+```{r E. coli promoters physics, cache=TRUE} 
 for (i in c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse')) {
   assign(i, c())
 }
@@ -366,7 +367,7 @@ to 5'-end for both strands
 
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
-```{r Synechocystis proms physics, cache=T} 
+```{r Synechocystis proms physics, cache=TRUE} 
 
 
 for (i in c('synechocystis_seqsforward', 'synechocystis_seqsreverse', 'synechocystis_E01forward', 'synechocystis_E01reverse', 'synechocystis_d1forward', 'synechocystis_d1reverse', 'synechocystis_GCforward', 'synechocystis_GCreverse', 'synechocystis_EPforward', 'synechocystis_EPreverse')) {
@@ -434,22 +435,6 @@ matplot(synechocystis_EP, type = 'l', col = 1)
 
 ```
 
-```{r two bacteria promoters mixture - EP}
-library(fastcluster)
-library(dendextend)
-
-par(mfrow = c(2,2))
-for (i in c('E01', 'd1', 'GC', 'EP')){
-  both_tmp <- rbind(get(i), get(paste0('synechocystis_', i)))
-  ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = ), method = 'ward')
-
-  colvec_ward_both_tmp <- c(rep('orange', length(exp_tsss)),rep('darkgreen',length(synechocystis_proms$X1.TSS)))[order.dendrogram(ward_both_tmp %>% as.dendrogram )]
-
-  ward_both_tmp %>% as.dendrogram %>% color_branches(k = length(ward_both_tmp$order), col = colvec_ward_both_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_both_tmp$height)*.2) -> to_plot_ward_both_tmp
-
-  plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'))
-}
-```
 
 ```{r string distance}
 library(Biostrings)
@@ -470,9 +455,29 @@ rep('orange', length(exp_tsss)))
 ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_synechocystis_e.coli_proms_stringdist$order), col = colvec_synechocystis_e.coli_proms[order.dendrogram(ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_synechocystis_e.coli_proms_stringdist$height)*0.2)%>% circlize_dendrogram(labels=F, dend_track_height = 0.95) -> to_plot_ward_synechocystis_e.coli_proms_stringdist
 
 
-plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance')
+#plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance')
 ```
 
+
+
+```{r two bacteria promoters mixture - all the characteristics}
+library(fastcluster)
+library(dendextend)
+
+#par(mfrow = c(2,2))
+for (i in c('E01', 'd1', 'GC', 'EP')){
+  both_tmp <- rbind(get(i), get(paste0('synechocystis_', i)))
+  ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = ), method = 'ward')
+
+  colvec_ward_both_tmp <- c(rep('orange', length(exp_tsss)),rep('darkgreen',length(synechocystis_proms$X1.TSS)))[order.dendrogram(ward_both_tmp %>% as.dendrogram )]
+
+  ward_both_tmp %>% as.dendrogram %>% color_branches(k = length(ward_both_tmp$order), col = colvec_ward_both_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_both_tmp$height)*.2) -> to_plot_ward_both_tmp
+
+  plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'))
+}
+
+plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance')
+```
 ```{r substring occurences}
 
 library(Biostrings)
@@ -496,7 +501,7 @@ View(all_seqs_oligos_freq)
 #phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
 
 
-par(mfrow = c(3,2))
+#par(mfrow = c(1,2))
 ylim = range(all_seqs_oligos_freq)
 
 for (i in 1:ncol(all_seqs_oligos_freq)){
