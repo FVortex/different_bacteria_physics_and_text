@@ -528,6 +528,12 @@ autoplot(PCA,
          loadings.label = TRUE,
          label.size = label.size)+
   theme_bw()
+
+library(factoextra)
+
+fviz_pca_biplot(PCA, 
+              axes = c (1,2),
+                col.ind = 'contrib')
 ```
 
 ```{r hexamers occurences PCA, pca 1-3}
