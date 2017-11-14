@@ -225,8 +225,8 @@ Calculation the properties for a given genome using sliding window 200 nt
 Loading data on sequences of different types (promoters, non-promoters, genes, islands, and lowscore) from .Rdata files (must be copied separetely)
 ```{r}
 
-load('/home/mikhail/Documents/Script_2016_all/spline_dataset_pro.Rdata')
-# #load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+# #load('/home/mikhail/Documents/Script_2016_all/spline_dataset_pro.Rdata')
+load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
 #load('spline_dataset_notpro.Rdata')
 #load('spline_dataset_gen.Rdata')
 #load('spline_dataset_isl.Rdata')
@@ -470,7 +470,7 @@ par(mfrow = c(5,1),
     mar = rep(0.8,4))
 for (i in c('E01', 'd1', 'GC', 'EP')){
   both_tmp <- rbind(get(i), get(paste0('synechocystis_', i)))
-  ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = ), method = 'ward')
+  ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = T), method = 'ward')
 
   colvec_ward_both_tmp <- c(rep('orange', length(exp_tsss)),rep('darkgreen',length(synechocystis_proms$X1.TSS)))[order.dendrogram(ward_both_tmp %>% as.dendrogram )]
 
@@ -489,7 +489,7 @@ library(Biostrings)
 
 #better way to find oligos frequnces with biostrigs
 all_seqs_oligos_freq <- c()
-for (i in list(synechocystis_seqs, seqs, e.coli_U00096.2, synechocystis_NC_000911.1)){
+for (i in list(synechocystis_seqs, seqs, synechocystis_NC_000911.1, e.coli_U00096.2)){
   print(length(i))
   tmp <- DNAString(paste0(unlist(i), collapse = ''))
   
@@ -500,12 +500,12 @@ all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp
 
 
 
-colnames(all_seqs_oligos_freq) <- c('Synechocystis promoters', 'E. coli promoters', 'E. coli', 'Synechocystis')
+colnames(all_seqs_oligos_freq) <- c('Synechocystis promoters', 'E. coli promoters', 'Synechocystis sp., complete genome', 'E. coli, complete genome' )
 View(all_seqs_oligos_freq)
 #phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
 
 
-#par(mfrow = c(1,2))
+par(mfrow = c(1,2))
 ylim = range(all_seqs_oligos_freq)
 
 for (i in 1:ncol(all_seqs_oligos_freq)){
@@ -515,21 +515,23 @@ for (i in 1:ncol(all_seqs_oligos_freq)){
 ```
 
 ```{r hexamers occurences PCA, pca 1-2}
-PCA12 <- prcomp(all_seqs_oligos_freq[,1:2], scale = T)
+PCA <- prcomp(all_seqs_oligos_freq[,1:2], scale = T)
 #library(factoextra)
 #fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
+label.size <- 2
 library(ggfortify)
-autoplot(PCA12,
+autoplot(PCA,
          shape = FALSE,
          loadings = TRUE,
          label = TRUE,
-         loadings.label = TRUE)+
+         loadings.label = TRUE,
+         label.size = label.size)+
   theme_bw()
 ```
 
 ```{r hexamers occurences PCA, pca 1-3}
-PCA <- prcomp(all_seqs_oligos_freq[,c(2,3)], scale = T)
+PCA <- prcomp(all_seqs_oligos_freq[,c(1,3)], scale = T)
 #library(factoextra)
 #fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
@@ -537,8 +539,8 @@ library(ggfortify)
 autoplot(PCA,
          shape = FALSE,
          loadings = TRUE,
-         label = TRUE,
-         loadings.label = TRUE)+
+        loadings.label = TRUE,
+         label.size = label.size)+
   theme_bw()
 ```
 
@@ -552,7 +554,7 @@ library(ggfortify)
 autoplot(PCA,
          shape = FALSE,
          loadings = TRUE,
-         label = TRUE,
-         loadings.label = TRUE)+
+        loadings.label = TRUE,
+         label.size = label.size)+
   theme_bw()
 ```
