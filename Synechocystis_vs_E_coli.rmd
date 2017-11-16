@@ -482,6 +482,14 @@ for (i in c('E01', 'd1', 'GC', 'EP')){
 plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
 ```
 
+
+```{r Tanglegrams, cache=T}
+
+labels(to_plot_ward_both_tmp) <- labels(to_plot_ward_synechocystis_e.coli_proms_stringdist)
+tg <- tanglegram(dend1 = to_plot_ward_both_tmp, to_plot_ward_synechocystis_e.coli_proms_stringdist, intersecting =T)
+plot(tg)
+```
+
 ```{r substring occurences}
 
 library(Biostrings)
@@ -519,7 +527,7 @@ PCA <- prcomp(all_seqs_oligos_freq[,1:2], scale = T)
 #library(factoextra)
 #fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
-label.size <- 2
+label.size <- 2.5
 library(ggfortify)
 autoplot(PCA,
          shape = FALSE,
