@@ -272,6 +272,13 @@ exp_tsss[which(exp_strands=='reverse')]<-nchar(e.coli_U00096.2)-exp_tsss[which(e
 ```
 
 
+```{r strReverse funtcion}
+## a useful function: rev() for strings
+strReverse <- function(x)
+        sapply(lapply(strsplit(x, NULL), rev), paste, collapse="")
+```
+
+
 Creating matrices for data on activation energy ('E01') and size ('d1'). The matrices is 699*201 - 699 promoters sequences, 201 value for a physical property profile
 to 5'-end for both strands 
 
@@ -320,14 +327,14 @@ for (i in 1:length(exp_tsss)) {
 
 
 #merging matrices for forward and reverse strands  together
-seqs <- toupper(c(seqsforward, seqsreverse))
-E01<-rbind(E01forward, E01reverse)
+seqs <- toupper(c(seqsforward, sapply(seqsreverse, FUN = strReverse)))
+ E01<-rbind( E01forward, t(apply( E01reverse, 1, rev)))
 #aeos2<-rbind(aeos2forward, aeos2reverse)
-d1<-rbind(d1forward, d1reverse)
+ d1<-rbind( d1forward, t(apply( d1reverse, 1, rev)))
 #aeos4<-rbind(aeos4forward, aeos4reverse)
-GC<-rbind(GCforward, GCreverse)
+ GC<-rbind( GCforward, t(apply( GCreverse, 1, rev)))
 
-EP<-rbind(EPforward, EPreverse)
+ EP<-rbind( EPforward, t(apply( EPreverse, 1, rev)))
 ```
 
 
@@ -414,13 +421,15 @@ dynchars(synechocystis_NC_000911.1_char[(synechocystis_proms$X1.TSS[i]-50):(syne
 
 
 #merging matrices for forward and reverse strands  together
-synechocystis_seqs<-toupper(c(synechocystis_seqsforward, synechocystis_seqsreverse))
-synechocystis_E01<-rbind(synechocystis_E01forward, synechocystis_E01reverse)
+synechocystis_seqs <- toupper(c(synechocystis_seqsforward, sapply(synechocystis_seqsreverse, FUN = strReverse)))
+synechocystis_E01<-rbind(synechocystis_E01forward, t(apply(synechocystis_E01reverse, 1, rev)))
 #aeos2<-rbind(aeos2forward, aeos2reverse)
-synechocystis_d1<-rbind(synechocystis_d1forward, synechocystis_d1reverse)
+synechocystis_d1<-rbind(synechocystis_d1forward, t(apply(synechocystis_d1reverse, 1, rev)))
 #aeos4<-rbind(aeos4forward, aeos4reverse)
-synechocystis_GC<-rbind(synechocystis_GCforward, synechocystis_GCreverse)
-synechocystis_EP<-rbind(synechocystis_EPforward, synechocystis_EPreverse)
+synechocystis_GC<-rbind(synechocystis_GCforward, t(apply(synechocystis_GCreverse, 1, rev)))
+
+synechocystis_EP<-rbind(synechocystis_EPforward, t(apply(synechocystis_EPreverse, 1, rev)))
+
 ```
 
 
@@ -485,9 +494,9 @@ plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Syn
 
 ```{r Tanglegrams, cache=T}
 
-labels(to_plot_ward_both_tmp) <- labels(to_plot_ward_synechocystis_e.coli_proms_stringdist)
-tg <- tanglegram(dend1 = to_plot_ward_both_tmp, to_plot_ward_synechocystis_e.coli_proms_stringdist, intersecting =T)
-plot(tg)
+#labels(to_plot_ward_both_tmp) <- labels(to_plot_ward_synechocystis_e.coli_proms_stringdist)
+#tg <- tanglegram(dend1 = to_plot_ward_both_tmp, to_plot_ward_synechocystis_e.coli_proms_stringdist, intersecting =T)
+#plot(tg)
 ```
 
 ```{r substring occurences}
