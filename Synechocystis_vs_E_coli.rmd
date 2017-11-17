@@ -498,8 +498,8 @@ plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Syn
 
 ```{r Tanglegrams, cache=T}
 
-labels(to_plot_wards[[1]]) <- labels(to_plot_wards[[2]])
-tg12 <- tanglegram(dend1 = to_plot_wards[[1]], to_plot_wards[[2]], intersecting =T, lwd = 0.3 )
+labels(to_plot_wards[[1]]) <- labels(to_plot_wards[[2]]) <- as.character(labels(to_plot_wards[[2]]))
+tg12 <- tanglegram(dend1 = to_plot_wards[[1]], to_plot_wards[[2]], intersecting =F, lwd = 0.3 )
 untangle(tanglegram(dend1 = to_plot_wards[[1]], to_plot_wards[[2]], intersecting =T, lwd = 0.3 ))
 ```
 
