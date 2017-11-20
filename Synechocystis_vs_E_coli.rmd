@@ -472,9 +472,13 @@ ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(
 ```{r two bacteria promoters mixture - all the characteristics}
 library(fastcluster)
 library(dendextend)
+cex.main = 2
 
 
-to_plot_wards <- c()
+par(mfrow = c(5,1),
+    mar = rep(0.8,4))
+
+to_plot_wards <- list()
 for (i in c('E01', 'd1', 'GC', 'EP')){
   both_tmp <- rbind(get(i), get(paste0('synechocystis_', i)))
   ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = T), method = 'ward')
@@ -483,25 +487,15 @@ for (i in c('E01', 'd1', 'GC', 'EP')){
 
   ward_both_tmp %>% as.dendrogram %>% color_branches(k = length(ward_both_tmp$order), col = colvec_ward_both_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_both_tmp$height)*.2) -> to_plot_ward_both_tmp
 
-  to_plot_wards <- c(to_plot_wards, to_plot_ward_both_tmp)
+  plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
+  
+  assign(paste0('to_plot_wards', i), ward_both_tmp)
 }
 
-cex.main = 0.8
-par(mfrow = c(5,1),
-    mar = rep(0.8,4))
-for (i in c('E01', 'd1', 'GC', 'EP')){
-  plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
-}
 plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
 ```
 
 
-```{r Tanglegrams, cache=T}
-
-labels(to_plot_wards[[1]]) <- labels(to_plot_wards[[2]]) <- as.character(labels(to_plot_wards[[2]]))
-tg12 <- tanglegram(dend1 = to_plot_wards[[1]], to_plot_wards[[2]], intersecting =F, lwd = 0.3 )
-untangle(tanglegram(dend1 = to_plot_wards[[1]], to_plot_wards[[2]], intersecting =T, lwd = 0.3 ))
-```
 
 ```{r substring occurences}
 
@@ -535,27 +529,28 @@ for (i in 1:ncol(all_seqs_oligos_freq)){
 
 ```
 
+
 ```{r hexamers occurences PCA, pca 1-2}
 PCA <- prcomp(all_seqs_oligos_freq[,1:2], scale = T)
 #library(factoextra)
 #fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
-label.size <- 2.5
-library(ggfortify)
-autoplot(PCA,
-         shape = FALSE,
-         loadings = TRUE,
-         label = TRUE,
-         loadings.label = TRUE,
-         label.size = label.size)+
-  theme_bw()
+label.size <- 1.7
+#library(ggfortify)
+#autoplot(PCA,
+    #     shape = FALSE,
+   #      loadings = TRUE,
+  #       label = TRUE,
+ #        loadings.label = TRUE,
+#         label.size = label.size)+
+ # theme_bw()
 
 library(factoextra)
 
 fviz_pca_biplot(PCA, 
              axes = c (1,2),
-             labelsize = label.size,
-             #alpha.ind="contrib"
+             #labelsize = label.size,
+             #alpha.ind="contrib",
              col.ind = 'contrib'
              ) + scale_color_gradient2(low="white", 
                                        mid="blue",
@@ -569,46 +564,109 @@ PCA <- prcomp(all_seqs_oligos_freq[,c(1,3)], scale = T)
 #library(factoextra)
 #fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
-library(ggfortify)
-autoplot(PCA,
-         shape = FALSE,
-         loadings = TRUE,
-        loadings.label = TRUE,
-         label.size = label.size)+
-  theme_bw()
 
 fviz_pca_biplot(PCA, 
              axes = c (1,2),
-             labelsize = label.size,
-             #alpha.ind="contrib"
+             #labelsize = label.size,
+             #alpha.ind="contrib",
              col.ind = 'contrib'
              ) + scale_color_gradient2(low="white", 
                                        mid="blue",
                                        high="red", 
                                        midpoint=0.6)
+  
 ```
-
 
 ```{r hexamers occurences PCA, pca 4-3}
 PCA <- prcomp(all_seqs_oligos_freq[,c(3,4)], scale = T)
 #library(factoextra)
 #fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
-library(ggfortify)
-autoplot(PCA,
-         shape = FALSE,
-         loadings = TRUE,
-        loadings.label = TRUE,
-         label.size = label.size)+
-  theme_bw()
 
 fviz_pca_biplot(PCA, 
              axes = c (1,2),
-             labelsize = label.size,
-             #alpha.ind="contrib"
+             #labelsize = label.size,
+             #alpha.ind="contrib",
              col.ind = 'contrib'
              ) + scale_color_gradient2(low="white", 
                                        mid="blue",
                                        high="red", 
                                        midpoint=0.6)
+  
+```
+
+```{r 6 plots}
+
+par(mfrow = c(6,1),
+    mar = rep(0.8,4))
+
+to_plot_wards <- list()
+for (i in c('E01', 'd1', 'GC', 'EP')){
+  both_tmp <- rbind(get(i), get(paste0('synechocystis_', i)))
+  ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = T), method = 'ward')
+
+  colvec_ward_both_tmp <- c(rep('orange', length(exp_tsss)),rep('darkgreen',length(synechocystis_proms$X1.TSS)))[order.dendrogram(ward_both_tmp %>% as.dendrogram )]
+
+  ward_both_tmp %>% as.dendrogram %>% color_branches(k = length(ward_both_tmp$order), col = colvec_ward_both_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_both_tmp$height)*.2) -> to_plot_ward_both_tmp
+
+  plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
+  
+  assign(paste0('to_plot_wards', i), ward_both_tmp)
+}
+
+plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
+
+load('/home/mikhail/Documents/mol_a_2017/sidds_ecoli.rda')
+load('/home/mikhail/Documents/mol_a_2017/sidds_synechocystis.rda')
+
+library(fastcluster)
+synechocystis_e.coli_proms_sidds <- cbind(sidds_ecoli, sidds_syn)
+
+
+ward_synechocystis_e.coli_proms_sidd <- hclust.vector(t(synechocystis_e.coli_proms_sidds), method = 'ward')
+
+#plot(ward_synechocystis_e.coli_proms_sidd, labels = F)
+
+colvec_ward_synechocystis_e.coli_proms_sidd <- c(rep('darkgreen', length(synechocystis_proms$X1.TSS)),
+rep('orange', length(exp_tsss)))
+ward_synechocystis_e.coli_proms_sidd %>% as.dendrogram %>% color_branches(k = length(ward_synechocystis_e.coli_proms_sidd$order), col = colvec_ward_synechocystis_e.coli_proms_sidd[order.dendrogram(ward_synechocystis_e.coli_proms_sidd %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_synechocystis_e.coli_proms_sidd$height)*0.2) -> to_plot_ward_synechocystis_e.coli_proms_sidd #circlize_dendrogram(labels=F, dend_track_height = 0.95) 
+  
+
+plot(to_plot_ward_synechocystis_e.coli_proms_sidd, labels = F)
+
+```
+
+
+```{r cuplcl usage}
+source('/home/mikhail/Documents/Script_2016_all/cut_and_plot_clusters.R')
+
+cuplcl(t(synechocystis_e.coli_proms_sidds), method = 'ward', k = 4)
+```
+
+
+
+
+```{r Tanglegrams3, cache=T}
+
+#labels(to_plot_wards[[1]]) <- labels(to_plot_wards[[2]]) <- as.character(labels(to_plot_wards[[2]]))
+
+
+#for (i in c('E01', 'd1', 'GC', 'EP')){
+#for (j in c('E01', 'd1', 'GC', 'EP')){
+
+ #   if (i == j) {next} else {
+      
+tanglegram(to_plot_wardsE01, to_plot_wardsd1, lwd = 0.2, lab.cex = 1E-10)
+tanglegram(to_plot_wardsE01, to_plot_wardsGC, lwd = 0.2, lab.cex = 1E-10)
+tanglegram(to_plot_wardsE01, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
+
+
+tanglegram(to_plot_wardsd1, to_plot_wardsGC, lwd = 0.2, lab.cex = 1E-10)
+tanglegram(to_plot_wardsd1, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
+
+tanglegram(to_plot_wardsGC, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
+  #plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
+  #  }
+  #}
+#}
 ```
