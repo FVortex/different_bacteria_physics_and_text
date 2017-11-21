@@ -616,8 +616,12 @@ for (i in c('E01', 'd1', 'GC', 'EP')){
 
 plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
 
-load('/home/mikhail/Documents/mol_a_2017/sidds_ecoli.rda')
-load('/home/mikhail/Documents/mol_a_2017/sidds_synechocystis.rda')
+##load('/home/mikhail/Documents/mol_a_2017/sidds_ecoli.rda')
+##load('/home/mikhail/Documents/mol_a_2017/sidds_synechocystis.rda')
+
+sidds_ecoli <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_ecoli.csv')
+sidds_syn <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis.csv')
+
 
 library(fastcluster)
 synechocystis_e.coli_proms_sidds <- cbind(sidds_ecoli, sidds_syn)
@@ -638,9 +642,9 @@ plot(to_plot_ward_synechocystis_e.coli_proms_sidd, labels = F)
 
 
 ```{r cuplcl usage}
-source('/home/mikhail/Documents/Script_2016_all/cut_and_plot_clusters.R')
+#source('/home/mikhail/Documents/Script_2016_all/cut_and_plot_clusters.R')
 
-cuplcl(t(synechocystis_e.coli_proms_sidds), method = 'ward', k = 4)
+#cuplcl(t(synechocystis_e.coli_proms_sidds), method = 'ward', k = 4)
 ```
 
 
