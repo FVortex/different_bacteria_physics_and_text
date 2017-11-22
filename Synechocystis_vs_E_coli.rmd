@@ -595,10 +595,61 @@ fviz_pca_biplot(PCA,
   
 ```
 
+
+```{r Other text representation}
+
+#panel.cor function
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor) 
+{
+    usr <- par("usr"); on.exit(par(usr)) 
+    par(usr = c(0, 1, 0, 1)) 
+    r <- abs(cor(x, y)) 
+    txt <- format(c(r, 0.123456789), digits=digits)[1] 
+    txt <- paste(prefix, txt, sep="") 
+    if(missing(cex.cor)) cex <- 0.8/strwidth(txt) 
+ 
+    test <- cor.test(x,y) 
+    # borrowed from printCoefmat
+    Signif <- symnum(test$p.value, corr = FALSE, na = FALSE, 
+                  cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
+                  symbols = c("***", "**", "*", ".", " ")) 
+ 
+    text(0.5, 0.5, txt, cex = cex * r) 
+    text(.8, .8, Signif, cex=cex, col=2) 
+}
+
+pairs(all_seqs_oligos_freq, lower.panel=panel.smooth, upper.panel=panel.cor)
+
+
+par(mfrow = c(1,4))
+apply(all_seqs_oligos_freq, 2, function(x) {
+  boxplot(x, ylim = range(all_seqs_oligos_freq))
+  }
+  )
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+  assign(paste0('lm', i), lm(all_seqs_oligos_freq[,i] ~ seq_along(all_seqs_oligos_freq[,i])))
+}
+
+par(mfrow = c(4,5),
+    mar = rep(2,4))
+plotnames <- c('Synechocystis promoters', 'E. coli promoters', 'Synechocystis sp. genome', 'E. coli genome')
+for (i in 1:ncol(all_seqs_oligos_freq)){
+ 
+  plot(1, type="n", axes=F, xlab="", ylab="")
+  mtext(plotnames[i], side = 3, col = 2, cex= 0.7, line = -3)
+
+  plot(get(paste0('lm', i)))
+ 
+}
+#boxplot(all_seqs_oligos_freq[,1])
+#identify(rep(1, length(all_seqs_oligos_freq[,1])), all_seqs_oligos_freq[,1], labels = #seq_along(all_seqs_oligos_freq[,1]))
+```
+
 ```{r 6 plots}
 
-par(mfrow = c(6,1),
-    mar = rep(0.8,4))
+par(mfrow = c(3,2),
+    mar = rep(1,4))
 
 to_plot_wards <- list()
 for (i in c('E01', 'd1', 'GC', 'EP')){
@@ -674,3 +725,24 @@ tanglegram(to_plot_wardsGC, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
   #}
 #}
 ```
+
+
+```{r Synechocystis 1500 nts long sidd}
+sidds_syn1500 <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv' )[,-1]
+
+matplot(sidds_syn1500,ty='l',lty =1, col=1, lwd =0.5)
+
+ward_synechocystis_1500sidd<- hclust.vector(t(sidds_syn1500), method = 'ward')
+plot(ward_synechocystis_1500sidd, labels = F)
+cut_synechocystis_1500sidd <- cutree(ward_synechocystis_1500sidd, k = 4)
+
+
+`Sequence (nts)` <- -750:750
+par(mfrow = c(3,2))
+plot(ward_synechocystis_1500sidd, labels = F)
+for (i in unique(cut_synechocystis_1500sidd)){
+  matplot(`Sequence (nts)`, sidds_syn1500[, which(cut_synechocystis_1500sidd==i)], type = 'l', lty = 1, col=i)
+  abline(v = -10:10*100, lty =3, col = 'darkgrey', lwd =2)
+}
+```
+

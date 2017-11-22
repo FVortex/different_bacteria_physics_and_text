@@ -1,0 +1,46 @@
+---
+title: "split_complete_e.coli_sidd"
+author: "Mikhail Orlov"
+date: '22 ноября 2017 г '
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r clearence, R libraries}
+rm(list = ls())
+
+library(ape)
+```
+
+
+Reading in E. coli K12 genome (GenBank Accesion U00096.2), creating reverse complement genome and tranformation genome into character form 
+```{r Reading in E. coli genome}
+e.coli_U00096.2<-read.GenBank(access.nb = 'U00096.2', as.character = T)$U00096.2
+```
+
+```{r Splitting the E. coli genome}
+splitWithOverlap <- function(vec, seg.length, overlap) {
+  starts = seq(1, length(vec), by=seg.length-overlap)
+  ends   = starts + seg.length - 1
+  ends[ends > length(vec)] = length(vec)
+
+  lapply(1:length(starts), function(i) vec[starts[i]:ends[i]])
+}
+
+split_e.coli_2500_1000 <- splitWithOverlap(e.coli_U00096.2, seg.length = 2500, overlap = 1000)
+
+split_e.coli_5000_1000 <- splitWithOverlap(e.coli_U00096.2, seg.length = 5000, overlap = 1000)
+
+split_e.coli_7500_1000 <- splitWithOverlap(e.coli_U00096.2, seg.length = 7500, overlap = 1000)
+
+
+```
+
+```{r Writing txt-files containing the sequences}
+
+```
+
+
