@@ -116,15 +116,9 @@ whole_e.coli_mpots <- c()
 zout<- -480:239
 for (i in 1:length(pseudo_tss)) {
     p<-lseqspline1D(substr(extended_e.coli_U00096.2_string, pseudo_tss[i]+shifted_by-250, pseudo_tss[i]+shifted_by+150), bound=c(50, 350), ref=251 )
-    whole_e.coli_mpots<-rbind(whole_e.coli_mpots, p$mpot[p$x %in% zout])
+    whole_e.coli_mpots<-c(whole_e.coli_mpots, p$mpot[p$x %in% zout])
 }
-#merging matrices for forward and reverse strands  together
-aeos1<-rbind(aeos1forward, aeos1reverse)
-#aeos2<-rbind(aeos2forward, aeos2reverse)
-aeos3<-rbind(aeos3forward, aeos3reverse)
-#aeos4<-rbind(aeos4forward, aeos4reverse)
-gc200<-rbind(gc200forward, gc200reverse)
-mpots<-rbind(mpotsforward, mpotsreverse)
+
 ```
 
 ```{r}
