@@ -96,8 +96,8 @@ dynchars<-function(seq, interval_size) {
 
 ```{r Overall characteristics for both bacteria, cache=TRUE}
 whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = 200)
-whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2_string, bound = c(1, nchar(e.coli_U00096.2_string)), width = 1, ref =  1)
-whole_e.coli_geom <- dnaGeom(e.coli_U00096.2_string)
+#whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2_string, bound = c(1, nchar(e.coli_U00096.2_string)), width = 1, ref =  1)
+#whole_e.coli_geom <- dnaGeom(e.coli_U00096.2_string)
 
 ```
 
@@ -133,8 +133,8 @@ d2 <- scale(whole_e.coli_dynchars$d2)
 gc1 <- scale(whole_e.coli_dynchars$gc1)
 gc2 <- scale(whole_e.coli_dynchars$gc2)
 
-EP1 <- whole_e.coli_EP$mpot
-range(whole_e.coli)
+EP1 <- scale(whole_e.coli_EP$mpot)
+EP1 <- scale(whole_e.coli_EP$mpot)
 
 
 ```

@@ -746,3 +746,73 @@ for (i in unique(cut_synechocystis_1500sidd)){
 }
 ```
 
+
+
+```{r Whole-genome SIDD vectors}
+load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_2500_500.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_5000_1000.rda')
+load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+
+exp_pro_numbers<- which(sapply(dataset_pro, function(x) {x$evidence =='experimental' })==T)
+exp_pro_tsss <- sapply(dataset_pro, function(x){x$tss})[exp_pro_numbers]
+
+
+par(mfrow = c(2,1))
+interv <- 1:100000
+plot(whole_e.coli_sidd_2500_500[interv], type = 'l')
+abline(v = exp_pro_tsss, col = 2 )
+plot(whole_e.coli_sidd_5000_1000[interv], type = 'l')
+abline(v = exp_pro_tsss, col = 2 )
+
+exp_pro_sidd_2500_500 <- sapply(exp_pro_tsss, function(x) {whole_e.coli_sidd_2500_500[(x-1000):(x+1000)]})
+matplot(exp_pro_sidd_2500_500, type = 'l', col =1, lwd =0.3)
+
+exp_pro_sidd_5000_1000 <- sapply(exp_pro_tsss, function(x) {whole_e.coli_sidd_5000_1000[(x-1000):(x+1000)]})
+matplot(exp_pro_sidd_5000_1000, type = 'l', col =1, lwd =0.3)
+```
+
+
+```{r Rollaply max}
+library(zoo)
+
+rollmax_whole_e.coli_sidd_2500_500 <- rollmax(x = whole_e.coli_sidd_2500_500, k = 250)
+
+rollmax_whole_e.coli_sidd_5000_1000 <- rollmax(x = whole_e.coli_sidd_5000_1000, k = 250)
+
+
+par(mfrow = c(2,1),
+    mar = rep(0.7,4))
+interv <- 1:50000
+plot(rollmax_whole_e.coli_sidd_2500_500[interv], type = 'l')
+abline(v = exp_pro_tsss, col = 2 )
+plot(rollmax_whole_e.coli_sidd_5000_1000[interv], type = 'l')
+abline(v = exp_pro_tsss, col = 2 )
+
+which_rollmax_whole_e.coli_sidd_2500_500_0.95 <- which(rollmax_whole_e.coli_sidd_2500_500>0.95)
+which_rollmax_whole_e.coli_sidd_5000_1000_0.95 <- which(rollmax_whole_e.coli_sidd_5000_1000>0.95)                                              
+#how big is a moltem part of the genome (nts)
+length(which_rollmax_whole_e.coli_sidd_2500_500_0.95)
+length(which_rollmax_whole_e.coli_sidd_5000_1000_0.95)
+
+par(mfrow = c(2,1),
+    mar = rep(0.7,4))
+interv <- 1:500000
+plot(rollmax_whole_e.coli_sidd_2500_500[interv], type = 'n')
+points(x = which_rollmax_whole_e.coli_sidd_2500_500_0.95, y = rep(0.95, length(which_rollmax_whole_e.coli_sidd_2500_500_0.95)), pch = '|', col = 2)
+abline(v = exp_pro_tsss, col = 'darkgreen' )
+
+plot(rollmax_whole_e.coli_sidd_5000_1000[interv], type = 'n')
+points(x = which_rollmax_whole_e.coli_sidd_5000_1000_0.95, y = rep(0.95, length(which_rollmax_whole_e.coli_sidd_5000_1000_0.95)), pch = '|', col = 2)
+abline(v = exp_pro_tsss, col = 'darkgreen' )
+
+#which regions are melted for different split sets
+interv <- 300000:400000
+plot(rollmax_whole_e.coli_sidd_2500_500[interv], type = 'n')
+points(x = which_rollmax_whole_e.coli_sidd_2500_500_0.95, y = rep(0.95, length(which_rollmax_whole_e.coli_sidd_2500_500_0.95)), pch = '|', col = 2)
+text(x = 0, y =0.95, labels = '2500-500\n fragments', cex = 0.7)
+points(x = which_rollmax_whole_e.coli_sidd_5000_1000_0.95, y = rep(0.75, length(which_rollmax_whole_e.coli_sidd_5000_1000_0.95)), pch = '|', col = 2)
+text(x = 0, y =0.75, labels = '5000-1000\n fragments', cex = 0.7)
+points(x = exp_pro_tsss, y = rep(0.55, length(exp_pro_tsss)), pch = '|', col = 'darkblue')
+text(x = 0, y =0.55, labels = 'Experimentally\n evidenced\n promoters', cex = 0.7)
+
+```
