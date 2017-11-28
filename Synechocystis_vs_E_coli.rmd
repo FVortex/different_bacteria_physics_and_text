@@ -817,14 +817,19 @@ text(x = 0, y =0.55, labels = 'Experimentally\n evidenced\n promoters', cex = 0.
 
 ```
 Column 1 contains numbers and is removed 
-```{r CHecking bimodality for SIDD fro all promoters}
+```{r CHecking bimodality for SIDD for all promoters}
 
-sums_sidds_ecoli <- apply(sidds_ecoli[,-1], 2, function(x) {sum(x[750:2250])})
+interv <- 750:2250
+interv <- 500:2500
+####interv <- 900:2100
+####interv <- 1000:2000
 
-sums_sidds_syn <- apply(sidds_syn[,-1], 2, function(x) {sum(x[750:2250])})
+sums_sidds_ecoli <- apply(sidds_ecoli[,-1], 2, function(x) {sum(x[interv])})
+
+sums_sidds_syn <- apply(sidds_syn[,-1], 2, function(x) {sum(x[interv])})
 
 
-svg('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/densities_auc_sidd_2_bacteria.svg', height = 10, width = 10)
+#svg('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/densities_auc_sidd_2_bacteria.svg', height = 10, width = 10)
 par(mfrow = c(2,1))
 hist(sums_sidds_ecoli, breaks = 15, freq = F, xlab = 'AUC for 1500 nts-long SIDD profile', main = 'Histogram of E. coli Promoters AUC SIDD Data\n with Kernel Density Plot')
 lines(density(sums_sidds_ecoli, na.rm = T))
@@ -833,6 +838,15 @@ lines(density(sums_sidds_ecoli, na.rm = T))
 hist(sums_sidds_syn, breaks = 15, freq = F, xlab = 'AUC for 1500 nts-long SIDD profile', main = 'Histogram of Synechocystis sp. Promoters AUC SIDD Data\n with Kernel Density Plot')
 lines(density(sums_sidds_syn, na.rm = T))
 
-dev.off()
+#dev.off()
+
+library(diptest)
+diptest_sums_sidds_ecoli <- dip.test(sums_sidds_ecoli, simulate.p.value = T, B = 20000) #D = 0.055838, p-value < 2.2e-16 for 1500 nts -long interval
+# D = 0.029814, p-value = 1e-04 for 2000 nts
+diptest_sums_sidds_ecoli
+
+diptest_sums_sidds_syn<- dip.test(sums_sidds_syn, simulate.p.value = T, B = 20000) #D = 0.037924, p-value < 2.2e-16 for 1500 nts -long interval
+#D = 0.045919, p-value < 2.2e-16 for 2000 nts
+diptest_sums_sidds_syn
 ```
 
