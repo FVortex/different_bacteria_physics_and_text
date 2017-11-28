@@ -816,3 +816,23 @@ points(x = exp_pro_tsss, y = rep(0.55, length(exp_pro_tsss)), pch = '|', col = '
 text(x = 0, y =0.55, labels = 'Experimentally\n evidenced\n promoters', cex = 0.7)
 
 ```
+Column 1 contains numbers and is removed 
+```{r CHecking bimodality for SIDD fro all promoters}
+
+sums_sidds_ecoli <- apply(sidds_ecoli[,-1], 2, function(x) {sum(x[750:2250])})
+
+sums_sidds_syn <- apply(sidds_syn[,-1], 2, function(x) {sum(x[750:2250])})
+
+
+svg('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/densities_auc_sidd_2_bacteria.svg', height = 10, width = 10)
+par(mfrow = c(2,1))
+hist(sums_sidds_ecoli, breaks = 15, freq = F, xlab = 'AUC for 1500 nts-long SIDD profile', main = 'Histogram of E. coli Promoters AUC SIDD Data\n with Kernel Density Plot')
+lines(density(sums_sidds_ecoli, na.rm = T))
+
+
+hist(sums_sidds_syn, breaks = 15, freq = F, xlab = 'AUC for 1500 nts-long SIDD profile', main = 'Histogram of Synechocystis sp. Promoters AUC SIDD Data\n with Kernel Density Plot')
+lines(density(sums_sidds_syn, na.rm = T))
+
+dev.off()
+```
+
