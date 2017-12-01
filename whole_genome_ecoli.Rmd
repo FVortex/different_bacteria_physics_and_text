@@ -112,13 +112,34 @@ extended_e.coli_U00096.2_string <- paste0(
     substr(e.coli_U00096.2_string, 0, shifted_by)
 )
 
-whole_e.coli_mpots <- c()
+library(Biostrings)
+reverseComplement_extended_e.coli_U00096.2_string <-as.character(reverseComplement(DNAString(extended_e.coli_U00096.2_string)))
+
+whole_e.coli_EP1 <- c()
 zout<- -480:239
 for (i in 1:length(pseudo_tss)) {
     p<-lseqspline1D(substr(extended_e.coli_U00096.2_string, pseudo_tss[i]+shifted_by-250, pseudo_tss[i]+shifted_by+150), bound=c(50, 350), ref=251 )
-    whole_e.coli_mpots<-c(whole_e.coli_mpots, p$mpot[p$x %in% zout])
+    whole_e.coli_EP1<-cbind(whole_e.coli_EP1, p$mpot[p$x %in% zout])
+    #print(str(p$mpot[p$x %in% zout]))
 }
 
+whole_e.coli_EP2 <- c()
+zout<- -480:239
+for (i in 1:length(pseudo_tss)) {
+    p<-lseqspline1D(substr(reverseComplement_extended_e.coli_U00096.2_string, pseudo_tss[i]+shifted_by-250, pseudo_tss[i]+shifted_by+150), bound=c(50, 350), ref=251 )
+    whole_e.coli_EP2<-cbind(whole_e.coli_EP2, p$mpot[p$x %in% zout])
+    print(str(p$mpot[p$x %in% zout]))
+}
+
+
+unique(whole_e.coli_EP1==rev(whole_e.coli_EP2))
+str(whole_e.coli_EP1)
+str(whole_e.coli_EP2)
+
+write.csv(whole_e.coli_EP1, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/whole_e.coli_EP_1strand.csv')
+
+
+write.csv(whole_e.coli_EP2, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/whole_e.coli_EP_2strand.csv')
 ```
 
 ```{r}
