@@ -736,3 +736,79 @@ fviz_pca_biplot(PCA,
 
 ```
 
+
+```{r SIDD new fixed whole-genome vectors}
+
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_5000_1000_list_whole_e.coli.rda')
+
+
+sidd_5000_1000_df <- c()
+for (i in sidd_5000_1000_list) {
+  #if (nrow(i)<5000) {sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i)
+  #} else if (nrow(i)==5000) {
+    sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i[-c(4001:5000), ])
+  }
+}
+
+over95_positions <- which(sidd_5000_1000_df$P.x.>0.95)
+which(diff(which(sidd_5000_1000_df$P.x.>0.95)) !=1)
+extended_ecoli_seq <- paste0(tail(sidd_5000_1000_df$Nucleotide, n = 1000),
+sidd_5000_1000_df$Nucleotide,
+head(sidd_5000_1000_df$Nucleotide, n = 1000))
+
+over95_1500nts_sequences <- sapply(over95_positions, function(x) {extended_ecoli_seq[(x-100+1000):(x+100+1000)]})
+
+#oligos occurences
+
+library(Biostrings)
+
+#better way to find oligos frequnces with biostrigs
+all_seqs_oligos_freq <- c()
+for (i in list(paste0(over95_1500nts_sequences, collapse = '')[[1]], e.coli_U00096.2)){
+print(length(i))
+tmp <- DNAString(paste0(unlist(i), collapse = ''))
+
+#tmp_StringSet <- DNAStringSet(sapply(t(tmp), function(x) {paste0(x, collapse = '')}))
+
+all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp, 6, as.prob = T))
+}
+
+colnames(all_seqs_oligos_freq) <- c('Max SIDD','genome')
+View(all_seqs_oligos_freq)
+#phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
+
+par(mfrow = c(3,2))
+ylim = range(all_seqs_oligos_freq)
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
+}
+
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
+#library(factoextra)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+
+label.size <- 1.7
+#library(ggfortify)
+#autoplot(PCA,
+# shape = FALSE,
+# loadings = TRUE,
+# label = TRUE,
+# loadings.label = TRUE,
+# label.size = label.size)+
+# theme_bw()
+
+library(factoextra)
+
+fviz_pca_biplot(PCA,
+axes = c (1,2),
+#labelsize = label.size,
+#alpha.ind="contrib",
+col.ind = 'contrib'
+) + scale_color_gradient2(low="white",
+mid="blue",
+high="red",
+midpoint=0.4)
+```
+```
+
