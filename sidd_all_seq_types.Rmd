@@ -477,96 +477,6 @@ return(list(lefts_tmp, rights_tmp))
 }
 
 
-#how big are the sets in nts?
-
-lowscoresidds_short <- lowscoresidds[,1:2000]
-seqtypes_sidds <- list(whole_e.coli_sidd_5000_1000, expsidds, notsidds, gensidds, islsidds, lowscoresidds_short)
-seqtypes_sidds_lengths <- sapply(seqtypes_sidds, function(x) {length(as.numeric(x))})
-par(mar = rep(2,4)); barplot(seqtypes_sidds_lengths, names.arg = c('Whole','P', 'N', 'G', 'I', 'L'))
-
-whole_sidds_maxima <- maxima_position_width(whole_e.coli_sidd_5000_1000, 0.95)
-whole_sidds_maxima_widths <- whole_sidds_maxima[[2]]-whole_sidds_maxima[[1]]
-max(whole_sidds_maxima_widths)
-#for sequence types sets positions are irreleveant
-#in order to remove overlapping parts IRanges library is used
-
-
-library(IRanges)
-
-
-expIR <- reduce(IRanges(start = exptsss-750, end = exptsss+750))
-#expsidds_maxima_widths <- width(expIR)
-exp_siddsIR <- list()
-for (i in seq_along(start(expIR))){
-  exp_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(expIR)[i]:end(expIR)[i]]
-}
-max(unlist(exp_siddsIR))
-expsidds_maxima <- maxima_position_width(unlist(exp_siddsIR), 0.95)
-expsidds_maximaIR <- IRanges(start = expsidds_maxima[[1]], end = expsidds_maxima[[2]])
-
-
-nottsss_trim <- nottsss
-nottsss_trim[which(nottsss<750)] <- 750 #flanking sequences are trimed
-notIR <- reduce(IRanges(start = nottsss_trim-750, end = nottsss_trim+750))
-#notsidds_maxima_widths <- width(notIR)
-not_siddsIR <- list()
-for (i in seq_along(start(notIR))){
-  not_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(notIR)[i]:end(notIR)[i]]
-}
-max(unlist(not_siddsIR))
-notsidds_maxima <- maxima_position_width(unlist(not_siddsIR), 0.95)
-notsidds_maximaIR <- IRanges(start = notsidds_maxima[[1]], end = notsidds_maxima[[2]])
-
-
-
-
-gentsss_trim <- gentsss
-gentsss_trim[which(gentsss<750)] <- 750 #flanking sequences are trimed
-genIR <- reduce(IRanges(start = gentsss_trim-750, end = gentsss_trim+750))
-#gensidds_maxima_widths <- width(genIR)
-gen_siddsIR <- list()
-for (i in seq_along(start(genIR))){
-  gen_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(genIR)[i]:end(genIR)[i]]
-}
-max(unlist(gen_siddsIR))
-gensidds_maxima <- maxima_position_width(unlist(gen_siddsIR), 0.95)
-gensidds_maximaIR <- IRanges(start = gensidds_maxima[[1]], end = gensidds_maxima[[2]])
-
-
-isltsss_trim <- isltsss
-isltsss_trim[which(isltsss<750)] <- 750 #flanking sequences are trimed
-islIR <- reduce(IRanges(start = isltsss_trim-750, end = isltsss_trim+750))
-#islsidds_maxima_widths <- width(islIR)
-isl_siddsIR <- list()
-for (i in seq_along(start(islIR))){
-  isl_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(islIR)[i]:end(islIR)[i]]
-}
-max(unlist(isl_siddsIR))
-islsidds_maxima <- maxima_position_width(unlist(isl_siddsIR), 0.95)
-islsidds_maximaIR <- IRanges(start = islsidds_maxima[[1]], end = islsidds_maxima[[2]])
-
-
-lowscoretsss_trim <- lowscoretsss
-lowscoretsss_trim[which(lowscoretsss<750)] <- 750 #flanking sequences are trimed
-lowscoreIR <- reduce(IRanges(start = lowscoretsss_trim-750, end = lowscoretsss_trim+750))
-#lowscoresidds_maxima_widths <- width(lowscoreIR)
-lowscore_siddsIR <- list()
-for (i in seq_along(start(lowscoreIR))){
-  lowscore_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(lowscoreIR)[i]:end(lowscoreIR)[i]]
-}
-max(unlist(lowscore_siddsIR))
-lowscoresidds_maxima <- maxima_position_width(unlist(lowscore_siddsIR), 0.95)
-lowscoresidds_maximaIR <- IRanges(start = lowscoresidds_maxima[[1]], end = lowscoresidds_maxima[[2]])
-
-
-#unify
-
-whole_sidds_maximaIR <- IRanges(start = whole_sidds_maxima[[1]], end = whole_sidds_maxima[[2]])
-
-par(mfrow = c(1,6),
-mar= rep(2,4))
-lapply(grep('*sidds_maximaIR', ls(), value=T), function(x) {boxplot(get(x)@width, ylim = c(0,100), main = toupper(substr(x, 0,3)))})
-```
 
 
 ```{r Shift in vectors??}
@@ -748,7 +658,8 @@ for (i in sidd_5000_1000_list) {
   #} else if (nrow(i)==5000) {
     sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i[-c(4001:5000), ])
   }
-}
+
+nrow(sidd_5000_1000_df) == nchar(e.coli_U00096.2)
 
 over95_positions <- which(sidd_5000_1000_df$P.x.>0.95)
 which(diff(which(sidd_5000_1000_df$P.x.>0.95)) !=1)
@@ -756,7 +667,7 @@ extended_ecoli_seq <- paste0(tail(sidd_5000_1000_df$Nucleotide, n = 1000),
 sidd_5000_1000_df$Nucleotide,
 head(sidd_5000_1000_df$Nucleotide, n = 1000))
 
-over95_1500nts_sequences <- sapply(over95_positions, function(x) {extended_ecoli_seq[(x-100+1000):(x+100+1000)]})
+over95_1500nts_sequences <- sapply(over95_positions, function(x) {extended_ecoli_seq[(x-100+1000):(x+100+1000)]}) #200 nts context over every point with p over 0.95. not optimal
 
 #oligos occurences
 
@@ -810,5 +721,230 @@ mid="blue",
 high="red",
 midpoint=0.4)
 ```
+
+
+```{r SIDD fro different sequence types}
+#extracting one large vector
+whole_e.coli_sidd_5000_1000 <- sidd_5000_1000_df$P.x.
+
+
+#how big are the sets in nts?
+
+lowscoresidds_short <- lowscoresidds[,1:2000]
+seqtypes_sidds <- list(whole_e.coli_sidd_5000_1000, expsidds, notsidds, gensidds, islsidds, lowscoresidds_short)
+seqtypes_sidds_lengths <- sapply(seqtypes_sidds, function(x) {length(as.numeric(x))})
+par(mar = rep(2,4)); barplot(seqtypes_sidds_lengths, names.arg = c('Whole','P', 'N', 'G', 'I', 'L'))
+
+whole_sidds_maxima <- maxima_position_width(whole_e.coli_sidd_5000_1000, 0.95)
+whole_sidds_maxima_widths <- whole_sidds_maxima[[2]]-whole_sidds_maxima[[1]]
+max(whole_sidds_maxima_widths)
+boxplot(whole_sidds_maxima_widths, main = 'Whole genome: \nover 0.95 SIDD regions length')
+#for sequence types sets positions are irreleveant
+#in order to remove overlapping parts IRanges library is used
+
+
+library(IRanges)
+
+
+expIR <- reduce(IRanges(start = exptsss-750, end = exptsss+750))
+#expsidds_maxima_widths <- width(expIR)
+exp_siddsIR <- list()
+for (i in seq_along(start(expIR))){
+  exp_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(expIR)[i]:end(expIR)[i]]
+}
+max(unlist(exp_siddsIR))
+expsidds_maxima <- maxima_position_width(unlist(exp_siddsIR), 0.95)
+expsidds_maximaIR <- IRanges(start = expsidds_maxima[[1]], end = expsidds_maxima[[2]])
+
+
+nottsss_trim <- nottsss
+nottsss_trim[which(nottsss<750)] <- 750 #flanking sequences are trimed
+notIR <- reduce(IRanges(start = nottsss_trim-750, end = nottsss_trim+750))
+#notsidds_maxima_widths <- width(notIR)
+not_siddsIR <- list()
+for (i in seq_along(start(notIR))){
+  not_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(notIR)[i]:end(notIR)[i]]
+}
+max(unlist(not_siddsIR))
+notsidds_maxima <- maxima_position_width(unlist(not_siddsIR), 0.95)
+notsidds_maximaIR <- IRanges(start = notsidds_maxima[[1]], end = notsidds_maxima[[2]])
+
+
+
+
+gentsss_trim <- gentsss
+gentsss_trim[which(gentsss<750)] <- 750 #flanking sequences are trimed
+genIR <- reduce(IRanges(start = gentsss_trim-750, end = gentsss_trim+750))
+#gensidds_maxima_widths <- width(genIR)
+gen_siddsIR <- list()
+for (i in seq_along(start(genIR))){
+  gen_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(genIR)[i]:end(genIR)[i]]
+}
+max(unlist(gen_siddsIR))
+gensidds_maxima <- maxima_position_width(unlist(gen_siddsIR), 0.95)
+gensidds_maximaIR <- IRanges(start = gensidds_maxima[[1]], end = gensidds_maxima[[2]])
+
+
+isltsss_trim <- isltsss
+isltsss_trim[which(isltsss<750)] <- 750 #flanking sequences are trimed
+islIR <- reduce(IRanges(start = isltsss_trim-750, end = isltsss_trim+750))
+#islsidds_maxima_widths <- width(islIR)
+isl_siddsIR <- list()
+for (i in seq_along(start(islIR))){
+  isl_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(islIR)[i]:end(islIR)[i]]
+}
+max(unlist(isl_siddsIR))
+islsidds_maxima <- maxima_position_width(unlist(isl_siddsIR), 0.95)
+islsidds_maximaIR <- IRanges(start = islsidds_maxima[[1]], end = islsidds_maxima[[2]])
+
+
+lowscoretsss_trim <- lowscoretsss
+lowscoretsss_trim[which(lowscoretsss<750)] <- 750 #flanking sequences are trimed
+lowscoreIR <- reduce(IRanges(start = lowscoretsss_trim-750, end = lowscoretsss_trim+750))
+#lowscoresidds_maxima_widths <- width(lowscoreIR)
+lowscore_siddsIR <- list()
+for (i in seq_along(start(lowscoreIR))){
+  lowscore_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(lowscoreIR)[i]:end(lowscoreIR)[i]]
+}
+max(unlist(lowscore_siddsIR))
+lowscoresidds_maxima <- maxima_position_width(unlist(lowscore_siddsIR), 0.95)
+lowscoresidds_maximaIR <- IRanges(start = lowscoresidds_maxima[[1]], end = lowscoresidds_maxima[[2]])
+
+
+#unify
+
+whole_sidds_maximaIR <- IRanges(start = whole_sidds_maxima[[1]], end = whole_sidds_maxima[[2]])
+
+par(mfrow = c(1,6),
+mar= rep(2,4))
+lapply(grep('*sidds_maximaIR', ls(), value=T), function(x) {boxplot(get(x)@width, ylim = c(0,100), main = paste0(toupper(substr(x, 0,3)), ',\nover 0.95 width'))})
+
+par(mfrow = c(1,6),
+mar= rep(2,4))
+lapply(grep('*sidds_maximaIR', ls(), value=T), function(x) {barplot(length(get(x)@width)/sum(get(x)@width), ylim = c(0,0.03), main = paste0(toupper(substr(x, 0,3)), ',\nover 0.95 numbers/length'))})
 ```
+
+```{r Circos - genomic positions of SIDD maxima and experimental promoters}
+
+maxifind <- function(vec, max){
+  v <- vec
+  v[which(v<max)] <- 0
+  v[which(v>=max)] <- 1
+  return(v)
+}
+
+maxifind_whole_e.coli_sidd_2500_500 <- maxifind(whole_e.coli_sidd_2500_500, 0.95)
+maxifind_whole_e.coli_sidd_5000_1000 <- maxifind(whole_e.coli_sidd_5000_1000, 0.95)
+
+table(maxifind_whole_e.coli_sidd_5000_1000)
+table(maxifind_whole_e.coli_sidd_2500_500)
+
+library(circlize)
+
+#SIDD maxima and experimental TSSs do not match
+region <- 1:5000
+#plot(y = rep(0.9, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))), x = which(maxifind_whole_e.coli_sidd_2500_500 ==1),  pch = '|', col = 'red', ylim = c(0,1))
+##plot(region, type = 'n',ylim = c(0,1))
+plot(y = rep(0.7, length(which(maxifind_whole_e.coli_sidd_5000_1000 ==1)))[region], x = which(maxifind_whole_e.coli_sidd_5000_1000 ==1)[region],  pch = '|', col = 'red')
+points(y = rep(0.65, length(exptsss))[region], x = exptsss[region],  pch = '|', col = 'darkblue')
+
+
+#Create data
+data = data.frame(
+    factor = c(rep('a', length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+              # rep(2, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+               rep('c', length(which(maxifind_whole_e.coli_sidd_5000_1000 ==1)))),
+    x = c(which(maxifind_whole_e.coli_sidd_2500_500 ==1),
+        #  which(maxifind_whole_e.coli_sidd_2500_500 ==1),
+          which(maxifind_whole_e.coli_sidd_5000_1000 ==1)),
+    y = c(rep(0.9, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+              # rep(2, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+               rep(0.7, length(which(maxifind_whole_e.coli_sidd_5000_1000 ==1))))
+    )
+# custom general parameters:
+par(mar = c(1, 1, 1, 1), bg=rgb(0.4,0.1,0.7,0.05) ) 
+circos.par("track.height" = 0.6)
+ 
+#Now we can initialize the chart. Note that sector.width can be used to custom the size of each sector.
+
+# Step1: Initialize
+circos.initialize(factors = data$factor, x = data$x)
+circos.trackPlotRegion(y = NULL)
+circos.trackPlotRegion(factors = data$factor, y = data$y, panel.fun = function(x, y) {
+    circos.axis(
+        h="top",                   # x axis on the inner or outer part of the track?
+        labels=TRUE,               # show the labels of the axis?
+        major.tick=TRUE,           # show ticks?
+        labels.cex=0.5,            # labels size (higher=bigger)
+        labels.font=1,             # labels font (1, 2, 3 , 4)
+        direction="outside",       # ticks point to the outside or inside of the circle ?
+        minor.ticks=4,             # Number of minor (=small) ticks
+        major.tick.percentage=0.1, # The size of the ticks in percentage of the track height
+        lwd=2                      # thickness of ticks and x axis.
+        )
+    })
+ 
+
+#The last step fills the region with the chart. You can use all the tradiationnal parameters such as pch, cex, col…
+
+# Step 3: Add points
+circos.trackPoints(data$factor, data$x, data$y, col = "blue", pch = 1, cex = 0.5)
+```
+
+```{r Sequence of precise region of SIDD over 0.95}
+
+over95_positions <- which(sidd_5000_1000_df$P.x.>0.95)
+over95_precise_sequences <- as.character(sidd_5000_1000_df$Nucleotide[which(sidd_5000_1000_df$P.x.>0.95)])
+
+
+#oligos occurences
+
+library(Biostrings)
+
+#better way to find oligos frequnces with biostrigs
+all_seqs_oligos_freq <- c()
+for (i in list(paste0(over95_precise_sequences, collapse = '')[[1]], e.coli_U00096.2)){
+print(length(i))
+tmp <- DNAString(paste0(unlist(i), collapse = ''))
+
+#tmp_StringSet <- DNAStringSet(sapply(t(tmp), function(x) {paste0(x, collapse = '')}))
+
+all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp, 6, as.prob = T))
+}
+
+colnames(all_seqs_oligos_freq) <- c('Precise max SIDD','genome')
+View(all_seqs_oligos_freq)
+#phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
+
+par(mfrow = c(2,1))
+ylim = range(all_seqs_oligos_freq)
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
+}
+
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
+#library(factoextra)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+
+
+
+library(factoextra)
+label.size <- 1.7
+
+fviz_pca_biplot(PCA,
+axes = c (1,2),
+#labelsize = label.size,
+#alpha.ind="contrib",
+col.ind = 'contrib'
+) + scale_color_gradient2(low="white",
+mid="blue",
+high="red",
+midpoint=0.4)
+
+library(ape)
+GC.content(as.DNAbin(over95_precise_sequences))
+
+```
+
 
