@@ -947,4 +947,30 @@ GC.content(as.DNAbin(over95_precise_sequences))
 
 ```
 
+```{r Does sequence type and genome-wide SIDD maxima overlap?}
+
+
+maxima_edges <- which(diff(over95_positions)!=1)
+maxima_left_edges <- over95_positions[seq(1, to = length(maxima_edges), 2)]
+maxima_right_edges <- maxima_edges[seq(2, to = length(maxima_edges), 2)]
+
+plot(sidd_5000_1000_df$Position, type = 'n', ylim = c(0,1))
+abline(v = over95_positions, col = 'red')
+abline(v = maxima_right_edges, col = 'red')
+
+#maxima themselves + 1500 nts context
+genome_maxima_edgesIR <- IRanges(start = maxima_left_edges-750, end = maxima_right_edges+750)
+
+
+df_all_IRs <- as.data.frame(matrix(NA, ncol = 6, nrow = 6))
+colnames(df_all_IRs) <- c('expIR', 'notIR', 'genIR', 'islIR', 'lowscoreIR', 'genome_maxima_edgesIR')-> rownames(df_all_IRs)
+for (i in c('expIR', 'notIR', 'genIR', 'islIR', 'lowscoreIR', 'genome_maxima_edgesIR')){
+  for (j in c('expIR', 'notIR', 'genIR', 'islIR', 'lowscoreIR', 'genome_maxima_edgesIR')){
+
+  df_all_IRs[i,j] <- (length(queryHits(findOverlaps(get(i), get(j)))))
+  }
+}
+
+plot(df_all_IRs)
+```
 
