@@ -991,7 +991,51 @@ for (i in unique(cut_ward_expsidds)) {
 
 #reading in transription units data
 
-TUSet <- read.table('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
+TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
+
+#promoters to genes
+
+genes_from_promoters_list <- c()
+for (i in seq_along(colnames(expsidds))){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == colnames(expsidds)[i])])
+  if(length(tmp) ==0) {tmp <- NA}
+  tmp <- paste0(tmp, collapse = ',')
+  genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
+}
+
+#clusters of genes
+for (i in unique(cut_ward_expsidds)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_expsidds == i)], collapse = ','), split = ',')[[1]]
+  if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
+  assign(paste0('genes_clust', i), unique(genes_clust_tmp))
+}
+
+
+```
+```{r Data for GO }
+
+library(org.EcK12.eg.db)
+
+#not found in regulon TUset
+  absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
+
+  
+dfGO <- c()
+
+LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
+names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
+for ( i in  seq_along(LIST)) {
+  if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
+    tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
+  }
+  Entrezid <- unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG))
+  group <- rep(i, length(Entrezid))
+  dfGO <- rbind(dfGO, cbind(Entrezid, group))
+}
+
+
+save(dfGO, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
+
 ```
 
 
