@@ -974,3 +974,47 @@ for (i in c('expIR', 'notIR', 'genIR', 'islIR', 'lowscoreIR', 'genome_maxima_edg
 plot(df_all_IRs)
 ```
 
+
+
+```{r Once again cluster analysis for experimental promoter SIDD data}
+library(fastcluster)
+ward_expsidds <- hclust.vector(t(expsidds), method = 'ward')
+plot(ward_expsidds)
+cut_ward_expsidds <- cutree(ward_expsidds, k = 4) #esteblished previosly
+table(cut_ward_expsidds)
+
+
+for (i in unique(cut_ward_expsidds)) {
+  assign(paste0('ecoli_clust', i),
+         colnames(expsidds)[which(cut_ward_expsidds ==i)])
+}
+
+#reading in transription units data
+
+TUSet <- read.table('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/regulondb_TUSet_html_line_removed.txt', header = F, sep = '\t')
+```
+
+
+```{r GO enrichment using clusterProfiler}
+library(clusterProfiler)
+library(org.EcK12.eg.db)
+load('/home/jane/Документы/Misha/mol_a_2018/mydf_genes_100_promoters_each_group_for_go_analysis.rda')
+
+genes <- as.character(mydf_genes$Entrez)
+genes_no_insD_gadF<- genes[-which(genes %in% c("gadF",'insD'))] 
+
+newdf_genes<- mydf_genes[-which(mydf_genes$Entrez %in% c("gadF",'insD')),] 
+
+newdf_genes$Entrez <- unlist(mget(x= as.character(newdf_genes$Entrez), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG))
+group<- as.character(newdf_genes$group)
+Entrez <- unlist(mget(x= as.character(newdf_genes$Entrez), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG))
+newdf <- cbind(Entrez, group)
+
+  
+
+random_df <- as.data.frame(cbind(group = group[1:100], Entrez = Entrez[1:100]))
+rownames(random_df) <- seq_along(rownames(random_df))
+genes_formula <- compareCluster(Entrez~group, data=random_df, fun='enrichGO', OrgDb='org.EcK12.eg.db')
+
+```
+
