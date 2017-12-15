@@ -991,7 +991,7 @@ for (i in unique(cut_ward_expsidds)) {
 
 #reading in transription units data
 
-TUSet <- read.table('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/regulondb_TUSet_html_line_removed.txt', header = F, sep = '\t')
+TUSet <- read.table('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
 ```
 
 

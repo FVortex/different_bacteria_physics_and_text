@@ -26,13 +26,7 @@
 # Release: 9.4 Date: 05-08-2017
 # ___________________________________________________________________________
 # Columns:
-# (1) Transcription Unit identifier assigned by RegulonDB
-# (2) Transcription unit name 
-# (3) Operon name containing the transcription unit
-# (4) Name of the gene(s) contained in the transcription unit
-# (5) Promoter Name
-# (6) Evidence that supports the existence of the transcription unit
-# (7) Evidence confidence level (Confirmed, Strong, Weak)
+Transcription Unit identifier assigned by RegulonDB	Transcription unit name	Operon name containing the transcription unit	Name of the gene(s) contained in the transcription unit	Promoter Name	Evidence that supports the existence of the transcription unit	Evidence confidence level (Confirmed, Strong, Weak)
 ECK120026560	C0067	C0067	C0067		[ICWHO|W|Inferred computationally without human oversight]	Weak
 ECK120030224	C0299	C0299	C0299			
 ECK120030164	C0362	C0362	C0362		[IHBCE|W|Inferred by a human based on computational evidence]	Weak
