@@ -1069,7 +1069,7 @@ rownames(random_df) <- seq_along(rownames(random_df))
 genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='enrichGO', OrgDb='org.EcK12.eg.db')
 
 
-View(genes_formula@compareClusterResult[,1:6])
+View(genes_formula@compareClusterResult[,1:7])
 
 for (i in unique(dfGO$group)){
   tmp <- enrichGO(dfGO$Entrezid[which(dfGO$group == '1')], 'org.EcK12.eg.db', ont="BP", pvalueCutoff=0.01)
@@ -1087,5 +1087,10 @@ enrichGO_heads_summary <- rbind((summary(enrichGO_output_cluster_1)),
 View(enrichGO_heads_summary)
 
 #different function 
+```
+
+
+```{r SIDD clusterization for Synechocystis}
+sidd_synechocystis_1500nts <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv')
 ```
 
