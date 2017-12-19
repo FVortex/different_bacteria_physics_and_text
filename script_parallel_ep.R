@@ -44,6 +44,7 @@ library(reldna)
 no_cores = detectCores() - 2
 cl <- makeCluster(no_cores)
 
+
 calculate_EP_on_interval <- function(tss_position, extended_string, shifted_by, zout) {
   p <- lseqspline1D(substr(extended_string, tss_position+shifted_by-250, tss_position+shifted_by+150), bound=c(50, 350), ref=251 )
   return (p$mpot[p$x %in% zout])
