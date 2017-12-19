@@ -1020,7 +1020,8 @@ library(org.EcK12.eg.db)
   absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
 
   
-dfGO <- c()
+Entrezid <- c()
+group <- c()
 
 LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
 names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
@@ -1028,13 +1029,20 @@ for ( i in  seq_along(LIST)) {
   if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
     tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
   }
-  Entrezid <- unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG))
-  group <- rep(i, length(Entrezid))
-  dfGO <- rbind(dfGO, cbind(Entrezid, group))
+  Entrezid <- c(Entrezid, unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))
+  group <- c(group,  rep(i, length(unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))))
+ # dfGO <- rbind(dfGO, cbind(Entrezid, group))
 }
 
-
+dfGO <- data.frame(Entrezid = Entrezid, group = group)
+                   
+                   
+#colnames(dfGO) <- c('Entrezids', 'group')
 save(dfGO, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
+
+
+genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='groupGO', OrgDb='org.EcK12.eg.db')
+genes_formula@compareClusterResult
 
 ```
 
@@ -1058,7 +1066,9 @@ newdf <- cbind(Entrez, group)
 
 random_df <- as.data.frame(cbind(group = group[1:100], Entrez = Entrez[1:100]))
 rownames(random_df) <- seq_along(rownames(random_df))
-genes_formula <- compareCluster(Entrez~group, data=random_df, fun='enrichGO', OrgDb='org.EcK12.eg.db')
+genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='enrichGO', OrgDb='org.EcK12.eg.db')
 
+
+View(genes_formula@compareClusterResult[,1:6])
 ```
 
