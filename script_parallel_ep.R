@@ -1,12 +1,12 @@
 
 ---
-title: ""
+  title: ""
 author: ""
 date: '22 ноября 2017 г '
 output: pdf_document
 ---
-
-```{r setup, include=FALSE}
+  
+  ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -30,7 +30,7 @@ shifted_by <- 200
 extended_e.coli_U00096.2_string <- paste0(
   substr(e.coli_U00096.2_string, nchar(e.coli_U00096.2_string)-shifted_by, nchar(e.coli_U00096.2_string)),
   e.coli_U00096.2_string,
-    substr(e.coli_U00096.2_string, 0, shifted_by)
+  substr(e.coli_U00096.2_string, 0, shifted_by)
 )
 
 ```
@@ -69,12 +69,12 @@ for (i in 1:(length(bounds) - 1)){
   
   res <- parSapply(cl, X = pseudo_tss, FUN = function(x) calculate_EP_on_interval(x, extended_ecoli_string, 250, -480:239))
   
-  assign( paste0('sliced_ep_', min(pseudo_tss), '_', max(pseudo_tss)), res)
+ # assign( paste0('sliced_ep_', min(pseudo_tss), '_', max(pseudo_tss)), res)
   
- # rm(list = ls())
-  #save( res, file = paste0('/home/jane/Документы/Misha/mol_a_2018/',  paste0('sliced_ep_', min(pseudo_tss), '_', max(pseudo_tss)), '.rda'))
+  rm(list = 'res')
+  save( res, file = paste0('/home/jane/Документы/Misha/mol_a_2018/',  paste0('sliced_ep_', min(pseudo_tss), '_', max(pseudo_tss)), '.rda'))
 }
-  
+
 
 ```
 
