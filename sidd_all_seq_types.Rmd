@@ -1070,5 +1070,22 @@ genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='enrichGO', OrgDb
 
 
 View(genes_formula@compareClusterResult[,1:6])
+
+for (i in unique(dfGO$group)){
+  tmp <- enrichGO(dfGO$Entrezid[which(dfGO$group == '1')], 'org.EcK12.eg.db', ont="BP", pvalueCutoff=0.01)
+  tmp <- summary(tmp)
+  tmp <- cbind(rep(i, ncol(tmp)), tmp)
+  assign(paste0('enrichGO_output_cluster_', i), tmp)
+}
+
+
+enrichGO_heads_summary <- rbind((summary(enrichGO_output_cluster_1)),
+      (summary(enrichGO_output_cluster_2)),
+(summary(enrichGO_output_cluster_3)),
+      (summary(enrichGO_output_cluster_4)))
+
+View(enrichGO_heads_summary)
+
+#different function 
 ```
 
