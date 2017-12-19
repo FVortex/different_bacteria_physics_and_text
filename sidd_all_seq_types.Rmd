@@ -581,7 +581,7 @@ lines(whole_e.coli_E01[region], col = 'red') #maximorum position
 
 ```{r Highest E01 points and sequnce}
 
-library()
+
 broadest_maxima <- which(maxima_widths_E01>15) 
 
 broadest_maxima_positions <- c()
@@ -1090,7 +1090,34 @@ View(enrichGO_heads_summary)
 ```
 
 
+```{r Fixing WHOLE promoter set for e.coli uncluding non-experimentally found promoters}
+load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+
+
+all_names<- names(dataset_pro)
+
+all_tsss <- sapply(dataset_pro, FUN = function(x) {x$tss})
+all_strands <- sapply(dataset_pro, FUN = function(x) {x$strand})
+all_evidence <- sapply(dataset_pro, FUN = function(x) {x$evidence})
+
+
+# Changing genomic coordinate used for dataset_pro- TSS is according to 5'-end for both strands 
+
+
+all_tsss[which(all_strands=='reverse')]<-nchar(e.coli_U00096.2)-all_tsss[which(all_strands=='reverse')]
+
+
+new_df_all_proms <- as.data.frame(cbind(all_names, all_tsss, all_strands, all_evidence), row.names = seq_along(all_names))
+colnames(new_df_all_proms) <- c('Name', 'TSS', 'Strand', 'Evidence')
+
+save(new_df_all_proms, file = '/home/jane/Документы/Misha/new_df_all_proms_regulon_8_5.rda')
+
+```
+
+
 ```{r SIDD clusterization for Synechocystis}
 sidd_synechocystis_1500nts <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv')
+
+
 ```
 
