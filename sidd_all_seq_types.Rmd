@@ -1037,7 +1037,11 @@ points(y = rep(0.9, length(which(over095_sidd_5000_1000 ==1)))[interv], x = whic
 points(y = rep(0.7, length(which(over095_sidd_7500_1000 ==1))), x = which(over095_sidd_7500_1000 ==1),  pch = '|', col = 'red')
 points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
 
+#take a closer look at most deviating points
 
+over095_sidd_subtracted <- maxifind(abs(subtracted), 0.95)
+
+subtracted
 ```
 
 ```{r Once again cluster analysis for experimental promoter SIDD data}
