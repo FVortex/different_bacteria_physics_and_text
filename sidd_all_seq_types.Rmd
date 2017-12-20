@@ -248,7 +248,7 @@ L <- grep('*sidds', ls(), value = T)
 ```
 
 
-```{r circles}
+```{r circles OLD DATA}
 load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_2500_500.rda')
 load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_5000_1000.rda')
 
@@ -650,6 +650,7 @@ fviz_pca_biplot(PCA,
 ```{r SIDD new fixed whole-genome vectors}
 
 load('/home/jane/Документы/Misha/mol_a_2018/sidd_5000_1000_list_whole_e.coli.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_7500_1000_list.rda')
 
 
 sidd_5000_1000_df <- c()
@@ -975,6 +976,69 @@ plot(df_all_IRs)
 ```
 
 
+```{r Comparinf SID vectors for differnet window (new fixed ones)}
+
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_5000_1000_list_whole_e.coli.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_7500_1000_list.rda')
+
+
+sidd_5000_1000_df <- c()
+for (i in sidd_5000_1000_list) {
+  #if (nrow(i)<5000) {sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i)
+  #} else if (nrow(i)==5000) {
+    sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i[-c(4001:5000), ])
+}
+
+
+str(sidd_5000_1000_df)
+
+#pulling out all 1-6500 nts from the raw data (6501-7500 nts are omitted)
+length(which(sidd_7500_1000_list$Position<6501))
+
+sidd_7500_1000_df <- sidd_7500_1000_list[which(sidd_7500_1000_list$Position<6501),]
+str(sidd_7500_1000_df)
+
+
+#comparing sid-by-side
+
+interv <- 1:100000
+
+
+
+plot(interv, sidd_5000_1000_df$G.x.[interv], type = 'l')
+plot(interv, sidd_7500_1000_df$G.x.[interv], type = 'l')
+
+
+
+#most deviating points
+
+subtracted <- sidd_5000_1000_df$P.x.-sidd_7500_1000_df$P.x.
+
+par(mfrow = c(3,1))
+plot(interv, sidd_5000_1000_df$P.x.[interv], type = 'l', ylim = c(0,1))
+abline(v = exptsss, col = 'red')
+plot(interv, sidd_7500_1000_df$P.x.[interv], type = 'l', ylim = c(0,1))
+abline(v = exptsss, col = 'red')
+plot(interv, subtracted[interv], type = 'l', ylim = c(-1,1))
+abline(v = exptsss, col = 'red')
+
+
+
+over095_sidd_5000_1000 <- maxifind(sidd_5000_1000_df$P.x., 0.95)
+over095_sidd_7500_1000 <- maxifind(sidd_7500_1000_df$P.x., 0.95)
+
+table(over095_sidd_5000_1000)
+table(over095_sidd_7500_1000)
+
+
+interv <- 1:1e6
+plot(interv, type ='n', ylim = c(0,1))
+points(y = rep(0.9, length(which(over095_sidd_5000_1000 ==1)))[interv], x = which(over095_sidd_5000_1000 ==1)[interv],  pch = '|', col = 'red', ylim = c(0,1))
+points(y = rep(0.7, length(which(over095_sidd_7500_1000 ==1))), x = which(over095_sidd_7500_1000 ==1),  pch = '|', col = 'red')
+points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
+
+
+```
 
 ```{r Once again cluster analysis for experimental promoter SIDD data}
 library(fastcluster)

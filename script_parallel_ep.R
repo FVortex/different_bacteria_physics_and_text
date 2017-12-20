@@ -64,16 +64,16 @@ clusterEvalQ(cl, {library(reldna)})
 ```{r By fragments}
 bounds <- c(seq(1, nchar(extended_ecoli_string), 250000), nchar(extended_ecoli_string))
 
-for (i in 1:(length(bounds) - 1)){
+for (i in 2:(length(bounds) - 1)){
   pseudo_tss <- bounds[i]:bounds[i+1]
   print(length(pseudo_tss))
   
   res <- parSapply(cl, X = pseudo_tss, FUN = function(x) calculate_EP_on_interval(x, extended_ecoli_string, 250, -480:239))
   
- # assign( paste0('sliced_ep_', min(pseudo_tss), '_', max(pseudo_tss)), res)
-  
-  rm(list = 'res')
+  # assign( paste0('sliced_ep_', min(pseudo_tss), '_', max(pseudo_tss)), res)
   save( res, file = paste0('/home/jane/Документы/Misha/mol_a_2018/',  paste0('sliced_ep_', min(pseudo_tss), '_', max(pseudo_tss)), '.rda'))
+  rm(list = 'res')
+  gc(verbose = FALSE)
 }
 
 
