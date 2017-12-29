@@ -2,7 +2,7 @@
 title: "sidd_all_seq_types.Rmd"
 author: "Mikhail Orlov"
 date: '13 октября 2017 г '
-output: pdf_document
+output: html_document
 ---
 
 
@@ -248,7 +248,9 @@ L <- grep('*sidds', ls(), value = T)
 ```
 
 
-```{r circles}
+```{r circles OLD DATA, eval =F}
+
+library(circlize)
 load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_2500_500.rda')
 load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_5000_1000.rda')
 
@@ -327,7 +329,7 @@ circos.trackPoints(data$factor, data$x, data$y, col = "blue", pch = 1, cex = 0.5
 
 
 
-```{r Translate}
+```{r Translate, eval=F}
 library(Biostrings)
 library(Peptides)
 library(fastcluster)
@@ -364,7 +366,7 @@ colvec_exp_not_hydrophob  <- c(rep('darkred', length(expseqs)), rep('darkblue', 
 #ward_exp_not_hydrophob %>% as.dendrogram %>% color_branches(k = length(#ward_exp_not_hydrophob$order), col = colvec_exp_not_hydrophob[order.dendrogram(#ward_exp_not_hydrophob %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(#ward_exp_not_hydrophob$height)*0.2)-> to_plot_#ward_exp_not_hydrophob
 ```
 
-```{r Translate and Zscale}
+```{r Translate and Zscale, eval =F}
 library(seqinr)
 library(Peptides)
 library(fastcluster)
@@ -396,7 +398,7 @@ colvec_exp_not_zscales <- c(rep('darkred', length(expseqs)), rep('darkblue', len
 #ward_exp_not_zscales %>% as.dendrogram %>% color_branches(k = length(#ward_exp_not_zscales$order), col = colvec_exp_not_zscales[order.dendrogram(#ward_exp_not_zscales %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(#ward_exp_not_zscales$height)*0.2)-> to_plot_#ward_exp_not_zscales
 ```
 
-```{r Hydrophobicity of genes with frame shift}
+```{r Hydrophobicity of genes with frame shift, eval =F}
 
 library(seqinr)
 library(Peptides)
@@ -581,7 +583,7 @@ lines(whole_e.coli_E01[region], col = 'red') #maximorum position
 
 ```{r Highest E01 points and sequnce}
 
-library()
+
 broadest_maxima <- which(maxima_widths_E01>15) 
 
 broadest_maxima_positions <- c()
@@ -650,6 +652,7 @@ fviz_pca_biplot(PCA,
 ```{r SIDD new fixed whole-genome vectors}
 
 load('/home/jane/Документы/Misha/mol_a_2018/sidd_5000_1000_list_whole_e.coli.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_7500_1000_list.rda')
 
 
 sidd_5000_1000_df <- c()
@@ -824,7 +827,7 @@ mar= rep(2,4))
 lapply(grep('*sidds_maximaIR', ls(), value=T), function(x) {barplot(length(get(x)@width)/sum(get(x)@width), ylim = c(0,0.03), main = paste0(toupper(substr(x, 0,3)), ',\nover 0.95 numbers/length'))})
 ```
 
-```{r Circos - genomic positions of SIDD maxima and experimental promoters}
+```{r Circos - genomic positions of SIDD maxima and experimental promoters, eval=FALSE}
 
 maxifind <- function(vec, max){
   v <- vec
@@ -947,7 +950,7 @@ GC.content(as.DNAbin(over95_precise_sequences))
 
 ```
 
-```{r Does sequence type and genome-wide SIDD maxima overlap?}
+```{r Does sequence type and genome-wide SIDD maxima overlap?, eval=FALSE}
 
 
 maxima_edges <- which(diff(over95_positions)!=1)
@@ -975,6 +978,106 @@ plot(df_all_IRs)
 ```
 
 
+```{r Comparinf SID vectors for differnet window (new fixed ones)}
+
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_5000_1000_list_whole_e.coli.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_7500_1000_list.rda')
+
+
+sidd_5000_1000_df <- c()
+for (i in sidd_5000_1000_list) {
+  #if (nrow(i)<5000) {sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i)
+  #} else if (nrow(i)==5000) {
+    sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i[-c(4001:5000), ])
+}
+
+
+str(sidd_5000_1000_df)
+
+#pulling out all 1-6500 nts from the raw data (6501-7500 nts are omitted)
+length(which(sidd_7500_1000_list$Position<6501))
+
+sidd_7500_1000_df <- sidd_7500_1000_list[which(sidd_7500_1000_list$Position<6501),]
+str(sidd_7500_1000_df)
+
+
+#comparing sid-by-side
+
+interv <- 1:100000
+
+
+
+plot(interv, sidd_5000_1000_df$G.x.[interv], type = 'l')
+plot(interv, sidd_7500_1000_df$G.x.[interv], type = 'l')
+
+
+
+#most deviating points
+
+subtracted <- sidd_5000_1000_df$P.x.-sidd_7500_1000_df$P.x.
+
+par(mfrow = c(3,1))
+plot(interv, sidd_5000_1000_df$P.x.[interv], type = 'l', ylim = c(0,1))
+abline(v = exptsss, col = 'red')
+plot(interv, sidd_7500_1000_df$P.x.[interv], type = 'l', ylim = c(0,1))
+abline(v = exptsss, col = 'red')
+plot(interv, subtracted[interv], type = 'l', ylim = c(-1,1))
+abline(v = exptsss, col = 'red')
+
+
+
+over095_sidd_5000_1000 <- maxifind(sidd_5000_1000_df$P.x., 0.95)
+over095_sidd_7500_1000 <- maxifind(sidd_7500_1000_df$P.x., 0.95)
+
+table(over095_sidd_5000_1000)
+table(over095_sidd_7500_1000)
+
+
+interv <- 1:1e6
+plot(interv, type ='n', ylim = c(0,1))
+points(y = rep(0.9, length(which(over095_sidd_5000_1000 ==1)))[interv], x = which(over095_sidd_5000_1000 ==1)[interv],  pch = '|', col = 'red', ylim = c(0,1))
+points(y = rep(0.7, length(which(over095_sidd_7500_1000 ==1))), x = which(over095_sidd_7500_1000 ==1),  pch = '|', col = 'red')
+points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
+
+
+#take a closer look at most deviating points
+
+over095_sidd_subtracted <- maxifind(abs(subtracted), 0.95)
+
+
+# approximate regions where deviation is maximal
+tmp <- which(over095_sidd_subtracted ==1)
+deviations <- tmp[which(diff(tmp)!=1)]
+
+
+
+
+
+interv <- (deviations[1]-5000):(deviations[1]+5000)
+
+par(mfrow = c(3,1))
+plot(interv, sidd_5000_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_5000_1000_df$Position==4000)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, sidd_7500_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_7500_1000_df$Position==6500)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, subtracted[interv], type = 'l', ylim = c(-1,1))
+abline(v = exptsss, col = 'darkgreen')
+points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
+
+
+interv <- (deviations[19]-5000):(deviations[19]+5000)
+
+par(mfrow = c(3,1))
+plot(interv, sidd_5000_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_5000_1000_df$Position==4000)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, sidd_7500_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_7500_1000_df$Position==6500)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, subtracted[interv], type = 'l', ylim = c(-1,1))
+abline(v = exptsss, col = 'darkgreen')
+points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
+
+
+```
 
 ```{r Once again cluster analysis for experimental promoter SIDD data}
 library(fastcluster)
@@ -1012,7 +1115,7 @@ for (i in unique(cut_ward_expsidds)){
 
 
 ```
-```{r Data for GO }
+```{r Data for GO, eval=FALSE }
 
 library(org.EcK12.eg.db)
 
@@ -1047,7 +1150,7 @@ genes_formula@compareClusterResult
 ```
 
 
-```{r GO enrichment using clusterProfiler}
+```{r GO enrichment using clusterProfiler, eval=FALSE}
 library(clusterProfiler)
 library(org.EcK12.eg.db)
 load('/home/jane/Документы/Misha/mol_a_2018/mydf_genes_100_promoters_each_group_for_go_analysis.rda')
@@ -1069,7 +1172,7 @@ rownames(random_df) <- seq_along(rownames(random_df))
 genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='enrichGO', OrgDb='org.EcK12.eg.db')
 
 
-View(genes_formula@compareClusterResult[,1:6])
+View(genes_formula@compareClusterResult[,1:7])
 
 for (i in unique(dfGO$group)){
   tmp <- enrichGO(dfGO$Entrezid[which(dfGO$group == '1')], 'org.EcK12.eg.db', ont="BP", pvalueCutoff=0.01)
@@ -1087,5 +1190,252 @@ enrichGO_heads_summary <- rbind((summary(enrichGO_output_cluster_1)),
 View(enrichGO_heads_summary)
 
 #different function 
+```
+
+
+```{r Fixing WHOLE promoter set for e.coli uncluding non-experimentally found promoters}
+load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+
+
+all_names<- names(dataset_pro)
+
+all_tsss <- sapply(dataset_pro, FUN = function(x) {x$tss})
+all_strands <- sapply(dataset_pro, FUN = function(x) {x$strand})
+all_evidence <- sapply(dataset_pro, FUN = function(x) {x$evidence})
+
+
+# Changing genomic coordinate used for dataset_pro- TSS is according to 5'-end for both strands 
+
+
+all_tsss[which(all_strands=='reverse')]<-nchar(e.coli_U00096.2)-all_tsss[which(all_strands=='reverse')]
+
+
+new_df_all_proms <- as.data.frame(cbind(all_names, all_tsss, all_strands, all_evidence), row.names = seq_along(all_names))
+colnames(new_df_all_proms) <- c('Name', 'TSS', 'Strand', 'Evidence')
+
+save(new_df_all_proms, file = '/home/jane/Документы/Misha/new_df_all_proms_regulon_8_5.rda')
+
+```
+
+```{r E. coli SIDD-based promoter clusters comparison}
+exptsss[which(cut_ward_expsidds==2)]
+exptsss[which(cut_ward_expsidds==3)]
+exptsss[which(cut_ward_expsidds==4)]
+
+expstrands[which(cut_ward_expsidds==2)]
+expstrands[which(cut_ward_expsidds==3)]
+expstrands[which(cut_ward_expsidds==4)]
+
+#rep_origin for the accesion
+
+rep_origin <- c(3923767, 3923998)
+rep_terminus <- c(1607181, 1607203)
+#no strand differentiation
+layout(matrix(c(1,2,1,3,1,4), ncol=3))
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+
+abline(v = exptsss[which(cut_ward_expsidds==2)], col = 'darkred')
+abline(v = exptsss[which(cut_ward_expsidds==3)], col = 'darkgreen')
+abline(v = exptsss[which(cut_ward_expsidds==4)], col = 'darkblue')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
+`Sequence` <- -750:750
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==2)], type = 'l', col = 'darkred', main = 'Cluster 2', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==3)], type = 'l', col = 'darkgreen', main = 'Cluster 3', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==4)], type = 'l', col = 'darkblue', main = 'Cluster 4', ylab = '')
+
+# strand differentiation
+table(expstrands[which(cut_ward_expsidds==2)])
+table(expstrands[which(cut_ward_expsidds==3)])
+table(expstrands[which(cut_ward_expsidds==4)])
+
+which.quadrant <- function(tss, strand){
+  tmp_rep <- ifelse(tss %in% min(rep_terminus):max(rep_origin), 'between OriC and terC', 'outside OriC and terC region')
+  tmp_strand <- ifelse(strand == 'forward', 'forward', 'reverse')
+  
+  return(paste0(tmp_rep, ', ', tmp_strand))
+}
+
+quadrants_2_cluster <- c()
+for (i in which(cut_ward_expsidds==2)){
+  tmp <-   which.quadrant(tss = exptsss[i], strand = expstrands[i])
+  quadrants_2_cluster <- c(quadrants_2_cluster, tmp)
+}
+
+table(quadrants_2_cluster)
+
+
+quadrants_3_cluster <- c()
+for (i in which(cut_ward_expsidds==3)){
+  tmp <-   which.quadrant(tss = exptsss[i], strand = expstrands[i])
+  quadrants_3_cluster <- c(quadrants_3_cluster, tmp)
+}
+
+table(quadrants_3_cluster)
+
+
+quadrants_4_cluster <- c()
+for (i in which(cut_ward_expsidds==4)){
+  tmp <-   which.quadrant(tss = exptsss[i], strand = expstrands[i])
+  quadrants_4_cluster <- c(quadrants_4_cluster, tmp)
+}
+
+table(quadrants_4_cluster)
+
+View(rbind(table(quadrants_2_cluster), table(quadrants_3_cluster), table(quadrants_4_cluster)))
+
+
+
+# #svg('/home/jane/Документы/Misha/mol_a_2018/masterplot_compact_sidd_cluster_location_quadrants.svg', height = 10, width = 10)
+#masterplot
+layout(matrix(c(1,2,5,1,3,5,1,4,5), ncol=3))
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+
+abline(v = exptsss[which(cut_ward_expsidds==2)], col = 'darkred')
+abline(v = exptsss[which(cut_ward_expsidds==3)], col = 'darkgreen')
+abline(v = exptsss[which(cut_ward_expsidds==4)], col = 'darkblue')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
+`Sequence` <- -750:750
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==2)], type = 'l', col = 'darkred', main = 'Cluster 2', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==3)], type = 'l', col = 'darkgreen', main = 'Cluster 3', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==4)], type = 'l', col = 'darkblue', main = 'Cluster 4', ylab = '')
+
+cex = 2
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+text(paste(table(quadrants_2_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = 0.5, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = 0.5, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = 0.25, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = 0.25, col = 'darkred', cex = cex)
+
+
+text(paste(table(quadrants_3_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = 0, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = -0.25, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = 0, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = -0.25, col = 'darkgreen', cex = cex)
+
+text(paste(table(quadrants_4_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = -0.5, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = -0.75, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = -0.5, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = -0.75, col = 'darkblue', cex = cex)
+# #dev.off()
+
+
+par(mfrow = c(2,1))
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1))
+
+which.forward <- which(expstrands == 'forward')
+abline(v = exptsss[intersect(which(cut_ward_expsidds==2), which.forward)], col = 'darkred')
+abline(v = exptsss[intersect(which(cut_ward_expsidds==3), which.forward)], col = 'darkgreen')
+abline(v = exptsss[intersect(which(cut_ward_expsidds==4), which.forward)], col = 'darkblue')
+abline(v = rep_origin, col = 'black', lwd = 4)
+
+#whether the clusters TSS are located closely
+which(diff(c(0, sort(exptsss[which(cut_ward_expsidds==2)])))<250)
+which(diff(c(0, sort(exptsss[which(cut_ward_expsidds==3)])))<250)
+which(diff(c(0, sort(exptsss[which(cut_ward_expsidds==4)])))<250)
+
+#whether these TSSs are located nearly any other TSS
+
+
+for (k in unique(cut_ward_expsidds)){
+  tmp <- c()
+  for (i in exptsss[which(cut_ward_expsidds == k)]){
+    
+  tmp <- c(tmp, min(abs(exptsss[which(cut_ward_expsidds != k)] - i)))
+  
+   assign(paste0('min_to_any_tss_', k,'_clust'), tmp)
+  }
+}
+
+
+par(mfrow = c (1,4))
+ylim <- c(0, 3e4)
+boxplot(min_to_any_tss_1_clust, ylim = ylim)
+boxplot(min_to_any_tss_2_clust, ylim = ylim)
+boxplot(min_to_any_tss_3_clust, ylim = ylim)
+boxplot(min_to_any_tss_4_clust, ylim = ylim)
+
+
+#cluster 2 tss coincide with downstream tsss?
+
+interval_to_downstream_tss_2_clust <- c()
+for (i in exptsss[which(cut_ward_expsidds==2)] ) {
+  tmp <- (min(abs( exptsss[which(cut_ward_expsidds!=2)] - i)))
+  interval_to_downstream_tss_2_clust <- c(interval_to_downstream_tss_2_clust, tmp)
+}
+
+#is there a nucleotide composition difference among the clusters?
+
+
+
+```
+
+```{r SIDD clusterization for Synechocystis}
+
+library(ape)
+synechocystis_NC_000911.1 <- toupper(paste0(read.GenBank(access.nb = 'NC_000911.1', as.character = T)$NC_000911.1, collapse = ''))
+sidd_synechocystis_1500nts <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv')
+
+synechocystis_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/synechocystis_proms_datasets_1015154108_sd01.csv', skip = 14, header = T)
+
+
+
+
+```
+
+
+```{r SIDD globally in respect to oric and terc}
+
+library(zoo)
+roll10000sum_sidd_5000_1000 <- rollapply(sidd_5000_1000_df$P.x., 10000, sum)
+roll10000_10000sum_sidd_5000_1000 <- rollapply(roll10000sum_sidd_5000_1000, 10000, sum)
+
+plot(roll10000sum_sidd_5000_1000, type = 'l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(roll10000_10000sum_sidd_5000_1000, type = 'l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
+slice <- function(input, by=2){ 
+  starts <- seq(1,length(input),by)
+  tt <- lapply(starts, function(y) input[y:(y+(by-1))])
+  lapply(tt, function(x) x[!is.na(x)])
+}
+
+sliced_sidd_5000_1000 <- slice(sidd_5000_1000_df$P.x., by = 10e4)
+
+
+#lapply(sliced_sidd_5000_1000, mean)
+
+###plot(sliced_sidd_5000_1000[[1]], type = 'l')
+###abline(h = mean(sliced_sidd_5000_1000[[1]]), col = 'blue', lwd = 3)
+#abline(h = median(sliced_sidd_5000_1000[[1]]), col = 'red', lwd = 3)
+
+
+#genome-wide SIDD vector sliced into junks 250000 nts
+teethed_sum_sliced_sidd_5000_1000 <- sapply(sliced_sidd_5000_1000, function(x) {rep(sum(x), length(x))} )
+teethed_mean_sliced_sidd_5000_1000 <- sapply(sliced_sidd_5000_1000, function(x) {rep(mean(x), length(x))} )
+teethed_median_sliced_sidd_5000_1000 <- sapply(sliced_sidd_5000_1000, function(x) {rep(median(x), length(x))} )
+
+par(mfrow = c (3,1))
+
+plot(unlist(teethed_sum_sliced_sidd_5000_1000), type ='l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(unlist(teethed_mean_sliced_sidd_5000_1000), type ='l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(unlist(teethed_median_sliced_sidd_5000_1000), type ='l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
 ```
 
