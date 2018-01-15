@@ -1,0 +1,1598 @@
+---
+title: "sidd_all_seq_types.Rmd"
+author: "Mikhail Orlov"
+date: '13 октября 2017 г '
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown SIDD for all sequence types
+Reading in E. coli K12 genome (GenBank Accesion U00096.2), creating reverse complement genome and tranformation genome into character form 
+
+```{r}
+library(seqinr)
+library(Biostrings)
+e.coli_U00096.2<-unlist(read.fasta('/home/jane/Документы/Misha/Lab/mol_a-16/Genome_to_dataset_pro_U00096.2.txt', seqonly = T))
+reverseComplement_e.coli_U00096.2<-as.character(reverseComplement(DNAString(e.coli_U00096.2)))
+
+load('/home/jane/Загрузки/spline_dataset_pro.Rdata')
+load('/home/jane/Загрузки/spline_dataset_notpro.Rdata')
+load('/home/jane/Загрузки/spline_dataset_gen.Rdata')
+load('/home/jane/Загрузки/spline_dataset_isl.Rdata')
+load('/home/jane/Загрузки/dataset_lowscore.Rdata')
+
+load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_5000_1000.rda')
+
+allprotsss <- sapply(dataset_pro, function(x){x$tss})
+allprostrands <- sapply(dataset_pro, function(x){x$strand})
+
+which.experimental <- which(sapply(dataset_pro, function(x) {(x$evidence == 'experimental')}))
+exptsss <- sapply(dataset_pro, function(x) {x$tss})[which.experimental]
+expstrands <- sapply(dataset_pro, function(x) {x$strand})[which.experimental]
+
+nottsss <- sapply(dataset_notpro, function(x) {x$tss})
+notstrands <- sapply(dataset_notpro, function(x) {x$strand})
+
+gentsss <- sapply(dataset_gen, function(x) {x$tss})
+genstrands <- sapply(dataset_gen, function(x) {x$strand})
+
+isltsss <- sapply(dataset_isl, function(x) {x$tss})
+islstrands <- sapply(dataset_isl, function(x) {x$strand})
+
+lowscoretsss <- sapply(dataset_lowscore, function(x) {x$tss}) #only some are to be used
+lowscorestrands <- sapply(dataset_lowscore, function(x) {x$strand})
+
+## a useful function: rev() for strings
+strReverse <- function(x)
+        sapply(lapply(strsplit(x, NULL), rev), paste, collapse="")
+
+expseqs <- c()
+for (i in seq_along(exptsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (exptsss[i]-1000), stop = (exptsss[i]+1000))
+    if (expstrands[i] == 'forward'){
+      expseqs <- c(expseqs, tmp)
+    }
+    else if (expstrands[i] == 'reverse'){
+      expseqs <- c(expseqs, strReverse(tmp))
+    }
+}
+
+notseqs <- c()
+for (i in seq_along(nottsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (nottsss[i]-1000), stop = (nottsss[i]+1000))
+    if (notstrands[i] == 'forward'){
+      notseqs <- c(notseqs, tmp)
+    }
+    else if (notstrands[i] == 'reverse'){
+      notseqs <- c(notseqs, strReverse(tmp))
+    }
+}
+
+genseqs <- c()
+for (i in seq_along(gentsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (gentsss[i]-1000), stop = (gentsss[i]+1000))
+    if (genstrands[i] == 'forward'){
+      genseqs <- c(genseqs, tmp)
+    }
+    else if (genstrands[i] == 'reverse'){
+      genseqs <- c(genseqs, strReverse(tmp))
+    }
+}
+
+
+islseqs <- c()
+for (i in seq_along(isltsss)) {
+    tmp <- substr(e.coli_U00096.2, start = (isltsss[i]-1000), stop = (isltsss[i]+1000))
+    if (islstrands[i] == 'forward'){
+      islseqs <- c(islseqs, tmp)
+    }
+    else if (islstrands[i] == 'reverse'){
+      islseqs <- c(islseqs, strReverse(tmp))
+    }
+}
+
+
+
+lowscoreseqs <- c()
+for (i in seq_along(lowscoretsss)[1:2000]) {
+    tmp <- substr(e.coli_U00096.2, start = (lowscoretsss[i]-1000), stop = (lowscoretsss[i]+1000))
+    if (lowscorestrands[i] == 'forward'){
+      lowscoreseqs <- c(lowscoreseqs, tmp)
+    }
+    else if (lowscorestrands[i] == 'reverse'){
+      lowscoreseqs <- c(lowscoreseqs, strReverse(tmp))
+    }
+}
+
+#only 2000 lowscore sequences are considered
+
+set.seed(40)
+lowscoretsss_short <- sample(lowscoretsss, 2000)
+lowscoreseqs_short <- sample(lowscoreseqs, 2000)
+```
+
+
+```{r Sequences statistics}
+
+list_seqs <- grep(pattern = '*seqs', x = ls(), value = T)
+
+
+list_gcs <- sapply(list_seqs, function(x) {GC(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+
+barplot(list_gcs)
+
+list_gc1 <- sapply(list_seqs, function(x) {GC1(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+list_gc2 <- sapply(list_seqs, function(x) {GC2(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+list_gc3 <- sapply(list_seqs, function(x) {GC3(unlist(strsplit(paste0(get(x), collapse = ''), split = '')))})
+
+par(mfrow = c(1,5),
+    mar = rep(1,4))
+for (i in seq_along(list_gc1)) {
+  barplot(c(list_gc1[i], list_gc2[i],list_gc3[i]), ylim = c(0.4,.55), main = names(list_gc1[i]))
+}
+
+#aug presence
+
+grepl(pattern = 'AGG', get(list_seqs[i]))
+
+library(stringr)
+
+# Count the number of 'a's in each element of string
+
+list_aug_occurences <- list()
+for (i in seq_along(list_seqs)) {
+  tmp <- sapply(get(list_seqs[i]), function (x) {str_count(x, pattern = 'TATAAT')})
+  names(tmp) <- NULL
+  list_aug_occurences[[i]] <- tmp
+}
+
+par(mfrow = c(1,5))
+sapply(list_aug_occurences, function(x) {barplot(unlist(x), ylim = c(0, 85))})
+
+barplot(list_aug_occurences[[1]])
+  number.of.AUG <- lapply(get(list_seqs[1]), function (x) {str_count(x, pattern = 'AUG')})
+number.of.AUG <- lapply(get(list_seqs[2]), function (x) {str_count(x, pattern = 'AAA')})
+
+
+
+#plot(1:nchar(e.coli_U00096.2))
+```
+
+
+```{r Sequences - oligos occurences }
+
+library(Biostrings)
+
+
+#better way to find oligos frequnces with biostrigs
+all_seqs_oligos_freq <- c()
+for (i in list(expseqs, notseqs, genseqs, islseqs, lowscoreseqs_short, e.coli_U00096.2)){
+  print(length(i))
+  tmp <- DNAString(paste0(unlist(i), collapse = ''))
+  
+  #tmp_StringSet <- DNAStringSet(sapply(t(tmp), function(x) {paste0(x, collapse = '')}))
+
+all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp, 6, as.prob = T))
+}
+
+
+
+colnames(all_seqs_oligos_freq) <- c('Promoters', 'Non-promoters', 'Genes', 'Promoter islands', 'Lowscore', 'Complete genome')
+View(all_seqs_oligos_freq)
+#phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
+
+
+par(mfrow = c(3,2))
+ylim = range(all_seqs_oligos_freq)
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+  barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
+}
+
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
+#library(factoextra)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+
+label.size <- 1.7
+#library(ggfortify)
+#autoplot(PCA,
+    #     shape = FALSE,
+   #      loadings = TRUE,
+  #       label = TRUE,
+ #        loadings.label = TRUE,
+#         label.size = label.size)+
+ # theme_bw()
+
+library(factoextra)
+
+svg('/home/jane/Документы/Misha/mol_a_2018/mce2018_oligos_pca_seq_types.svg', height = 10, width = 8)
+fviz_pca_biplot(PCA, 
+             axes = c (1,2),
+             #labelsize = label.size,
+             #alpha.ind="contrib",
+             col.ind = 'contrib',
+             col.var = 'black'
+             ) + scale_color_gradient2(low="white", 
+                                       mid="blue",
+                                       high="red", 
+                                       midpoint=0.7)+xlim(-14,2)
+  dev.off()
+
+```
+
+
+```{r Extracting SIDD profiles for different sequence type from genome-wide vector}
+
+expsidds <- sapply(exptsss, function(x) {whole_e.coli_sidd_5000_1000[(x-750):(x+750)]})
+
+#removing tsss closer than 7500 nts to flanks
+nottsss_short <- nottsss[nottsss > 750]
+gentsss_short <- gentsss[gentsss > 750]
+isltsss_short <- isltsss[isltsss > 750]
+lowscoretsss_short <- lowscoretsss[lowscoretsss > 750]
+
+notsidds <- sapply(nottsss_short, function(x) {whole_e.coli_sidd_5000_1000[(x-750):(x+750)]})
+gensidds <- sapply(gentsss_short, function(x) {whole_e.coli_sidd_5000_1000[(x-750):(x+750)]})
+islsidds <- sapply(isltsss_short, function(x) {whole_e.coli_sidd_5000_1000[(x-750):(x+750)]})
+lowscoresidds <- sapply(lowscoretsss_short, function(x) {whole_e.coli_sidd_5000_1000[(x-750):(x+750)]})
+islsidds <- sapply(isltsss_short, function(x) {whole_e.coli_sidd_5000_1000[(x-750):(x+750)]})
+
+```
+
+```{r SIDDs set statistics and plots}
+L <- grep('*sidds', ls(), value = T)
+#par(mfrow = c (2,2)); sapply(L, function(x) {boxplot(get(x))})
+
+#sapply(L, function(x) {apply, 1, sum})
+
+```
+
+```{r Overall SIDD maxima statistics}
+
+load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_2500_500.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_5000_1000.rda')
+
+
+maxifind <- function(vec, max){
+  v <- vec
+  v[which(v<max)] <- 0
+  v[which(v>=max)] <- 1
+  return(v)
+}
+
+#maxifind_whole_e.coli_sidd_2500_500 <- maxifind(whole_e.coli_sidd_2500_500, 0.95)
+maxifind_whole_e.coli_sidd_5000_1000 <- maxifind(whole_e.coli_sidd_5000_1000, 0.95)
+
+table(maxifind_whole_e.coli_sidd_5000_1000)
+#table(maxifind_whole_e.coli_sidd_2500_500)
+
+left_edges <- which(diff(maxifind_whole_e.coli_sidd_5000_1000)==1)
+right_edges <- which(diff(maxifind_whole_e.coli_sidd_5000_1000)==-1)
+
+maxima_095_width <- right_edges - left_edges
+boxplot(maxima_095_width)
+
+
+```
+
+
+```{r Overall maxima width for sequence types and genome}
+
+maxima_position_width <- function(vec, max_cutoff) {
+  maxifind <- function(vec, max){
+    v <- vec
+    v[which(v<max)] <- 0
+    v[which(v>=max)] <- 1
+    return(v)
+  }
+  maxifind_tmp <- maxifind(vec, max_cutoff)
+  lefts_tmp <- which(diff(maxifind_tmp)==1)
+  rights_tmp <- which(diff(maxifind_tmp)==-1)
+return(list(lefts_tmp, rights_tmp))
+}
+
+```
+
+
+```{r Shift in vectors??}
+diff(c(length(whole_e.coli_sidd_2500_500), length(whole_e.coli_sidd_5000_1000), nchar(e.coli_U00096.2)))
+
+int <-1: 100000 #maxima are matched
+plot(whole_e.coli_sidd_5000_1000[int], type = 'l', ylim = c(-1,1))
+lines(-whole_e.coli_sidd_2500_500[int], col = 'red')
+
+
+int <-100000: 200000 #maxima are matched
+plot(whole_e.coli_sidd_5000_1000[int], type = 'l', ylim = c(-1,1))
+lines(-whole_e.coli_sidd_2500_500[int], col = 'red')
+
+
+int <-850000: 900000 #maxima are almost matched
+plot(whole_e.coli_sidd_5000_1000[int], type = 'l', ylim = c(-1,1))
+lines(-whole_e.coli_sidd_2500_500[int], col = 'red')
+
+
+#to compare left flank SIDD obtained using inine tool
+
+ecoli_9900 <- substr(e.coli_U00096.2, 1, 9900)
+ecoli_9900_sidd_online <- read.table('/home/jane/Документы/Misha/mol_a_2018/9900_left_ecoli_sidd_online.txt', skip = 17, sep = '\t', col.names= c('position', 'P(x)', 'G(x)'))
+
+par(mfrow = c (3,1))
+int <-1: 9900 #maxima are matched
+plot(whole_e.coli_sidd_5000_1000[int], type = 'l', ylim = c(-1,1))
+plot(whole_e.coli_sidd_2500_500[int], type = 'l', ylim = c(-1,1))
+plot(ecoli_9900_sidd_online[int,2], type = 'l', ylim = c(-1,1))
+
+
+lines(-whole_e.coli_sidd_2500_500[int], col = 'red')
+
+
+```
+
+
+```{r Sequence analysis for highest maxima of dynamic properties}
+load('/home/jane/Документы/Misha/mol_a_2018/df_ecoli_complete_dynamic_chars.rda')
+library(Biostrings)
+source('/home/jane/Документы/Misha/my_functions/dynchars.R')
+
+whole_e.coli_E01 <- dynchars(strsplit(e.coli_U00096.2, split = '')[[1]], interval_size = 200)$E01
+length(whole_e.coli_E01) == nchar(e.coli_U00096.2) #lenghts are checked 
+
+max <- summary(whole_e.coli_E01)['Max.']
+
+maxima_position_width_whole_E01 <- maxima_position_width(whole_e.coli_E01, max_cutoff = max*0.975)
+
+maxima_widths_E01 <- maxima_position_width_whole_E01[[2]] - maxima_position_width_whole_E01[[1]]
+which.max(maxima_widths_E01)
+
+midpoints_maxima_E01 <- c()
+for (i in seq_along(maxima_position_width_whole_E01[[1]])){
+   shift <- round(maxima_widths_E01[i]/2)
+   midpoints_maxima_E01 <- c(midpoints_maxima_E01, (maxima_position_width_whole_E01[[2]][i] + shift))
+}
+
+
+#maxima genomic positions
+plot(seq_along(whole_e.coli_E01), type = 'n')
+abline(v = midpoints_maxima_E01, col = 'red')
+
+maximorum_E01 <- midpoints_maxima_E01[which.max(maxima_widths_E01)]
+
+#half_int <- 500
+#plot((maximorum_E01-half_int):(maximorum_E01+half_int), whole_e.coli_E01[(maximorum_E01-half_int):(maximorum_E01+half_int)])
+
+region <- maxima_position_width_whole_E01[[1]][which.max(maxima_widths_E01)]:maxima_position_width_whole_E01[[2]][which.max(maxima_widths_E01)]
+plot(region, whole_e.coli_E01[region], type = 'l') #maximorum position
+
+#corresponding sequence
+
+region_sequence <- substr(e.coli_U00096.2, start = min(region), stop = max(region))
+
+region_DNASS <- DNAString(region_sequence)
+genome_DNASS <- DNAString(e.coli_U00096.2)
+
+
+svg('/home/jane/Документы/Misha/mol_a_2018/e.coli_highest_E01_vs_whole_genome_oligomers.svg', width = 10, height = 10)
+par(mfrow = c(6,2),
+  mar = rep(3.5,4),
+  oma = rep(3,4))
+for (width in 1:6){
+   barplot(sort(oligonucleotideFrequency(region_DNASS, width = width, step=1, as.prob=T), decreasing = T)[1:10], las = 2, main = paste0('Highest E01 region ', width, '-mers'))
+   barplot(sort(oligonucleotideFrequency(genome_DNASS, width = width, step=1, as.prob=T), decreasing = T)[1:10], las = 2, main = paste0('Whole genome E01 ', width, '-mers'))
+}
+ dev.off()
+
+c('A','G')[1*(2*rbinom(1000,1,0.5)/2)]
+
+
+artificial_seq <- rep(c(rep('A', 13), rep('G', 11), rep('A', 22), rep('G', 12), rep('A', 11), rep('G', 22)), 5)
+
+
+plot(dynchars(artificial_seq, 200)$E01, type = 'l', ylim  = c(200, 300) )
+lines(whole_e.coli_E01[region], col = 'red') #maximorum position
+
+```
+
+
+```{r Highest E01 points and sequnce}
+
+
+broadest_maxima <- which(maxima_widths_E01>15) 
+
+broadest_maxima_positions <- c()
+broadest_maxima_seqs<- c()
+broadest_maxima_E01<- c() #as a sinlge concatenated vector!
+
+for (i in broadest_maxima ){
+ broadest_maxima_positions <- cbind(broadest_maxima_positions, c(maxima_position_width_whole_E01[[1]][i], maxima_position_width_whole_E01[[2]][i]))
+  broadest_maxima_seqs <- c(broadest_maxima_seqs, substr(e.coli_U00096.2, start = maxima_position_width_whole_E01[[1]][i], stop = maxima_position_width_whole_E01[[2]][i]))
+  broadest_maxima_E01<- c(broadest_maxima_E01, whole_e.coli_E01[(maxima_position_width_whole_E01[[1]][i]):(maxima_position_width_whole_E01[[2]][i])])
+}
+
+par(mfrow = c (1,2)); boxplot(broadest_maxima_E01, ylim = c(200, 260)); boxplot(whole_e.coli_E01, ylim = c(200, 260))
+
+
+library(Biostrings)
+
+
+#better way to find oligos frequnces with biostrigs
+all_seqs_oligos_freq <- c()
+for (i in list(paste0(broadest_maxima_seqs, collapse = ''), e.coli_U00096.2)){
+  print(length(i))
+  tmp <- DNAString(paste0(unlist(i), collapse = ''))
+  
+  #tmp_StringSet <- DNAStringSet(sapply(t(tmp), function(x) {paste0(x, collapse = '')}))
+
+all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp, 6, as.prob = T))
+}
+
+
+
+colnames(all_seqs_oligos_freq) <- c(paste('Highest E01 sequence', nchar(paste0(broadest_maxima_seqs, collapse = '')),'nts'), 'Whole genome')
+View(all_seqs_oligos_freq)
+#phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
+
+
+par(mfrow = c(3,2))
+ylim = range(all_seqs_oligos_freq)
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+  barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
+}
+
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
+#library(factoextra)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+
+
+library(factoextra)
+label.size <- 1.7
+
+fviz_pca_biplot(PCA, 
+             axes = c (1,2),
+             #labelsize = label.size,
+             #alpha.ind="contrib",
+             col.ind = 'contrib',
+             col.var = 'black',
+             lab
+             ) + scale_color_gradient2(low="white", 
+                                       mid="blue",
+                                       high="red", 
+                                       midpoint=1)
+  
+
+```
+
+
+```{r SIDD new fixed whole-genome vectors}
+
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_5000_1000_list_whole_e.coli.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_7500_1000_list.rda')
+
+
+#sidd_5000_1000_df <- c()
+#for (i in sidd_5000_1000_list) {
+  #if (nrow(i)<5000) {sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i)
+  #} else if (nrow(i)==5000) {
+ #   sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i[-c(4001:5000), ])
+  #}
+
+nrow(sidd_5000_1000_df) == nchar(e.coli_U00096.2)
+
+over95_positions <- which(sidd_5000_1000_df$P.x.>0.95)
+which(diff(which(sidd_5000_1000_df$P.x.>0.95)) !=1)
+extended_ecoli_seq <- paste0(tail(sidd_5000_1000_df$Nucleotide, n = 1000),
+sidd_5000_1000_df$Nucleotide,
+head(sidd_5000_1000_df$Nucleotide, n = 1000))
+
+over95_1500nts_sequences <- sapply(over95_positions, function(x) {extended_ecoli_seq[(x-100+1000):(x+100+1000)]}) #200 nts context over every point with p over 0.95. not optimal
+
+#oligos occurences
+
+library(Biostrings)
+
+#better way to find oligos frequnces with biostrigs
+all_seqs_oligos_freq <- c()
+for (i in list(paste0(over95_1500nts_sequences, collapse = '')[[1]], e.coli_U00096.2)){
+print(length(i))
+tmp <- DNAString(paste0(unlist(i), collapse = ''))
+
+#tmp_StringSet <- DNAStringSet(sapply(t(tmp), function(x) {paste0(x, collapse = '')}))
+
+all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp, 6, as.prob = T))
+}
+
+colnames(all_seqs_oligos_freq) <- c('Max SIDD','genome')
+View(all_seqs_oligos_freq)
+#phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
+
+par(mfrow = c(3,2))
+ylim = range(all_seqs_oligos_freq)
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
+}
+
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
+#library(factoextra)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+
+label.size <- 1.7
+#library(ggfortify)
+#autoplot(PCA,
+# shape = FALSE,
+# loadings = TRUE,
+# label = TRUE,
+# loadings.label = TRUE,
+# label.size = label.size)+
+# theme_bw()
+
+library(factoextra)
+
+fviz_pca_biplot(PCA,
+axes = c (1,2),
+#labelsize = label.size,
+#alpha.ind="contrib",
+col.ind = 'contrib'
+) + scale_color_gradient2(low="white",
+mid="blue",
+high="red",
+midpoint=0.4)
+```
+
+
+```{r SIDD fro different sequence types}
+#extracting one large vector
+whole_e.coli_sidd_5000_1000 <- sidd_5000_1000_df$P.x.
+
+
+#how big are the sets in nts?
+
+lowscoresidds_short <- lowscoresidds[,1:2000]
+seqtypes_sidds <- list(whole_e.coli_sidd_5000_1000, expsidds, notsidds, gensidds, islsidds, lowscoresidds_short)
+seqtypes_sidds_lengths <- sapply(seqtypes_sidds, function(x) {length(as.numeric(x))})
+par(mar = rep(2,4)); barplot(seqtypes_sidds_lengths, names.arg = c('Whole','P', 'N', 'G', 'I', 'L'))
+
+whole_sidds_maxima <- maxima_position_width(whole_e.coli_sidd_5000_1000, 0.95)
+whole_sidds_maxima_widths <- whole_sidds_maxima[[2]]-whole_sidds_maxima[[1]]
+max(whole_sidds_maxima_widths)
+boxplot(whole_sidds_maxima_widths, main = 'Whole genome: \nover 0.95 SIDD regions length')
+#for sequence types sets positions are irreleveant
+#in order to remove overlapping parts IRanges library is used
+
+
+library(IRanges)
+
+
+expIR <- reduce(IRanges(start = exptsss-750, end = exptsss+750))
+#expsidds_maxima_widths <- width(expIR)
+exp_siddsIR <- list()
+for (i in seq_along(start(expIR))){
+  exp_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(expIR)[i]:end(expIR)[i]]
+}
+max(unlist(exp_siddsIR))
+expsidds_maxima <- maxima_position_width(unlist(exp_siddsIR), 0.95)
+expsidds_maximaIR <- IRanges(start = expsidds_maxima[[1]], end = expsidds_maxima[[2]])
+
+
+nottsss_trim <- nottsss
+nottsss_trim[which(nottsss<750)] <- 750 #flanking sequences are trimed
+notIR <- reduce(IRanges(start = nottsss_trim-750, end = nottsss_trim+750))
+#notsidds_maxima_widths <- width(notIR)
+not_siddsIR <- list()
+for (i in seq_along(start(notIR))){
+  not_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(notIR)[i]:end(notIR)[i]]
+}
+max(unlist(not_siddsIR))
+notsidds_maxima <- maxima_position_width(unlist(not_siddsIR), 0.95)
+notsidds_maximaIR <- IRanges(start = notsidds_maxima[[1]], end = notsidds_maxima[[2]])
+
+
+
+
+gentsss_trim <- gentsss
+gentsss_trim[which(gentsss<750)] <- 750 #flanking sequences are trimed
+genIR <- reduce(IRanges(start = gentsss_trim-750, end = gentsss_trim+750))
+#gensidds_maxima_widths <- width(genIR)
+gen_siddsIR <- list()
+for (i in seq_along(start(genIR))){
+  gen_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(genIR)[i]:end(genIR)[i]]
+}
+max(unlist(gen_siddsIR))
+gensidds_maxima <- maxima_position_width(unlist(gen_siddsIR), 0.95)
+gensidds_maximaIR <- IRanges(start = gensidds_maxima[[1]], end = gensidds_maxima[[2]])
+
+
+isltsss_trim <- isltsss
+isltsss_trim[which(isltsss<750)] <- 750 #flanking sequences are trimed
+islIR <- reduce(IRanges(start = isltsss_trim-750, end = isltsss_trim+750))
+#islsidds_maxima_widths <- width(islIR)
+isl_siddsIR <- list()
+for (i in seq_along(start(islIR))){
+  isl_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(islIR)[i]:end(islIR)[i]]
+}
+max(unlist(isl_siddsIR))
+islsidds_maxima <- maxima_position_width(unlist(isl_siddsIR), 0.95)
+islsidds_maximaIR <- IRanges(start = islsidds_maxima[[1]], end = islsidds_maxima[[2]])
+
+
+lowscoretsss_trim <- lowscoretsss
+lowscoretsss_trim[which(lowscoretsss<750)] <- 750 #flanking sequences are trimed
+lowscoreIR <- reduce(IRanges(start = lowscoretsss_trim-750, end = lowscoretsss_trim+750))
+#lowscoresidds_maxima_widths <- width(lowscoreIR)
+lowscore_siddsIR <- list()
+for (i in seq_along(start(lowscoreIR))){
+  lowscore_siddsIR[[i]] <- whole_e.coli_sidd_5000_1000[start(lowscoreIR)[i]:end(lowscoreIR)[i]]
+}
+max(unlist(lowscore_siddsIR))
+lowscoresidds_maxima <- maxima_position_width(unlist(lowscore_siddsIR), 0.95)
+lowscoresidds_maximaIR <- IRanges(start = lowscoresidds_maxima[[1]], end = lowscoresidds_maxima[[2]])
+
+
+#unify
+
+whole_sidds_maximaIR <- IRanges(start = whole_sidds_maxima[[1]], end = whole_sidds_maxima[[2]])
+
+par(mfrow = c(1,6),
+mar= rep(2,4))
+lapply(grep('*sidds_maximaIR', ls(), value=T), function(x) {boxplot(get(x)@width, ylim = c(0,100), main = paste0(toupper(substr(x, 0,3)), ',\nover 0.95 width'))})
+
+par(mfrow = c(1,6),
+mar= rep(2,4))
+lapply(grep('*sidds_maximaIR', ls(), value=T), function(x) {barplot(length(get(x)@width)/sum(get(x)@width), ylim = c(0,0.03), main = paste0(toupper(substr(x, 0,3)), ',\nover 0.95 numbers/length'))})
+
+#molten fraction for sequnce types
+seqs_col <- c("#E41A1C", "#377EB8", "#4DAF4A", "#FF7F00", "#984EA3", "grey60")
+seqs_names <- c('Experimentally\n found\n promoters', 'Non-\npromoters', 'Genes', 'Promoter\n islands', 'Lowscore\n sequences', 'Complete\n genome')
+
+
+par(mfrow = c(1,6),
+mar= rep(1,4))
+
+L <- grep('*sidds_maximaIR', ls(), value=T)
+L_molten_fraction_seq_types <- sapply(L, function(x){length(get(x)@width)/sum(get(x)@width)})
+
+
+svg('/home/jane/Документы/Misha/mol_a_2018/mce2018_molten_regions_divided_by_length.svg', width = 5, height = 5)
+par(oma= rep(2.5,4))
+barplot(L_molten_fraction_seq_types, names.arg = seqs_names, col = seqs_col, las = 2)
+dev.off()
+
+
+```
+
+```{r Circos - genomic positions of SIDD maxima and experimental promoters, eval=FALSE}
+
+maxifind <- function(vec, max){
+  v <- vec
+  v[which(v<max)] <- 0
+  v[which(v>=max)] <- 1
+  return(v)
+}
+
+maxifind_whole_e.coli_sidd_2500_500 <- maxifind(whole_e.coli_sidd_2500_500, 0.95)
+maxifind_whole_e.coli_sidd_5000_1000 <- maxifind(whole_e.coli_sidd_5000_1000, 0.95)
+
+table(maxifind_whole_e.coli_sidd_5000_1000)
+table(maxifind_whole_e.coli_sidd_2500_500)
+
+library(circlize)
+
+#SIDD maxima and experimental TSSs do not match
+region <- 1:5000
+#plot(y = rep(0.9, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))), x = which(maxifind_whole_e.coli_sidd_2500_500 ==1),  pch = '|', col = 'red', ylim = c(0,1))
+##plot(region, type = 'n',ylim = c(0,1))
+plot(y = rep(0.7, length(which(maxifind_whole_e.coli_sidd_5000_1000 ==1)))[region], x = which(maxifind_whole_e.coli_sidd_5000_1000 ==1)[region],  pch = '|', col = 'red')
+points(y = rep(0.65, length(exptsss))[region], x = exptsss[region],  pch = '|', col = 'darkblue')
+
+
+#Create data
+data = data.frame(
+    factor = c(rep('a', length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+              # rep(2, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+               rep('c', length(which(maxifind_whole_e.coli_sidd_5000_1000 ==1)))),
+    x = c(which(maxifind_whole_e.coli_sidd_2500_500 ==1),
+        #  which(maxifind_whole_e.coli_sidd_2500_500 ==1),
+          which(maxifind_whole_e.coli_sidd_5000_1000 ==1)),
+    y = c(rep(0.9, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+              # rep(2, length(which(maxifind_whole_e.coli_sidd_2500_500 ==1))),
+               rep(0.7, length(which(maxifind_whole_e.coli_sidd_5000_1000 ==1))))
+    )
+# custom general parameters:
+par(mar = c(1, 1, 1, 1), bg=rgb(0.4,0.1,0.7,0.05) ) 
+circos.par("track.height" = 0.6)
+ 
+#Now we can initialize the chart. Note that sector.width can be used to custom the size of each sector.
+
+# Step1: Initialize
+circos.initialize(factors = data$factor, x = data$x)
+circos.trackPlotRegion(y = NULL)
+circos.trackPlotRegion(factors = data$factor, y = data$y, panel.fun = function(x, y) {
+    circos.axis(
+        h="top",                   # x axis on the inner or outer part of the track?
+        labels=TRUE,               # show the labels of the axis?
+        major.tick=TRUE,           # show ticks?
+        labels.cex=0.5,            # labels size (higher=bigger)
+        labels.font=1,             # labels font (1, 2, 3 , 4)
+        direction="outside",       # ticks point to the outside or inside of the circle ?
+        minor.ticks=4,             # Number of minor (=small) ticks
+        major.tick.percentage=0.1, # The size of the ticks in percentage of the track height
+        lwd=2                      # thickness of ticks and x axis.
+        )
+    })
+ 
+
+#The last step fills the region with the chart. You can use all the tradiationnal parameters such as pch, cex, col…
+
+# Step 3: Add points
+circos.trackPoints(data$factor, data$x, data$y, col = "blue", pch = 1, cex = 0.5)
+```
+
+```{r Sequence of precise region of SIDD over 0.95}
+
+over95_positions <- which(sidd_5000_1000_df$P.x.>0.95)
+over95_precise_sequences <- as.character(sidd_5000_1000_df$Nucleotide[which(sidd_5000_1000_df$P.x.>0.95)])
+
+
+#oligos occurences
+
+library(Biostrings)
+
+#better way to find oligos frequnces with biostrigs
+all_seqs_oligos_freq <- c()
+for (i in list(paste0(over95_precise_sequences, collapse = '')[[1]], e.coli_U00096.2)){
+print(length(i))
+tmp <- DNAString(paste0(unlist(i), collapse = ''))
+
+#tmp_StringSet <- DNAStringSet(sapply(t(tmp), function(x) {paste0(x, collapse = '')}))
+
+all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp, 6, as.prob = T))
+}
+
+colnames(all_seqs_oligos_freq) <- c('Precise max SIDD','genome')
+View(all_seqs_oligos_freq)
+#phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
+
+par(mfrow = c(2,1))
+ylim = range(all_seqs_oligos_freq)
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
+}
+
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
+#library(factoextra)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+
+
+
+library(factoextra)
+label.size <- 1.7
+
+fviz_pca_biplot(PCA,
+axes = c (1,2),
+#labelsize = label.size,
+#alpha.ind="contrib",
+col.ind = 'contrib'
+) + scale_color_gradient2(low="white",
+mid="blue",
+high="red",
+midpoint=0.4)
+
+library(ape)
+GC.content(as.DNAbin(over95_precise_sequences))
+
+```
+
+```{r Does sequence type and genome-wide SIDD maxima overlap?, eval=FALSE}
+
+
+maxima_edges <- which(diff(over95_positions)!=1)
+maxima_left_edges <- over95_positions[seq(1, to = length(maxima_edges), 2)]
+maxima_right_edges <- maxima_edges[seq(2, to = length(maxima_edges), 2)]
+
+plot(sidd_5000_1000_df$Position, type = 'n', ylim = c(0,1))
+abline(v = over95_positions, col = 'red')
+abline(v = maxima_right_edges, col = 'red')
+
+#maxima themselves + 1500 nts context
+genome_maxima_edgesIR <- IRanges(start = maxima_left_edges-750, end = maxima_right_edges+750)
+
+
+df_all_IRs <- as.data.frame(matrix(NA, ncol = 6, nrow = 6))
+colnames(df_all_IRs) <- c('expIR', 'notIR', 'genIR', 'islIR', 'lowscoreIR', 'genome_maxima_edgesIR')-> rownames(df_all_IRs)
+for (i in c('expIR', 'notIR', 'genIR', 'islIR', 'lowscoreIR', 'genome_maxima_edgesIR')){
+  for (j in c('expIR', 'notIR', 'genIR', 'islIR', 'lowscoreIR', 'genome_maxima_edgesIR')){
+
+  df_all_IRs[i,j] <- (length(queryHits(findOverlaps(get(i), get(j)))))
+  }
+}
+
+plot(df_all_IRs)
+```
+
+
+```{r Comparinf SID vectors for differnet window (new fixed ones)}
+
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_5000_1000_list_whole_e.coli.rda')
+load('/home/jane/Документы/Misha/mol_a_2018/sidd_7500_1000_list.rda')
+
+
+sidd_5000_1000_df <- c()
+for (i in sidd_5000_1000_list) {
+  #if (nrow(i)<5000) {sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i)
+  #} else if (nrow(i)==5000) {
+    sidd_5000_1000_df <- rbind(sidd_5000_1000_df, i[-c(4001:5000), ])
+}
+
+
+str(sidd_5000_1000_df)
+
+#pulling out all 1-6500 nts from the raw data (6501-7500 nts are omitted)
+length(which(sidd_7500_1000_list$Position<6501))
+
+sidd_7500_1000_df <- sidd_7500_1000_list[which(sidd_7500_1000_list$Position<6501),]
+str(sidd_7500_1000_df)
+
+
+#comparing sid-by-side
+
+interv <- 1:100000
+
+
+
+plot(interv, sidd_5000_1000_df$G.x.[interv], type = 'l')
+plot(interv, sidd_7500_1000_df$G.x.[interv], type = 'l')
+
+
+
+#most deviating points
+
+subtracted <- sidd_5000_1000_df$P.x.-sidd_7500_1000_df$P.x.
+
+par(mfrow = c(3,1))
+plot(interv, sidd_5000_1000_df$P.x.[interv], type = 'l', ylim = c(0,1))
+abline(v = exptsss, col = 'red')
+plot(interv, sidd_7500_1000_df$P.x.[interv], type = 'l', ylim = c(0,1))
+abline(v = exptsss, col = 'red')
+plot(interv, subtracted[interv], type = 'l', ylim = c(-1,1))
+abline(v = exptsss, col = 'red')
+
+
+
+over095_sidd_5000_1000 <- maxifind(sidd_5000_1000_df$P.x., 0.95)
+over095_sidd_7500_1000 <- maxifind(sidd_7500_1000_df$P.x., 0.95)
+
+table(over095_sidd_5000_1000)
+table(over095_sidd_7500_1000)
+
+
+interv <- 1:1e6
+plot(interv, type ='n', ylim = c(0,1))
+points(y = rep(0.9, length(which(over095_sidd_5000_1000 ==1)))[interv], x = which(over095_sidd_5000_1000 ==1)[interv],  pch = '|', col = 'red', ylim = c(0,1))
+points(y = rep(0.7, length(which(over095_sidd_7500_1000 ==1))), x = which(over095_sidd_7500_1000 ==1),  pch = '|', col = 'red')
+points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
+
+
+#take a closer look at most deviating points
+
+over095_sidd_subtracted <- maxifind(abs(subtracted), 0.95)
+
+
+# approximate regions where deviation is maximal
+tmp <- which(over095_sidd_subtracted ==1)
+deviations <- tmp[which(diff(tmp)!=1)]
+
+
+
+
+
+interv <- (deviations[1]-5000):(deviations[1]+5000)
+
+par(mfrow = c(3,1))
+plot(interv, sidd_5000_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_5000_1000_df$Position==4000)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, sidd_7500_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_7500_1000_df$Position==6500)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, subtracted[interv], type = 'l', ylim = c(-1,1))
+abline(v = exptsss, col = 'darkgreen')
+points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
+
+
+interv <- (deviations[19]-5000):(deviations[19]+5000)
+
+par(mfrow = c(3,1))
+plot(interv, sidd_5000_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_5000_1000_df$Position==4000)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, sidd_7500_1000_df$P.x.[interv], type ='l', col = 'red', ylim = c(0,1))
+abline(v = which(sidd_7500_1000_df$Position==6500)-min(interv), lty = 2)#to plot cutlines taking into account the shift
+plot(interv, subtracted[interv], type = 'l', ylim = c(-1,1))
+abline(v = exptsss, col = 'darkgreen')
+points(y = rep(0.5, length(exptsss)), x = exptsss,  pch = '|', col = 'darkblue')
+
+
+```
+
+```{r Once again cluster analysis for experimental promoter SIDD data}
+library(fastcluster)
+ward_expsidds <- hclust.vector(t(expsidds), method = 'ward')
+plot(ward_expsidds)
+cut_ward_expsidds <- cutree(ward_expsidds, k = 4) #esteblished previosly
+table(cut_ward_expsidds)
+
+
+for (i in unique(cut_ward_expsidds)) {
+  assign(paste0('ecoli_clust', i),
+         colnames(expsidds)[which(cut_ward_expsidds ==i)])
+}
+
+
+#cuplcl way
+
+
+#reading in transription units data
+
+TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
+
+#promoters to genes
+
+genes_from_promoters_list <- c()
+for (i in seq_along(colnames(expsidds))){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == colnames(expsidds)[i])])
+  if(length(tmp) ==0) {tmp <- NA}
+  tmp <- paste0(tmp, collapse = ',')
+  genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
+}
+
+#clusters of genes
+for (i in unique(cut_ward_expsidds)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_expsidds == i)], collapse = ','), split = ',')[[1]]
+  if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
+  assign(paste0('genes_clust', i), unique(genes_clust_tmp))
+}
+
+
+```
+```{r Data for GO, eval=FALSE }
+
+library(org.EcK12.eg.db)
+
+#not found in regulon TUset
+  absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
+
+  
+Entrezid <- c()
+group <- c()
+
+LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
+names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
+for ( i in  seq_along(LIST)) {
+  if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
+    tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
+  }
+  Entrezid <- c(Entrezid, unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))
+  group <- c(group,  rep(i, length(unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))))
+ # dfGO <- rbind(dfGO, cbind(Entrezid, group))
+}
+
+dfGO <- data.frame(Entrezid = Entrezid, group = group)
+                   
+                   
+#colnames(dfGO) <- c('Entrezids', 'group')
+save(dfGO, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
+
+
+genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='groupGO', OrgDb='org.EcK12.eg.db')
+genes_formula@compareClusterResult
+
+```
+
+
+```{r GO enrichment using clusterProfiler, eval=FALSE}
+library(clusterProfiler)
+library(org.EcK12.eg.db)
+load('/home/jane/Документы/Misha/mol_a_2018/mydf_genes_100_promoters_each_group_for_go_analysis.rda')
+
+genes <- as.character(mydf_genes$Entrez)
+genes_no_insD_gadF<- genes[-which(genes %in% c("gadF",'insD'))] 
+
+newdf_genes<- mydf_genes[-which(mydf_genes$Entrez %in% c("gadF",'insD')),] 
+
+newdf_genes$Entrez <- unlist(mget(x= as.character(newdf_genes$Entrez), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG))
+group<- as.character(newdf_genes$group)
+Entrez <- unlist(mget(x= as.character(newdf_genes$Entrez), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG))
+newdf <- cbind(Entrez, group)
+
+  
+
+random_df <- as.data.frame(cbind(group = group[1:100], Entrez = Entrez[1:100]))
+rownames(random_df) <- seq_along(rownames(random_df))
+genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='enrichGO', OrgDb='org.EcK12.eg.db')
+
+
+View(genes_formula@compareClusterResult[,1:7])
+
+for (i in unique(dfGO$group)){
+  tmp <- enrichGO(dfGO$Entrezid[which(dfGO$group == '1')], 'org.EcK12.eg.db', ont="BP", pvalueCutoff=0.01)
+  tmp <- summary(tmp)
+  tmp <- cbind(rep(i, ncol(tmp)), tmp)
+  assign(paste0('enrichGO_output_cluster_', i), tmp)
+}
+
+
+enrichGO_heads_summary <- rbind((summary(enrichGO_output_cluster_1)),
+      (summary(enrichGO_output_cluster_2)),
+(summary(enrichGO_output_cluster_3)),
+      (summary(enrichGO_output_cluster_4)))
+
+View(enrichGO_heads_summary)
+
+#different function 
+```
+
+
+```{r Fixing WHOLE promoter set for e.coli uncluding non-experimentally found promoters}
+load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+
+
+all_names<- names(dataset_pro)
+
+all_tsss <- sapply(dataset_pro, FUN = function(x) {x$tss})
+all_strands <- sapply(dataset_pro, FUN = function(x) {x$strand})
+all_evidence <- sapply(dataset_pro, FUN = function(x) {x$evidence})
+
+
+# Changing genomic coordinate used for dataset_pro- TSS is according to 5'-end for both strands 
+
+
+all_tsss[which(all_strands=='reverse')]<-nchar(e.coli_U00096.2)-all_tsss[which(all_strands=='reverse')]
+
+
+new_df_all_proms <- as.data.frame(cbind(all_names, all_tsss, all_strands, all_evidence), row.names = seq_along(all_names))
+colnames(new_df_all_proms) <- c('Name', 'TSS', 'Strand', 'Evidence')
+
+save(new_df_all_proms, file = '/home/jane/Документы/Misha/new_df_all_proms_regulon_8_5.rda')
+
+```
+
+```{r E. coli SIDD-based promoter clusters comparison}
+exptsss[which(cut_ward_expsidds==2)]
+exptsss[which(cut_ward_expsidds==3)]
+exptsss[which(cut_ward_expsidds==4)]
+
+expstrands[which(cut_ward_expsidds==2)]
+expstrands[which(cut_ward_expsidds==3)]
+expstrands[which(cut_ward_expsidds==4)]
+
+#rep_origin for the accesion
+
+rep_origin <- c(3923767, 3923998)
+rep_terminus <- c(1607181, 1607203)
+#no strand differentiation
+layout(matrix(c(1,2,1,3,1,4), ncol=3))
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+
+abline(v = exptsss[which(cut_ward_expsidds==2)], col = 'darkred')
+abline(v = exptsss[which(cut_ward_expsidds==3)], col = 'darkgreen')
+abline(v = exptsss[which(cut_ward_expsidds==4)], col = 'darkblue')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
+`Sequence` <- -750:750
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==2)], type = 'l', col = 'darkred', main = 'Cluster 2', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==3)], type = 'l', col = 'darkgreen', main = 'Cluster 3', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==4)], type = 'l', col = 'darkblue', main = 'Cluster 4', ylab = '')
+
+# strand differentiation
+table(expstrands[which(cut_ward_expsidds==2)])
+table(expstrands[which(cut_ward_expsidds==3)])
+table(expstrands[which(cut_ward_expsidds==4)])
+
+which.quadrant <- function(tss, strand){
+  tmp_rep <- ifelse(tss %in% min(rep_terminus):max(rep_origin), 'between OriC and terC', 'outside OriC and terC region')
+  tmp_strand <- ifelse(strand == 'forward', 'forward', 'reverse')
+  
+  return(paste0(tmp_rep, ', ', tmp_strand))
+}
+
+quadrants_2_cluster <- c()
+for (i in which(cut_ward_expsidds==2)){
+  tmp <-   which.quadrant(tss = exptsss[i], strand = expstrands[i])
+  quadrants_2_cluster <- c(quadrants_2_cluster, tmp)
+}
+
+table(quadrants_2_cluster)
+
+
+quadrants_3_cluster <- c()
+for (i in which(cut_ward_expsidds==3)){
+  tmp <-   which.quadrant(tss = exptsss[i], strand = expstrands[i])
+  quadrants_3_cluster <- c(quadrants_3_cluster, tmp)
+}
+
+table(quadrants_3_cluster)
+
+
+quadrants_4_cluster <- c()
+for (i in which(cut_ward_expsidds==4)){
+  tmp <-   which.quadrant(tss = exptsss[i], strand = expstrands[i])
+  quadrants_4_cluster <- c(quadrants_4_cluster, tmp)
+}
+
+table(quadrants_4_cluster)
+
+View(rbind(table(quadrants_2_cluster), table(quadrants_3_cluster), table(quadrants_4_cluster)))
+
+
+
+# #svg('/home/jane/Документы/Misha/mol_a_2018/masterplot_compact_sidd_cluster_location_quadrants.svg', height = 10, width = 10)
+#masterplot
+layout(matrix(c(1,2,5,1,3,5,1,4,5), ncol=3))
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+
+lwd = 0.1
+abline(v = exptsss[which(cut_ward_expsidds==2)], col = 'darkred', lwd = lwd)
+abline(v = exptsss[which(cut_ward_expsidds==3)], col = 'darkgreen', lwd = lwd)
+abline(v = exptsss[which(cut_ward_expsidds==4)], col = 'darkblue', lwd = lwd)
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
+`Sequence` <- -750:750
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==2)], type = 'l', col = 'darkred', main = 'Cluster 2', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==3)], type = 'l', col = 'darkgreen', main = 'Cluster 3', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==4)], type = 'l', col = 'darkblue', main = 'Cluster 4', ylab = '')
+
+cex = 2
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+text(paste(table(quadrants_2_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = 0.5, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = 0.5, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = 0.25, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = 0.25, col = 'darkred', cex = cex)
+
+
+text(paste(table(quadrants_3_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = 0, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = -0.25, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = 0, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = -0.25, col = 'darkgreen', cex = cex)
+
+text(paste(table(quadrants_4_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = -0.5, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = -0.75, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = -0.5, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = -0.75, col = 'darkblue', cex = cex)
+# #dev.off()
+
+#same but cluster abline on distinct plots
+
+# #svg('/home/jane/Документы/Misha/mol_a_2018/masterplot_compact_sidd_cluster_location_quadrants.svg', height = 10, width = 10)
+#masterplot
+layout((matrix( c(1,2,3,4,7,1,2,3,5,7,1,2,3,6,7), ncol=3)))
+par(mar = rep(0.7,4))
+
+lwd = 1
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+abline(v = exptsss[which(cut_ward_expsidds==2)], col = 'darkred', lwd = lwd)
+abline(v = c(mean(rep_origin), mean(rep_terminus)), col = 'black', lwd = 2)
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+abline(v = exptsss[which(cut_ward_expsidds==3)], col = 'darkgreen', lwd = lwd)
+abline(v = c(mean(rep_origin), mean(rep_terminus)), col = 'black', lwd = 2)
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+abline(v = exptsss[which(cut_ward_expsidds==4)], col = 'darkblue', lwd = lwd)
+
+abline(v = c(mean(rep_origin), mean(rep_terminus)), col = 'black', lwd = 2)
+
+
+`Sequence` <- -750:750
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==2)], type = 'l', col = 'darkred', main = 'Cluster 2', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==3)], type = 'l', col = 'darkgreen', main = 'Cluster 3', ylab = '')
+matplot(`Sequence`, expsidds[,which(cut_ward_expsidds==4)], type = 'l', col = 'darkblue', main = 'Cluster 4', ylab = '')
+
+cex = 2
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1), main = 'Compact clusters TSS and OriC/terC location ', yaxt = 'n', ylab = '', xlab = 'Genome (nts)')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+text(paste(table(quadrants_2_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = 0.5, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = 0.5, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = 0.25, col = 'darkred', cex = cex)
+text(paste(table(quadrants_2_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = 0.25, col = 'darkred', cex = cex)
+
+
+text(paste(table(quadrants_3_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = 0, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = -0.25, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = 0, col = 'darkgreen', cex = cex)
+text(paste(table(quadrants_3_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = -0.25, col = 'darkgreen', cex = cex)
+
+text(paste(table(quadrants_4_cluster)[1], '\u2192'), x =  rep_terminus+1e6, y = -0.5, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[2], '\u2190'), x =  rep_terminus-1e6, y = -0.75, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[3], '\u2192'), x =  rep_terminus-1e6, y = -0.5, col = 'darkblue', cex = cex)
+text(paste(table(quadrants_4_cluster)[4], '\u2190'), x =  rep_terminus+1e6, y = -0.75, col = 'darkblue', cex = cex)
+# #dev.off()
+
+
+
+par(mfrow = c(2,1))
+
+plot(1:nchar(e.coli_U00096.2), type = 'n', ylim = c(-1,1))
+
+which.forward <- which(expstrands == 'forward')
+abline(v = exptsss[intersect(which(cut_ward_expsidds==2), which.forward)], col = 'darkred')
+abline(v = exptsss[intersect(which(cut_ward_expsidds==3), which.forward)], col = 'darkgreen')
+abline(v = exptsss[intersect(which(cut_ward_expsidds==4), which.forward)], col = 'darkblue')
+abline(v = rep_origin, col = 'black', lwd = 4)
+
+#whether the clusters TSS are located closely
+which(diff(c(0, sort(exptsss[which(cut_ward_expsidds==2)])))<250)
+which(diff(c(0, sort(exptsss[which(cut_ward_expsidds==3)])))<250)
+which(diff(c(0, sort(exptsss[which(cut_ward_expsidds==4)])))<250)
+
+#whether these TSSs are located nearly any other TSS
+
+
+for (k in unique(cut_ward_expsidds)){
+  tmp <- c()
+  for (i in exptsss[which(cut_ward_expsidds == k)]){
+    
+  tmp <- c(tmp, min(abs(exptsss[which(cut_ward_expsidds != k)] - i)))
+  
+   assign(paste0('min_to_any_tss_', k,'_clust'), tmp)
+  }
+}
+
+
+par(mfrow = c (1,4))
+ylim <- c(0, 3e4)
+boxplot(min_to_any_tss_1_clust, ylim = ylim)
+boxplot(min_to_any_tss_2_clust, ylim = ylim)
+boxplot(min_to_any_tss_3_clust, ylim = ylim)
+boxplot(min_to_any_tss_4_clust, ylim = ylim)
+
+
+#cluster 2 tss coincide with downstream tsss?
+
+interval_to_downstream_tss_2_clust <- c()
+for (i in exptsss[which(cut_ward_expsidds==2)] ) {
+  tmp <- (min(abs( exptsss[which(cut_ward_expsidds!=2)] - i)))
+  interval_to_downstream_tss_2_clust <- c(interval_to_downstream_tss_2_clust, tmp)
+}
+
+#finding overlaps between 2, 3, 4 clusters and the rest four clusters 
+
+svg('/home/jane/Документы/Misha/mol_a_2018/sidd_clusters_fraction_overlapping_other_clusters.svg', height = 10, width = 10)
+ par(mfrow = c(2,3),
+      mar = rep(0.9,4))
+ 
+for (interv in seq(250, 1500, by = 250)) {
+#interv <- 250
+ 
+
+for (i in 2:4) {
+  
+  tmp_cluster_tsss <- exptsss[which(cut_ward_expsidds==i)]
+  not_tmp_cluster_tsss <- setdiff(exptsss, tmp_cluster_tsss)
+  clust_tmpIR <- IRanges(start = tmp_cluster_tsss-interv, end =  tmp_cluster_tsss+interv )
+  clust_not_tmpR <- IRanges(start = not_tmp_cluster_tsss-interv, end =  not_tmp_cluster_tsss+interv )
+  
+  assign(paste0('clust', i, 'overlaps_with_three_others'),  findOverlaps(clust_tmpIR, clust_not_tmpR))
+}
+#ratio1clust <- length(queryHits(clust1overlaps_with_three_others))/queryLength(clust1overlaps_with_three_others)#macthes occasionally!
+ratio2clust <- length(queryHits(clust2overlaps_with_three_others))/queryLength(clust2overlaps_with_three_others)#macthes occasionally!
+ratio3clust <- length(queryHits(clust3overlaps_with_three_others))/queryLength(clust3overlaps_with_three_others)
+ratio4clust <- length(queryHits(clust4overlaps_with_three_others))/queryLength(clust4overlaps_with_three_others)
+
+
+
+#is there a nucleotide composition difference among the clusters?
+barplot(c(ratio2clust, ratio3clust, ratio4clust), main = paste0('How many promoter of a cluster overlap promoters of others?\n interval ', interv), col = c('darkred', 'darkgreen', 'darkblue'), ylim = c(0,1))
+}
+dev.off()
+
+#large cluster 1
+
+interv <- 500
+exptsssIR <- IRanges(start = exptsss-interv, end = exptsss+interv)
+reduced_exptsssIR <- reduce(exptsssIR)
+
+exptsss_no_overlaps <- setdiff(exptsssIR@start, reduced_exptsssIR@start)+interv #not reduced and do not overlap others
+
+exptsss_1_overlap <- exptsss[which(reduced_exptsssIR@width>1501)] #2 ranges are merged
+exptsss_2_overlaps <-exptsss[which(reduced_exptsssIR@width>3002)] #3 ranges are merged
+
+intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==1)])
+intersect(exptsss_2_overlaps, exptsss[which(cut_ward_expsidds==1)])
+
+
+intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==2)])
+intersect(exptsss_2_overlaps, exptsss[which(cut_ward_expsidds==2)])
+
+intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==3)])
+intersect(exptsss_2_overlaps, exptsss[which(cut_ward_expsidds==3)])
+
+intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==4)])
+intersect(exptsss_2_overlaps, exptsss[which(cut_ward_expsidds==4)])
+
+length(intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==1)]))/length(which(cut_ward_expsidds==1))
+length(intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==2)]))/length(which(cut_ward_expsidds==2))
+length(intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==3)]))/length(which(cut_ward_expsidds==3))
+length(intersect(exptsss_1_overlap, exptsss[which(cut_ward_expsidds==4)]))/length(which(cut_ward_expsidds==4))
+
+par(mfrow = c(3,1))
+plot(sidd_5000_1000_df$Position, type = 'n')
+abline(v = exptsss[which(cut_ward_expsidds==2)], col = 'darkred')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(sidd_5000_1000_df$Position, type = 'n')
+abline(v = exptsss[which(cut_ward_expsidds==3)], col = 'darkgreen')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(sidd_5000_1000_df$Position, type = 'n')
+abline(v = exptsss[which(cut_ward_expsidds==4)], col = 'darkblue')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+#cluster 2 tsss - closest downstream tsss
+
+
+```
+
+```{r SIDD clusterization for Synechocystis}
+
+library(ape)
+synechocystis_NC_000911.1 <- toupper(paste0(read.GenBank(access.nb = 'NC_000911.1', as.character = T)$NC_000911.1, collapse = ''))
+sidd_synechocystis_1500nts <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv')
+
+synechocystis_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/synechocystis_proms_datasets_1015154108_sd01.csv', skip = 14, header = T)
+
+
+
+
+```
+
+
+```{r SIDD globally in respect to oric and terc}
+
+library(zoo)
+roll10000sum_sidd_5000_1000 <- rollapply(sidd_5000_1000_df$P.x., 10000, sum)
+roll10000_10000sum_sidd_5000_1000 <- rollapply(roll10000sum_sidd_5000_1000, 10000, sum)
+
+plot(roll10000sum_sidd_5000_1000, type = 'l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(roll10000_10000sum_sidd_5000_1000, type = 'l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
+slice <- function(input, by=2){ 
+  starts <- seq(1,length(input),by)
+  tt <- lapply(starts, function(y) input[y:(y+(by-1))])
+  lapply(tt, function(x) x[!is.na(x)])
+}
+
+sliced_sidd_5000_1000 <- slice(sidd_5000_1000_df$P.x., by = 10e4)
+
+
+#lapply(sliced_sidd_5000_1000, mean)
+
+###plot(sliced_sidd_5000_1000[[1]], type = 'l')
+###abline(h = mean(sliced_sidd_5000_1000[[1]]), col = 'blue', lwd = 3)
+#abline(h = median(sliced_sidd_5000_1000[[1]]), col = 'red', lwd = 3)
+
+
+#genome-wide SIDD vector sliced into junks 250000 nts
+teethed_sum_sliced_sidd_5000_1000 <- sapply(sliced_sidd_5000_1000, function(x) {rep(sum(x), length(x))} )
+teethed_mean_sliced_sidd_5000_1000 <- sapply(sliced_sidd_5000_1000, function(x) {rep(mean(x), length(x))} )
+teethed_median_sliced_sidd_5000_1000 <- sapply(sliced_sidd_5000_1000, function(x) {rep(median(x), length(x))} )
+
+par(mfrow = c (3,1))
+
+plot(unlist(teethed_sum_sliced_sidd_5000_1000), type ='l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(unlist(teethed_mean_sliced_sidd_5000_1000), type ='l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+plot(unlist(teethed_median_sliced_sidd_5000_1000), type ='l')
+abline(v = c(rep_origin, rep_terminus), col = 'black', lwd = 4)
+
+
+```
+
+```{r Predicted promoters on 1 - 250000 nts}
+
+load('/home/jane/Документы/Misha/mol_a_2018/test_result.Rdata')
+
+which.expforward <- which(expstrands == 'forward')
+which.allproforward <- which(allprostrands == 'forward')
+
+plot(predictions_list$Promoter, type ='l')
+abline(v = exptsss[which.expforward], col = 'red')
+abline(v = allprotsss[which.allproforward], col = 'blue')
+
+length(exptsss[which.forward])
+
+#complete forward strand result
+library(gtools)
+dir_predictions <- mixedsort(dir('/home/jane/Документы/Misha/mol_a_2018/predictions/'))
+
+forward_strand_all_predictions <- c()
+for (i in dir_predictions) {
+  
+ tmp <- get(load(paste0('/home/jane/Документы/Misha/mol_a_2018/predictions/', i)))
+   forward_strand_all_predictions <- c(forward_strand_all_predictions, tmp$Promoter)
+}
+
+summary(forward_strand_all_predictions)
+
+which_over095 <- which(forward_strand_all_predictions > 0.99)
+
+
+#constructing iranges, left flank is expanded by 200 nts
+
+library(IRanges)
+
+which.forward <- which(expstrands == 'forward')
+
+
+seq_margs <- seq(100, 500, 100)
+seq_cutoff <- c(0.75, 0.85, 0.95, 0.99)
+
+df <- as.data.frame(matrix(NA, length(seq_margs), length(seq_cutoff )))
+
+colnames(df) <- seq_cutoff
+rownames(df) <- seq_margs
+
+df1 <- df
+
+for (marg in seq_along(seq_margs)) {
+  for (i in seq_along(seq_cutoff)){
+#marg <- 100
+    tmp_which_over_i <- which(forward_strand_all_predictions > seq_cutoff[i])
+    expIR <- reduce(IRanges(start = exptsss[which.forward]-seq_margs[marg], end = exptsss[which.forward]+seq_margs[marg]))
+
+    tmp <- reduce(IRanges(start = tmp_which_over_i+200-seq_margs [marg], end = tmp_which_over_i+200+seq_margs[marg] ))
+    assign(paste0('over', seq_cutoff[i], 'IR'), tmp)
+    tmp2 <- findOverlaps(tmp, expIR)
+    tmp3 <- length(queryHits(tmp2))/queryLength(tmp2)
+    
+    df[marg, i] <- tmp3
+    
+    tmp4 <- paste(length(queryHits(tmp2)), '/', queryLength(tmp2))
+    
+    df1[marg, i] <- tmp4
+  }
+}
+
+df # fraction of hits in a query
+df1 #absolute values
+findOverlaps(over095IR, expIR)
+findOverlaps(expIR, over095IR)
+
+#genome portion covered with high scoring sequnces
+sum(over095IR@width) / nchar(e.coli_U00096.2)
+
+#genome portion covered with experimental promoters
+sum(expIR@width) / nchar(e.coli_U00096.2)
+
+#eyeball it
+
+par(mfrow = c(2,1))
+
+plot(forward_strand_all_predictions, type = 'n')
+abline(v = which_over095+200, col = 'darkblue')
+plot(forward_strand_all_predictions, type = 'n')
+abline(v = exptsss, col = 'darkred')
+
+
+```
+
+
+```{r unimodality test}
+
+
+expsidds_sums <- apply(expsidds, MARGIN = 2, sum)
+expsidds_means <- apply(expsidds, MARGIN = 2, mean)
+
+
+plot(hist(expsidds_sums))
+#bimodality check for different intervals
+
+svg('/home/jane/Документы/Misha/mol_a_2018/bimodality_on_auc_sidds_699-exp_proms.svg', height = 9, width = 15)
+par(mfrow = c (4,4),
+    mar = rep(1.75,4),
+    oma = rep(1.75,4))
+for (i in seq(100, 750, by = 50)) {
+  tmp_dataset <- expsidds[(750 - i):(750 + i),]
+  tmp_expsidds_sums <- apply(tmp_dataset, MARGIN = 2, sum)
+  plot(density(tmp_expsidds_sums), main = paste('Interval of', 2*i, 'nts'))
+  
+   mtext(text = paste('Dip test', round(dip.test(x = tmp_expsidds_sums, B = 2000 )$p.value, digits = 7)), col = 'darkred', line = 9)
+}
+dev.off()
+
+plot(density(expsidds_sums))
+plot(density(expsidds_means))
+
+library(diptest)
+diptest::dip.test(x = expsidds_sums, B = 2000 )
+diptest::dip.test(x = expsidds_means, B = 2000 )
+```
+
+```{r cuplcl}
+#function to cut heirarchical clusterization results at given clusters numer and plot all pfrofiles from each
+data = t(expsidds)
+method = 'ward'
+k = 4
+
+
+library(fastcluster)
+library(dendextend)
+hclust <- hclust.vector(data, method = method)
+cut_hclust<-cutree(hclust, k=k)
+m <- rbind(rep(1, k), c(2:(k+1)))
+layout(m)
+par(mar = c(1, 1, 2, 1),
+    oma = rep(1.5,4))
+
+dend <- color_branches(as.dendrogram(hclust), col = c('black','darkred','darkblue','darkgreen','gold')[cut_hclust[order.dendrogram(as.dendrogram(hclust))]])
+plot(dend%>%set('labels_cex', NA), main = 'SIDD profiles Ward clusterization', cex.main = 2)
+
+`Sequence (nts)` <- -750:750
+for (i in unique(cut_hclust[order.dendrogram(as.dendrogram(hclust))])) {
+matplot(`Sequence (nts)`, t(data[which(cut_hclust==i),]), type='l', col=c('black','darkred','darkblue','darkgreen','gold')[i], main = i)
+  abline(v = 0, lty =2, lwd =2 )
+
+print(c(i, names(which(cut_hclust==i))))
+}
+
+
+```
+
+
+```{r Whether small clusters TSS overlap?}
+
+interv <- 800
+
+
+exptsss1clust <- exptsss[which(cut_ward_expsidds == 1)]
+exptsss1clustIR <- IRanges(start = exptsss1clust-interv, end = exptsss1clust+interv)
+
+exptsss2clust <- exptsss[which(cut_ward_expsidds == 2)]
+exptsss2clustIR <- IRanges(start = exptsss2clust-interv, end = exptsss2clust+interv)
+
+exptsss3clust <- exptsss[which(cut_ward_expsidds == 3)]
+exptsss3clustIR <- IRanges(start = exptsss3clust-interv, end = exptsss3clust+interv)
+
+exptsss4clust <- exptsss[which(cut_ward_expsidds == 4)]
+exptsss4clustIR <- IRanges(start = exptsss4clust-interv, end = exptsss4clust+interv)
+
+
+ov2_3 <- findOverlaps(exptsss2clustIR, exptsss3clustIR)
+findOverlaps(exptsss2clustIR, exptsss4clustIR)
+findOverlaps(exptsss3clustIR, exptsss4clustIR)
+findOverlaps(exptsss4clustIR, exptsss2clustIR)
+
+findOverlaps(exptsss2clustIR, exptsss1clustIR)
+findOverlaps(exptsss3clustIR, exptsss1clustIR)
+findOverlaps(exptsss4clustIR, exptsss1clustIR)
+
+#cluster 2 and 3 share common intervals, their positions
+
+queryHits_ov2_3 <- exptsss[queryHits(ov2_3)]
+
+subjectHits_ov2_3 <- exptsss[subjectHits(ov2_3)]
+
+par(mfrow= c(2,1))
+plot(forward_strand_all_predictions, type = 'n')
+abline(v = queryHits_ov2_3, col = 'darkblue')
+plot(forward_strand_all_predictions, type = 'n')
+abline(v = subjectHits_ov2_3, col = 'darkred')
+
+
+```
+
