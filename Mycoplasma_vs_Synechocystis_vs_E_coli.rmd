@@ -472,7 +472,7 @@ synechocystis_EP<-rbind(synechocystis_EPforward, t(apply(synechocystis_EPreverse
 
 
 
-```{r  Reading in M. gallisepticum strain S6 genome (CP006916.3 assembly) }
+```{r  Reading in M. gallisepticum strain S6 genome (CP006916.3 assembly) 1}
 
 mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/mycoplasma_gallisepticum_fisunov_2016.csv', header = T)
 
