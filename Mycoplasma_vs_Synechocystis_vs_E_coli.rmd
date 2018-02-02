@@ -130,13 +130,15 @@ return(dynchars_return)
 ```
 
 ```{r Overall characteristics for three bacteria, cache=TRUE}
-whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = 100)
+
+interval_size <- 100
+whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = interval_size)
 whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref =  1)
 
-whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = 200)
+whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = interval_size)
 whole_synechocystis_EP <- lseqspline1D(synechocystis_NC_000911.1, bound = c(1, nchar(synechocystis_NC_000911.1)), width = 1, ref =  1)
 
-whole_mycoplasma_dynchars<- dynchars(mycoplasma_CP006916.3_char, interval_size = 200)
+whole_mycoplasma_dynchars<- dynchars(mycoplasma_CP006916.3_char, interval_size = interval_size)
 whole_mycoplasma_EP <- lseqspline1D(mycoplasma_CP006916.3, bound = c(1, nchar(mycoplasma_CP006916.3)), width = 1, ref =  1)
 
 par(mfrow = c(3,4))
