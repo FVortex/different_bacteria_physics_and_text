@@ -1168,10 +1168,11 @@ group <- c()
 
 LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
 names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
+
 for ( i in  seq_along(LIST)) {
   if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
     tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
-  }
+  } else {tmp <- LIST[[i]]}
   Entrezid <- c(Entrezid, unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))
   group <- c(group,  rep(i, length(unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))))
  # dfGO <- rbind(dfGO, cbind(Entrezid, group))
