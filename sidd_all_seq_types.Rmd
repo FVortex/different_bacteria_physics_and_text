@@ -1179,7 +1179,7 @@ for ( i in  seq_along(LIST)) {
 }
 
 dfGO <- data.frame(Entrezid = Entrezid, group = group)
-                   
+#   View(dfGO)          
                    
 #colnames(dfGO) <- c('Entrezids', 'group')
 save(dfGO, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
@@ -1586,7 +1586,7 @@ selectedEntrezIds_clust3 <- as.character(dfGO$Entrezid[which(dfGO$group == 3)])
 selectedEntrezIds_clust4 <- as.character(dfGO$Entrezid[which(dfGO$group == 4)])
 
 
-hgCutoff <- 0.001
+hgCutoff <- 0.0005
 params_clust2 <- new("GOHyperGParams",
  geneIds=selectedEntrezIds_clust2,
  universeGeneIds=entrezUniverse,
@@ -1633,6 +1633,6 @@ df_clust3 <- summary(hgOver_clust3)
 df_clust4 <- summary(hgOver_clust4)
 
 names(df_clust2)
-View(summary(hgOver, pvalue=0.1))
+#View(summary(hgOver, pvalue=0.01))
 ```
 
