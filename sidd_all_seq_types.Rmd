@@ -1585,13 +1585,20 @@ selectedEntrezIds_clust2 <- as.character(dfGO$Entrezid[which(dfGO$group == 2)])
 selectedEntrezIds_clust3 <- as.character(dfGO$Entrezid[which(dfGO$group == 3)])
 selectedEntrezIds_clust4 <- as.character(dfGO$Entrezid[which(dfGO$group == 4)])
 
+#setting cutoff value
+hgCutoff <- 0.001
+#hgCutoff <- 0.1
 
-hgCutoff <- 0.0005
+#selecting onthology
+
+ontology <- 'BP'
+#ontology <- 'MF'
+
 params_clust2 <- new("GOHyperGParams",
  geneIds=selectedEntrezIds_clust2,
  universeGeneIds=entrezUniverse,
  annotation="org.EcK12.eg.db",
- ontology="BP",
+ ontology=ontology,
  pvalueCutoff=hgCutoff,
  conditional=FALSE,
  testDirection="over")
@@ -1600,7 +1607,7 @@ params_clust3 <- new("GOHyperGParams",
  geneIds=selectedEntrezIds_clust3,
  universeGeneIds=entrezUniverse,
  annotation="org.EcK12.eg.db",
- ontology="BP",
+ ontology=ontology,
  pvalueCutoff=hgCutoff,
  conditional=FALSE,
  testDirection="over")
@@ -1609,7 +1616,7 @@ params_clust4 <- new("GOHyperGParams",
  geneIds=selectedEntrezIds_clust4,
  universeGeneIds=entrezUniverse,
  annotation="org.EcK12.eg.db",
- ontology="BP",
+ ontology=ontology,
  pvalueCutoff=hgCutoff,
  conditional=FALSE,
  testDirection="over")
@@ -1631,6 +1638,8 @@ hgOver_clust4 <- hyperGTest(params_clust4)
 df_clust2 <- summary(hgOver_clust2)
 df_clust3 <- summary(hgOver_clust3)
 df_clust4 <- summary(hgOver_clust4)
+
+########cbind(rbind(df_clust2, df_clust3, df_clust4), (df_clust2, df_clust3, df_clust4)
 
 names(df_clust2)
 #View(summary(hgOver, pvalue=0.01))
