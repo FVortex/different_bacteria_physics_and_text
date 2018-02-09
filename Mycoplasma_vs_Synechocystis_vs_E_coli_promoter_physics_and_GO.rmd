@@ -1237,16 +1237,156 @@ cuplcl(data = sidds_syn, method = 'ward', k = 4)
 ```
 
 
-```{r cluster analysis for various properties and 3 bacteria}
+```{r cluster analysis for various properties and 3 bacteria, E01}
 library(fastcluster)
 ward_ecoli_E01 <- hclust.vector(E01, method = 'ward')
 ward_synechocystis_E01 <- hclust.vector(synechocystis_E01, method = 'ward')
 ward_mycoplasma_E01 <- hclust.vector(mycoplasma_E01, method = 'ward')
 
-plot(ward_E01_ecoli, labels = F)
+plot(ward_ecoli_E01, labels = F)
 plot(ward_synechocystis_E01, labels = F)
 plot(ward_mycoplasma_E01, labels = F)
 
 cuplcl(E01, method = 'ward', k = 4)
+cuplcl(synechocystis_E01, method = 'ward', k = 4)
+cuplcl(mycoplasma_E01, method = 'ward', k = 4)
+
 ```
+
+```{r Same for scaled versions}
+cuplcl(t(scale(t(E01), center = T, scale = T)), method = 'ward', k = 4)
+cuplcl(t(scale(t(synechocystis_E01), center = T, scale = T)), method = 'ward', k = 4)
+cuplcl(t(scale(t(mycoplasma_E01), center = T, scale = T)), method = 'ward', k = 4)
+
+```
+
+
+
+```{r cluster analysis for various properties and 3 bacteria, EP}
+library(fastcluster)
+ward_ecoli_EP <- hclust.vector(EP, method = 'ward')
+ward_synechocystis_EP <- hclust.vector(synechocystis_EP, method = 'ward')
+ward_mycoplasma_EP <- hclust.vector(mycoplasma_EP, method = 'ward')
+
+plot(ward_ecoli_EP, labels = F)
+plot(ward_synechocystis_EP, labels = F)
+plot(ward_mycoplasma_EP, labels = F)
+
+cuplcl(EP, method = 'ward', k = 4)
+cuplcl(synechocystis_EP, method = 'ward', k = 4)
+cuplcl(mycoplasma_EP, method = 'ward', k = 4)
+
+```
+
+```{r Same for scaled versions}
+cuplcl(t(scale(t(EP), center = T, scale = T)), method = 'ward', k = 4)
+cuplcl(t(scale(t(synechocystis_EP), center = T, scale = T)), method = 'ward', k = 4)
+cuplcl(t(scale(t(mycoplasma_EP), center = T, scale = T)), method = 'ward', k = 4)
+
+```
+
+
+
+```{r cluster analysis for various properties and 3 bacteria, GC}
+library(fastcluster)
+ward_ecoli_GC <- hclust.vector(GC, method = 'ward')
+ward_synechocystis_GC <- hclust.vector(synechocystis_GC, method = 'ward')
+ward_mycoplasma_GC <- hclust.vector(mycoplasma_GC, method = 'ward')
+
+plot(ward_ecoli_GC, labels = F)
+plot(ward_synechocystis_GC, labels = F)
+plot(ward_mycoplasma_GC, labels = F)
+
+cuplcl(GC, method = 'ward', k = 4)
+cuplcl(synechocystis_GC, method = 'ward', k = 4)
+cuplcl(mycoplasma_GC, method = 'ward', k = 4)
+
+```
+
+```{r Same for scaled versions}
+cuplcl(t(scale(t(GC), center = T, scale = T)), method = 'ward', k = 4)
+cuplcl(t(scale(t(synechocystis_GC), center = T, scale = T)), method = 'ward', k = 4)
+cuplcl(t(scale(t(mycoplasma_GC), center = T, scale = T)), method = 'ward', k = 4)
+
+```
+
+Promoter numbers and genenames
+```{r}
+cut_ward_ecoli_E01 <- cutree(ward_ecoli_E01, k = 4)
+
+table(cut_ward_ecoli_E01)
+
+
+for (i in unique(cut_ward_expsidds)) {
+  assign(paste0('ecoli_E01_clust_', i),
+         exp_names[which(cut_ward_ecoli_E01 ==i)])
+}
+
+
+#cuplcl way
+
+
+#reading in transription units data
+
+TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
+
+#promoters to genes
+
+genes_from_promoters_list <- c()
+for (i in seq_along(colnames(expsidds))){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == colnames(expsidds)[i])])
+  if(length(tmp) ==0) {tmp <- NA}
+  tmp <- paste0(tmp, collapse = ',')
+  genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
+}
+
+#clusters of genes
+for (i in unique(cut_ward_expsidds)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_expsidds == i)], collapse = ','), split = ',')[[1]]
+  if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
+  assign(paste0('genes_clust', i), unique(genes_clust_tmp))
+}
+
+
+
+
+entrezIds <- mget(featureNames(bcrAblOrNeg), envir=hgu95av2ENTREZID)
+     haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+```
+```{r Data for GO, eval=FALSE }
+
+library(org.EcK12.eg.db)
+
+#not found in regulon TUset
+  absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
+
+  
+Entrezid <- c()
+group <- c()
+
+LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
+names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
+for ( i in  seq_along(LIST)) {
+  if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
+    tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
+  }
+  Entrezid <- c(Entrezid, unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))
+  group <- c(group,  rep(i, length(unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))))
+ # dfGO <- rbind(dfGO, cbind(Entrezid, group))
+}
+
+dfGO <- data.frame(Entrezid = Entrezid, group = group)
+                   
+                   
+#colnames(dfGO) <- c('Entrezids', 'group')
+save(dfGO, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
+
+
+genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='groupGO', OrgDb='org.EcK12.eg.db')
+genes_formula@compareClusterResult
+
+```
+
+```
+
 
