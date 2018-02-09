@@ -503,6 +503,15 @@ length(greped_reverse)
 length(synechocystis_proms$X1.TSS)
 ```
 
+Right flank needs to be extended by 250 nts
+```{r Mycoplasma extension}
+extended_by <- 250
+extended_mycoplasma_CP006916.3 <- paste0(mycoplasma_CP006916.3,
+                                         substr(mycoplasma_CP006916.3, nchar(mycoplasma_CP006916.3)-extended_by, nchar(mycoplasma_CP006916.3)))
+
+extended_mycoplasma_CP006916.3_char <- strsplit(extended_mycoplasma_CP006916.3, split = '')[[1]]
+```
+
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
 ```{r mycoplasma proms physics, cache=TRUE} 
 
@@ -512,33 +521,33 @@ for (i in c('mycoplasma_seqsforward', 'mycoplasma_seqsreverse', 'mycoplasma_E01f
 }
 zout<- -480:239
 interval_size <- 50
-for (i in 1:length(mycoplasma_proms$X1.TSS)) {
-  if (mycoplasma_proms$X4.strand[i]=='fwd') {
+for (i in 1:length(mycoplasma_proms$Position)) {
+  if (mycoplasma_proms$Strand[i]=='fwd') {
     
-    mycoplasma_seqsforward<-c(mycoplasma_seqsforward, substr(mycoplasma_NC_000911.1, start = mycoplasma_proms$X1.TSS[i] - 150, stop = mycoplasma_proms$X1.TSS[i] + 50))
+    mycoplasma_seqsforward<-c(mycoplasma_seqsforward, substr(extended_mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i] - 150, stop = mycoplasma_proms$Position[i] + 50))
                                     
                                     
     mycoplasma_E01forward<-rbind(mycoplasma_E01forward,
-dynchars(mycoplasma_NC_000911.1_char[(mycoplasma_proms$X1.TSS[i]-150):(mycoplasma_proms$X1.TSS[i]+50)], interval_size = interval_size)$E01)                       
-    mycoplasma_d1forward<-rbind(mycoplasma_d1forward, dynchars(mycoplasma_NC_000911.1_char[(mycoplasma_proms$X1.TSS[i]-150):(mycoplasma_proms$X1.TSS[i]+50)], interval_size = interval_size)$d1)                       
+dynchars(extended_mycoplasma_CP006916.3_char[(mycoplasma_proms$Position[i]-150):(mycoplasma_proms$Position[i]+50)], interval_size = interval_size)$E01)                       
+    mycoplasma_d1forward<-rbind(mycoplasma_d1forward, dynchars(extended_mycoplasma_CP006916.3_char[(mycoplasma_proms$Position[i]-150):(mycoplasma_proms$Position[i]+50)], interval_size = interval_size)$d1)                       
     #aeos4forward<-rbind(aeos4forward, matr1[(as.numeric(exp_proms[i,3])-150):(as.numeric(exp_proms[i,3])+50),4])            
-    mycoplasma_GCforward<-rbind(mycoplasma_GCforward, dynchars(mycoplasma_NC_000911.1_char[(mycoplasma_proms$X1.TSS[i]-150):(mycoplasma_proms$X1.TSS[i]+50)], interval_size = interval_size)$gc1)                       
+    mycoplasma_GCforward<-rbind(mycoplasma_GCforward, dynchars(extended_mycoplasma_CP006916.3_char[(mycoplasma_proms$Position[i]-150):(mycoplasma_proms$Position[i]+50)], interval_size = interval_size)$gc1)                       
     
-    p<-lseqspline1D(substr(mycoplasma_NC_000911.1, mycoplasma_proms$X1.TSS[i]-250, mycoplasma_proms$X1.TSS[i]+150), bound=c(50, 350), ref=251 )
+    p<-lseqspline1D(substr(extended_mycoplasma_CP006916.3, mycoplasma_proms$Position[i]-250, mycoplasma_proms$Position[i]+150), bound=c(50, 350), ref=251 )
     mycoplasma_EPforward<-rbind(mycoplasma_EPforward, 
                         ##mpot_whole_genome_forward$mpot[mpot_whole_genome_forward$x %in% (exp_tsss[i]-150):(exp_tsss[i]+50)])
                         p$mpot[p$x %in% zout])
     
      } else  {
-    mycoplasma_seqsreverse<-c(mycoplasma_seqsreverse, substr(mycoplasma_NC_000911.1, start = mycoplasma_proms$X1.TSS[i] - 50, stop = mycoplasma_proms$X1.TSS[i] + 150))
+    mycoplasma_seqsreverse<-c(mycoplasma_seqsreverse, substr(extended_mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i] - 50, stop = mycoplasma_proms$Position[i] + 150))
        
     mycoplasma_E01reverse<-rbind(mycoplasma_E01reverse,
-dynchars(mycoplasma_NC_000911.1_char[(mycoplasma_proms$X1.TSS[i]-50):(mycoplasma_proms$X1.TSS[i]+150)], interval_size = interval_size)$E01)                       
-    mycoplasma_d1reverse<-rbind(mycoplasma_d1reverse, dynchars(mycoplasma_NC_000911.1_char[(mycoplasma_proms$X1.TSS[i]-50):(mycoplasma_proms$X1.TSS[i]+150)], interval_size = interval_size)$d1)                       
+dynchars(extended_mycoplasma_CP006916.3_char[(mycoplasma_proms$Position[i]-50):(mycoplasma_proms$Position[i]+150)], interval_size = interval_size)$E01)                       
+    mycoplasma_d1reverse<-rbind(mycoplasma_d1reverse, dynchars(extended_mycoplasma_CP006916.3_char[(mycoplasma_proms$Position[i]-50):(mycoplasma_proms$Position[i]+150)], interval_size = interval_size)$d1)                       
     #aeos4reverse<-rbind(aeos4reverse, matr1[(as.numeric(exp_proms[i,3])-150):(as.numeric(exp_proms[i,3])+50),4])            
-    mycoplasma_GCreverse<-rbind(mycoplasma_GCreverse, dynchars(mycoplasma_NC_000911.1_char[(mycoplasma_proms$X1.TSS[i]-50):(mycoplasma_proms$X1.TSS[i]+150)], interval_size = interval_size)$gc1)                       
+    mycoplasma_GCreverse<-rbind(mycoplasma_GCreverse, dynchars(extended_mycoplasma_CP006916.3_char[(mycoplasma_proms$Position[i]-50):(mycoplasma_proms$Position[i]+150)], interval_size = interval_size)$gc1)                       
     
-    p<-lseqspline1D(substr(mycoplasma_NC_000911.1, mycoplasma_proms$X1.TSS[i]-150, mycoplasma_proms$X1.TSS[i]+250), bound=c(50, 350), ref=251 )
+    p<-lseqspline1D(substr(extended_mycoplasma_CP006916.3, mycoplasma_proms$Position[i]-150, mycoplasma_proms$Position[i]+250), bound=c(50, 350), ref=251 )
     mycoplasma_EPreverse<-rbind(mycoplasma_EPreverse, 
                         ##mpot_whole_genome_reverse$mpot[mpot_whole_genome_reverse$x %in% (exp_tsss[i]-150):(exp_tsss[i]+50)])
                         p$mpot[p$x %in% zout])
@@ -1230,10 +1239,14 @@ cuplcl(data = sidds_syn, method = 'ward', k = 4)
 
 ```{r cluster analysis for various properties and 3 bacteria}
 library(fastcluster)
-ward_E01_ecoli <- hclust.vector(E01, method = 'ward')
-ward_E01_synechocystis <- hclust.vector(synechocystis_E01, method = 'ward')
-ward_E01_synechocystis <- hclust.vector(mycoplasma_, method = 'ward')
+ward_ecoli_E01 <- hclust.vector(E01, method = 'ward')
+ward_synechocystis_E01 <- hclust.vector(synechocystis_E01, method = 'ward')
+ward_mycoplasma_E01 <- hclust.vector(mycoplasma_E01, method = 'ward')
 
 plot(ward_E01_ecoli, labels = F)
+plot(ward_synechocystis_E01, labels = F)
+plot(ward_mycoplasma_E01, labels = F)
+
+cuplcl(E01, method = 'ward', k = 4)
 ```
 
