@@ -1317,7 +1317,7 @@ cut_ward_ecoli_E01 <- cutree(ward_ecoli_E01, k = 4)
 table(cut_ward_ecoli_E01)
 
 
-for (i in unique(cut_ward_expsidds)) {
+for (i in unique(cut_ward_ecoli_E01)) {
   assign(paste0('ecoli_E01_clust_', i),
          exp_names[which(cut_ward_ecoli_E01 ==i)])
 }
@@ -1333,16 +1333,22 @@ TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteri
 #promoters to genes
 
 genes_from_promoters_list <- c()
-for (i in seq_along(colnames(expsidds))){
-  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == colnames(expsidds)[i])])
+for (i in seq_along(exp_names)){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == exp_names[i])])
   if(length(tmp) ==0) {tmp <- NA}
   tmp <- paste0(tmp, collapse = ',')
   genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
 }
 
-#clusters of genes
-for (i in unique(cut_ward_expsidds)){
-  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_expsidds == i)], collapse = ','), split = ',')[[1]]
+
+#all the genes universe without repeating and 2 jr more names in 1 vector member
+
+fixed_vectors_genes_from_promoters_list <- strsplit(paste0(genes_from_promoters_list, collapse = ','), split = ',')[[1]]
+fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
+
+#clusters of genes as fixed vectors
+for (i in unique(cut_ward_ecoli_E01)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_ecoli_E01 == i)], collapse = ','), split = ',')[[1]]
   if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
   assign(paste0('genes_clust', i), unique(genes_clust_tmp))
 }
@@ -1353,15 +1359,13 @@ for (i in unique(cut_ward_expsidds)){
 xx <- as.list(org.EcK12.egALIAS2EG)
 # Remove pathway identifiers that do not map to any entrez gene id
 xx <- xx[!is.na(xx)]
-if(length(xx) > 0){
-# The entrez gene identifiers for the first two elements of XX
-xx[1:2]
-# Get the first one
-xx[[1]]
-}
 
-entrezIds <- mget(featureNames(bcrAblOrNeg), envir=hgu95av2ENTREZID)
-     haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+#common names in universe (xx) and the samples
+
+setdiffed <- setdiff(fixed_vectors_genes_from_promoters_list, names(xx))
+fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[!fixed_vectors_genes_from_promoters_list%in%setdiffed]
+entrezIds <- mget(fixed_vectors_genes_from_promoters_list, envir=org.EcK12.egALIAS2EG)
+  ###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
 ```
 ```{r Data for GO, eval=FALSE }
 
@@ -1397,6 +1401,6 @@ genes_formula@compareClusterResult
 
 ```
 
-```
+
 
 
