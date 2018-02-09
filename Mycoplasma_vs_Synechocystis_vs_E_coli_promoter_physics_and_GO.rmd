@@ -1348,7 +1348,17 @@ for (i in unique(cut_ward_expsidds)){
 }
 
 
-
+## Bimap interface:
+# Convert the object to a list
+xx <- as.list(org.EcK12.egALIAS2EG)
+# Remove pathway identifiers that do not map to any entrez gene id
+xx <- xx[!is.na(xx)]
+if(length(xx) > 0){
+# The entrez gene identifiers for the first two elements of XX
+xx[1:2]
+# Get the first one
+xx[[1]]
+}
 
 entrezIds <- mget(featureNames(bcrAblOrNeg), envir=hgu95av2ENTREZID)
      haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
