@@ -111,9 +111,9 @@ m1<-E01/c1/6.011E-26
 taus1<-as.numeric(M%*%tau) #!as.numeric conversion
 gc1 = M[,3] + M[,4]
   
-Is<-as.numeric(M%*%I)#! numeric conversion
-Ks<-as.numeric(M%*%K)
-Vs<-as.numeric(M%*%V)
+Is<-as.numeric(M_comp%*%I)#! numeric conversion
+Ks<-as.numeric(M_comp%*%K)
+Vs<-as.numeric(M_comp%*%V)
 
   
 E02<- 8*(Ks*Vs)^0.5  * 6E23 / 4184;
