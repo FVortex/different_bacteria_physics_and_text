@@ -130,14 +130,17 @@ return(dynchars_return)
 }
 ```
 
+First to set interval size for dynchars
 ```{r Overall characteristics for three bacteria, cache=TRUE}
-whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = 100)
+
+interval_size <- 100
+whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = interval_size)
 whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref =  1)
 
-whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = 200)
+whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = interval_size)
 whole_synechocystis_EP <- lseqspline1D(synechocystis_NC_000911.1, bound = c(1, nchar(synechocystis_NC_000911.1)), width = 1, ref =  1)
 
-whole_mycoplasma_dynchars<- dynchars(mycoplasma_CP006916.3_char, interval_size = 200)
+whole_mycoplasma_dynchars<- dynchars(mycoplasma_CP006916.3_char, interval_size = interval_size)
 whole_mycoplasma_EP <- lseqspline1D(mycoplasma_CP006916.3, bound = c(1, nchar(mycoplasma_CP006916.3)), width = 1, ref =  1)
 
 par(mfrow = c(3,4))
@@ -328,7 +331,7 @@ for (i in 1:length(exp_tsss)) {
                         p$mpot[p$x %in% zout])
     
      } else {
-    seqsreverse<-c(seqsreverse, substr(e.coli_U00096.2, start = exp_tsss[i] - 150, stop = exp_tsss[i] + 50))
+    seqsreverse<-c(seqsreverse, substr(e.coli_U00096.2, start = exp_tsss[i] - 150, stop = exp_tsss[i] + 50)) #string itself is revesed, so there is no need to mirror intervals
     E01reverse<-rbind(E01reverse, whole_e.coli_dynchars$E02[(as.numeric(exp_tsss[i])-50):(as.numeric(exp_tsss[i])+150)])
     #aeos2reverse<-rbind(aeos2reverse, matr1[(as.numeric(exp_tsss[i])-50):(as.numeric(exp_tsss[i])+150),2])
     d1reverse<-rbind(d1reverse, whole_e.coli_dynchars$d2[(as.numeric(exp_tsss[i])-50):(as.numeric(exp_tsss[i])+150)])
@@ -597,14 +600,24 @@ to 5'-end for both strands
 
 
 
-```{r Plotting characteristics profiles for Cynechocystis}
+```{r Plotting characteristics profiles for 3 bacteria}
 
-par(mfrow = c(2,2))
+par(mfrow = c(4,3))
+
+matplot(E01, type = 'l', col = 1)
+matplot(d1, type = 'l', col = 1)
+matplot(GC, type = 'l', col = 1)
+matplot(EP, type = 'l', col = 1)
 
 matplot(synechocystis_E01, type = 'l', col = 1)
 matplot(synechocystis_d1, type = 'l', col = 1)
 matplot(synechocystis_GC, type = 'l', col = 1)
 matplot(synechocystis_EP, type = 'l', col = 1)
+
+matplot(mycoplasma_E01, type = 'l', col = 1)
+matplot(mycoplasma_d1, type = 'l', col = 1)
+matplot(mycoplasma_GC, type = 'l', col = 1)
+matplot(mycoplasma_EP, type = 'l', col = 1)
 
 ```
 
@@ -633,7 +646,7 @@ ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(
 
 
 
-```{r two bacteria promoters mixture - all the characteristics}
+```{r two bacteria promoters mixture - all the characteristics, eval=F}
 library(fastcluster)
 library(dendextend)
 cex.main = 2
@@ -695,7 +708,7 @@ for (i in 1:ncol(all_seqs_oligos_freq)){
 
 
 ```{r hexamers occurences PCA, pca 1-2}
-PCA <- prcomp(all_seqs_oligos_freq[,1:2], scale = T)
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
 #library(factoextra)
 #fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
 
@@ -723,43 +736,7 @@ fviz_pca_biplot(PCA,
   
 ```
 
-```{r hexamers occurences PCA, pca 1-3}
-PCA <- prcomp(all_seqs_oligos_freq[,c(1,3)], scale = T)
-#library(factoextra)
-#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
-
-
-fviz_pca_biplot(PCA, 
-             axes = c (1,2),
-             #labelsize = label.size,
-             #alpha.ind="contrib",
-             col.ind = 'contrib'
-             ) + scale_color_gradient2(low="white", 
-                                       mid="blue",
-                                       high="red", 
-                                       midpoint=0.6)
-  
-```
-
-```{r hexamers occurences PCA, pca 4-3}
-PCA <- prcomp(all_seqs_oligos_freq[,c(3,4)], scale = T)
-#library(factoextra)
-#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
-
-
-fviz_pca_biplot(PCA, 
-             axes = c (1,2),
-             #labelsize = label.size,
-             #alpha.ind="contrib",
-             col.ind = 'contrib'
-             ) + scale_color_gradient2(low="white", 
-                                       mid="blue",
-                                       high="red", 
-                                       midpoint=0.6)
-  
-```
-
-
+## hexanucleotides vs their frequences
 ```{r Other text representation}
 
 #panel.cor function
@@ -794,6 +771,9 @@ apply(all_seqs_oligos_freq, 2, function(x) {
 for (i in 1:ncol(all_seqs_oligos_freq)){
   assign(paste0('lm', i), lm(all_seqs_oligos_freq[,i] ~ seq_along(all_seqs_oligos_freq[,i])))
 }
+```
+
+```{r Descriptive statistics for hexanucleotide frequences}
 
 par(mfrow = c(4,5),
     mar = rep(2,4))
@@ -810,29 +790,45 @@ for (i in 1:ncol(all_seqs_oligos_freq)){
 #identify(rep(1, length(all_seqs_oligos_freq[,1])), all_seqs_oligos_freq[,1], labels = #seq_along(all_seqs_oligos_freq[,1]))
 ```
 
-```{r 6 plots}
+```{r 6 plots, eval=F}
 
-par(mfrow = c(3,2),
+par(mfrow = c(3,3),
     mar = rep(1,4))
+cex.main <- 2
 
 to_plot_wards <- list()
 for (i in c('E01', 'd1', 'GC', 'EP')){
-  both_tmp <- rbind(get(i), get(paste0('synechocystis_', i)))
-  ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = T), method = 'ward')
+  three_tmp <- rbind(get(i), get(paste0('synechocystis_', i)), get(paste0('mycoplasma_', i)))
+  ward_three_tmp<- hclust.vector(scale(three_tmp, center = T, scale = T), method = 'ward')
 
-  colvec_ward_both_tmp <- c(rep('orange', length(exp_tsss)),rep('darkgreen',length(synechocystis_proms$X1.TSS)))[order.dendrogram(ward_both_tmp %>% as.dendrogram )]
+  colvec_ward_three_tmp <- c(rep('orange', length(exp_tsss)),rep('darkgreen',length(synechocystis_proms$X1.TSS)))[order.dendrogram(ward_three_tmp %>% as.dendrogram )]
 
-  ward_both_tmp %>% as.dendrogram %>% color_branches(k = length(ward_both_tmp$order), col = colvec_ward_both_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_both_tmp$height)*.2) -> to_plot_ward_both_tmp
+  ward_three_tmp %>% as.dendrogram %>% color_branches(k = length(ward_three_tmp$order), col = colvec_ward_three_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_three_tmp$height)*.2) -> to_plot_ward_three_tmp
 
-  plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
+  plot(to_plot_ward_three_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
   
-  assign(paste0('to_plot_wards', i), ward_both_tmp)
+  assign(paste0('to_plot_wards', i), ward_three_tmp)
 }
 
 plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
 
 ##load('/home/mikhail/Documents/mol_a_2017/sidds_ecoli.rda')
 ##load('/home/mikhail/Documents/mol_a_2017/sidds_synechocystis.rda')
+```
+
+```{r Clusterization for separate bacteria}
+
+ward_e.coli_E01 <- hclust.vector(E01, method = 'ward')
+
+plot(ward_e.coli_E01, labels = F)
+
+cuplcl(E01, method = 'ward', k = 4)
+```
+
+
+
+loading previously saved SIDD profiles
+```{r SIDD clusterization}
 
 sidds_ecoli <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_ecoli.csv')
 sidds_syn <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis.csv')
@@ -862,22 +858,22 @@ plot(to_plot_ward_synechocystis_e.coli_proms_sidd, labels = F)
 #function to cut heirarchical clusterization results at given clusters numer and plot all pfrofiles from each
 
 cuplcl <- function(data, method, k) {
-library(fastcluster)
-library(dendextend)
-hclust <- hclust.vector(data, method = method)
-cut_hclust<-cutree(hclust, k=k)
-m <- rbind(rep(1, k), c(2:(k+1)))
-layout(m)
-par(mar = c(1, 1, 0, 0))
+  library(fastcluster)
+  library(dendextend)
+  hclust <- hclust.vector(data, method = method)
+  cut_hclust<-cutree(hclust, k=k)
+  m <- rbind(rep(1, k), c(2:(k+1)))
+  layout(m)
+  par(mar = c(2, 2, 1, 1))
 
-dend <- color_branches(as.dendrogram(hclust), col = cut_hclust[order.dendrogram(as.dendrogram(hclust))])
+  dend <- color_branches(as.dendrogram(hclust), col = cut_hclust[order.dendrogram(as.dendrogram(hclust))])
 plot(dend%>%set('labels_cex', NA))
-
-for (i in unique(cut_hclust[order.dendrogram(as.dendrogram(hclust))])) {
-matplot(t(data[which(cut_hclust==i),]), type='l', col=i)
-
-print(c(i, names(which(cut_hclust==i))))
-}
+  
+  ylim <- range(data)
+  for (i in unique(cut_hclust[order.dendrogram(as.dendrogram(hclust))])) {
+    matplot(t(data[which(cut_hclust==i),]), type='l', col=i, ylim = ylim)
+    print(c(i, names(which(cut_hclust==i))))
+  }
 }
 ```
 
