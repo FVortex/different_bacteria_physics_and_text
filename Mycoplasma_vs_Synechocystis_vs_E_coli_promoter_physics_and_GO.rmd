@@ -816,14 +816,6 @@ plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Syn
 ##load('/home/mikhail/Documents/mol_a_2017/sidds_synechocystis.rda')
 ```
 
-```{r Clusterization for separate bacteria}
-
-ward_e.coli_E01 <- hclust.vector(E01, method = 'ward')
-
-plot(ward_e.coli_E01, labels = F)
-
-cuplcl(E01, method = 'ward', k = 4)
-```
 
 
 
@@ -857,17 +849,18 @@ plot(to_plot_ward_synechocystis_e.coli_proms_sidd, labels = F)
 
 #function to cut heirarchical clusterization results at given clusters numer and plot all pfrofiles from each
 
-cuplcl <- function(data, method, k) {
+cuplcl <- function(data, method, k, main) {
   library(fastcluster)
   library(dendextend)
   hclust <- hclust.vector(data, method = method)
   cut_hclust<-cutree(hclust, k=k)
   m <- rbind(rep(1, k), c(2:(k+1)))
   layout(m)
-  par(mar = c(2, 2, 1, 1))
+  par(mar = c(1.5,1.5, 1, 1),
+      oma = c(2,2,2,2))
 
   dend <- color_branches(as.dendrogram(hclust), col = cut_hclust[order.dendrogram(as.dendrogram(hclust))])
-plot(dend%>%set('labels_cex', NA))
+plot(dend%>%set('labels_cex', NA), main = main, cex.main = 1.75)
   
   ylim <- range(data)
   for (i in unique(cut_hclust[order.dendrogram(as.dendrogram(hclust))])) {
@@ -1222,7 +1215,7 @@ ward_synechocystis_1500sidd<- hclust.vector(t(sidds_syn), method = 'ward')
 plot(ward_synechocystis_1500sidd, labels = F)
 cut_synechocystis_1500sidd <- cutree(ward_synechocystis_1500sidd, k = 4)
 
-cuplcl(data = sidds_syn, method = 'ward', k = 4)
+
 #`Sequence (nts)` <- -750:750
 #par(mfrow = c(3,2))
 #plot(ward_synechocystis_1500sidd, labels = F)
@@ -1230,6 +1223,54 @@ cuplcl(data = sidds_syn, method = 'ward', k = 4)
   #matplot(`Sequence (nts)`, sidds_syn[, which(cut_synechocystis_1500sidd==i)], type = 'l', lty = 1, col=i)
  # abline(v = -10:10*100, lty =3, col = 'darkgrey', lwd =2)
 #}
+
+
+sidds_synechocystis_1500 <- sidds_syn[750:2250,-1]#row 1 nreeds to be removed since it is a rownumbers
+
+ward_sidds_synechocystis_1500 <- hclust.vector(t(sidds_synechocystis_1500), method = 'ward') 
+plot(ward_sidds_synechocystis_1500, labels = F)
+cuplcl(data = t(sidds_synechocystis_1500), method = 'ward', k = 4, 'Synechocystis sp., SIDD')
+
+
+cut_sidds_synechocystis_1500 <- cutree(ward_sidds_synechocystis_1500, k = 4)
+table(cut_sidds_synechocystis_1500)
+#removing  prmoters of cluster 2 (largest)
+
+synechocystis_clusters_2_3_4_numbers <- which(cut_sidds_synechocystis_1500!=1)
+str(synechocystis_clusters_2_3_4_numbers)
+
+# 3 small clusters plotted together
+
+
+`Sequence (nts)` <- -750:750
+matplot(`Sequence (nts)`, sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers],ty='l',lty =1, col=1, lwd =0.5, main = 'Mycoplasma gallisepticum, 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
+
+#clusterization of the 3 clusters profiles only
+
+sidds_synechocystis_small_clusters <- sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]
+ward_sidds_synechocystis_small_clusters <- hclust.vector(t(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]), method = 'ward')
+
+plot(ward_sidds_synechocystis_small_clusters, labels = F)
+
+
+#cur and plot the new clusterization results
+cuplcl(data = t(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]), method = 'ward', k = 3, main = 'Mycoplasma gallisepticum, 3 small clusters SIDD')
+
+#sums by rows for reduced (3 small clusters only) dataset
+
+
+`Sequence (nts)` <- -750:750
+
+sidds_sums_on_positions_synechocystis_3_clusters <- rowSums(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers])
+matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_3_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis gallisepticum, 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
+
+library(diptest)
+diptest::dip.test(x = sidds_sums_on_positions_synechocystis_3_clusters, simulate.p.value = T, B = 10000)
+#and for complete set of Synechocystis profiles
+
+sidds_sums_on_positions_synechocystis_all_clusters <- rowSums(sidds_synechocystis_1500)
+matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_all_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis gallisepticum, 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
+
 ```
 
 
@@ -1243,9 +1284,9 @@ plot(ward_ecoli_E01, labels = F)
 plot(ward_synechocystis_E01, labels = F)
 plot(ward_mycoplasma_E01, labels = F)
 
-cuplcl(E01, method = 'ward', k = 4)
-cuplcl(synechocystis_E01, method = 'ward', k = 4)
-cuplcl(mycoplasma_E01, method = 'ward', k = 4)
+cuplcl(E01, method = 'ward', k = 4, main = 'E. coli, E01')
+cuplcl(synechocystis_E01, method = 'ward', k = 4, main = 'Synechocystis, E01')
+cuplcl(mycoplasma_E01, method = 'ward', k = 4, main = 'Mycoplasma gallisepticum, E01')
 
 ```
 
@@ -1268,10 +1309,34 @@ plot(ward_ecoli_EP, labels = F)
 plot(ward_synechocystis_EP, labels = F)
 plot(ward_mycoplasma_EP, labels = F)
 
-cuplcl(EP, method = 'ward', k = 4)
-cuplcl(synechocystis_EP, method = 'ward', k = 4)
-cuplcl(mycoplasma_EP, method = 'ward', k = 4)
+cuplcl(EP, method = 'ward', k = 4, main = 'E. coli, EP')
+cuplcl(synechocystis_EP, method = 'ward', k = 4, main = 'Synechocystis, EP')
+cuplcl(mycoplasma_EP, method = 'ward', k = 4, main = 'Mycoplasma gallisepticum, EP')
 
+
+#an interesting cluster for Mycoplasma EP
+
+par(mfrow = c(2,1),
+    mar = c(1.5, 1, 1.5,1),
+    oma = rep(1.5,4))
+`Sequence (angstrom)` <- -480:239
+inds <- which(cutree(ward_mycoplasma_EP, k = 3) == 3)
+matplot(`Sequence (angstrom)`, t(mycoplasma_EP[inds,]), type = 'l', col = 1, main = 'Mycoplasma gallisepticum: small (13 promoters) cluster EP profiles', ylab = 'EP value' )
+abline(v = 0, lty = 3)
+
+pos <- mycoplasma_proms[inds,'Position']
+mycoplasma_proms[inds,]
+#the promoters genomic location
+interv <- 2.5e5:4.75e5
+plot(interv, type = 'n', ylab = '', xlab = 'Sequence (nts)', yaxt = 'n', xlim = range(interv))
+abline(v = pos , col = 'darkred')
+
+
+#NB  Papazisi et al. (2003) reported that the predicted oriC region of M. gallisepticum was located between the dnaN and dnaA genes. The predicted oriC region contains five DnaA box sequences, with the consensus sequence 5′-TTWTMHAMA-3′... 180 nts long
+
+#from genebank by assecion :complement(984237..985412) /gene="dnaN"
+#gene 3161..4546 /gene="dnaA" /locus_tag="GCW_00010"
+dnaA <- 3161:4546
 ```
 
 ```{r Same for scaled versions}
@@ -1293,9 +1358,9 @@ plot(ward_ecoli_GC, labels = F)
 plot(ward_synechocystis_GC, labels = F)
 plot(ward_mycoplasma_GC, labels = F)
 
-cuplcl(GC, method = 'ward', k = 4)
-cuplcl(synechocystis_GC, method = 'ward', k = 4)
-cuplcl(mycoplasma_GC, method = 'ward', k = 4)
+cuplcl(GC, method = 'ward', k = 4, main = 'E. coli, GC')
+cuplcl(synechocystis_GC, method = 'ward', k = 4, main = 'Synechocystis, GC')
+cuplcl(mycoplasma_GC, method = 'ward', k = 4, main = 'Mycoplasma gallisepticum, GC')
 
 ```
 
@@ -1312,10 +1377,16 @@ cut_ward_ecoli_E01 <- cutree(ward_ecoli_E01, k = 4)
 
 table(cut_ward_ecoli_E01)
 
-
+ecoli_E01_promoters_clusters <- c()
 for (i in unique(cut_ward_ecoli_E01)) {
-  assign(paste0('ecoli_E01_clust_', i),
-         exp_names[which(cut_ward_ecoli_E01 ==i)])
+ assign(paste0('ecoli_E01_clust_', i),
+       exp_names[which(cut_ward_ecoli_E01 ==i)])
+  
+  #alternatively
+  tmp <- exp_names[which(cut_ward_ecoli_E01 ==i)]
+  tmp1 <- cbind(rep(i, length(tmp)), tmp)
+  
+  ecoli_E01_promoters_clusters <- rbind(ecoli_E01_promoters_clusters, tmp1)
 }
 
 
@@ -1326,7 +1397,7 @@ for (i in unique(cut_ward_ecoli_E01)) {
 
 TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
 
-#promoters to genes
+#promoters to genes (complete set)
 
 genes_from_promoters_list <- c()
 for (i in seq_along(exp_names)){
@@ -1340,7 +1411,7 @@ for (i in seq_along(exp_names)){
 #all the genes universe without repeating and 2 jr more names in 1 vector member
 
 fixed_vectors_genes_from_promoters_list <- strsplit(paste0(genes_from_promoters_list, collapse = ','), split = ',')[[1]]
-fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
+fixed_vectors_genes_from_promoters_list <-fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
 
 #clusters of genes as fixed vectors
 for (i in unique(cut_ward_ecoli_E01)){
@@ -1362,13 +1433,44 @@ setdiffed <- setdiff(fixed_vectors_genes_from_promoters_list, names(xx))
 fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[!fixed_vectors_genes_from_promoters_list%in%setdiffed]
 entrezIds <- mget(fixed_vectors_genes_from_promoters_list, envir=org.EcK12.egALIAS2EG)
   ###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+
+#common names in universe (xx) and the clusters 1-4
+
+setdiffed_clust1 <- setdiff(genes_clust1, names(xx))
+fixed_genes_clust1 <- genes_clust1[!genes_clust1%in%setdiffed_clust1]
+entrezIds_clust1 <- mget(fixed_genes_clust1, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust2 <- setdiff(genes_clust2, names(xx))
+fixed_genes_clust2 <- genes_clust2[!genes_clust2%in%setdiffed_clust2]
+entrezIds_clust2 <- mget(fixed_genes_clust2, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust3 <- setdiff(genes_clust3, names(xx))
+fixed_genes_clust3 <- genes_clust3[!genes_clust3%in%setdiffed_clust3]
+entrezIds_clust3 <- mget(fixed_genes_clust3, envir=org.EcK12.egALIAS2EG)
+
+setdiffed_clust4 <- setdiff(genes_clust4, names(xx))
+fixed_genes_clust4 <- genes_clust4[!genes_clust4%in%setdiffed_clust4]
+entrezIds_clust4 <- mget(fixed_genes_clust4, envir=org.EcK12.egALIAS2EG)
+
+dfGO_ecoli_E01 <- as.data.frame(rbind(cbind(rep(1, length(entrezIds_clust1)), as.character(entrezIds_clust1)),
+      cbind(rep(2, length(entrezIds_clust2)), as.character(entrezIds_clust2)),
+      cbind(rep(3, length(entrezIds_clust3)), as.character(entrezIds_clust3)),
+      cbind(rep(4, length(entrezIds_clust4)), as.character(entrezIds_clust4))
+))
+
+colnames(dfGO_ecoli_E01) <- c('group', 'Entrezid')
+  
+# #save(dfGO_ecoli_E01, file = '/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_E01.rda')
+###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
 ```
 ```{r Data for GO, eval=FALSE }
 
 library(org.EcK12.eg.db)
 
 #not found in regulon TUset
-  absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
+ # absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
 
   
 Entrezid <- c()
@@ -1377,9 +1479,15 @@ group <- c()
 LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
 names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
 for ( i in  seq_along(LIST)) {
-  if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
-    tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
+#  if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
+  #  tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
+ # }
+  
+  #handling absent genes
+  for (gene in LIST[[i]]){
+     get(x = gene, envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)
   }
+  mget(x= as.character(LIST[[i]]), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)
   Entrezid <- c(Entrezid, unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))
   group <- c(group,  rep(i, length(unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))))
  # dfGO <- rbind(dfGO, cbind(Entrezid, group))
