@@ -1507,4 +1507,69 @@ genes_formula@compareClusterResult
 
 
 
+```{r GO statistics using GOstats for E01}
+library(GOstats)
+library(Category)
+library(DBI)
+library(org.EcK12.eg.db)
+
+load('/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_E01.rda')
+
+entrezUniverse <- as.character(dfGO_ecoli_E01$Entrezid)
+
+selectedEntrezIds_clust1 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 1)])
+selectedEntrezIds_clust2 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 2)])
+selectedEntrezIds_clust3 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 3)])
+selectedEntrezIds_clust4 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 4)])
+
+#setting cutoff value
+hgCutoff <- 0.0005
+#hgCutoff <- 0.1
+
+#selecting onthology
+
+ontology <- 'BP'
+#ontology <- 'MF'
+
+for (i in 1:4) {
+params <- new("GOHyperGParams",
+ geneIds=get(paste0('selectedEntrezIds_clust', i)),
+ universeGeneIds=entrezUniverse,
+ annotation="org.EcK12.eg.db",
+ ontology=ontology,
+ pvalueCutoff=hgCutoff,
+ conditional=FALSE,
+ testDirection="over")
+
+  hgOver_clust <- hyperGTest(params)
+  
+  assign(x = paste0('df_summary_clust', i), summary(hgOver_clust))
+}
+
+
+View(df_summary_clust1) #primarly nucleoside metabolisim and ion transport
+View(df_summary_clust2) #suflur,bicarbonic acid, aldehyde metabolism
+View(df_summary_clust3) #biogenesis, aerobic respiration
+View(df_summary_clust4) #sugar metabolism
+#We would also like to perform a conditional test.  Instead of having to de ne a new
+#GO-HyperGParamsinstance  by  hand,  we  can  create  a  copy  and  update  just  the  parameter  of interest.
+#paramsCond <- params
+#conditional(paramsCond) <- TRUE
+#hgCondOver <- hyperGTest(paramsCond)
+
+
+#hgOver_clust1 <- hyperGTest(params_clust1)
+#hgOver_clust2 <- hyperGTest(params_clust2)
+#hgOver_clust3 <- hyperGTest(params_clust3)
+#hgOver_clust4 <- hyperGTest(params_clust4)
+
+
+#df_clust1 <- summary(hgOver_clust1)
+#df_clust2 <- summary(hgOver_clust2)
+#df_clust3 <- summary(hgOver_clust3)
+#df_clust4 <- summary(hgOver_clust4)
+
+########cbind(rbind(df_clust2, df_clust3, df_clust4), (df_clust2, df_clust3, df_clust4)
+
+names(df_clust2)
 
