@@ -1288,6 +1288,58 @@ cuplcl(E01, method = 'ward', k = 4, main = 'E. coli, E01')
 cuplcl(synechocystis_E01, method = 'ward', k = 4, main = 'Synechocystis, E01')
 cuplcl(mycoplasma_E01, method = 'ward', k = 4, main = 'Mycoplasma gallisepticum, E01')
 
+
+
+#an interesting cluster for Mycoplasma E01
+
+par(mfrow = c(2,1),
+    mar = c(1.5, 1, 1.5,1),
+    oma = rep(1.5,4))
+`Sequence (nts)` <- -150:50
+inds <- which(cutree(ward_mycoplasma_E01, k = 3) == 3)
+matplot(`Sequence (nts)`, t(mycoplasma_E01[inds,]), type = 'l', col = 1, main = 'Mycoplasma gallisepticum: small (13 promoters) cluster E01 profiles', ylab = 'E01 value' )
+abline(v = 0, lty = 3)
+
+pos <- mycoplasma_proms[inds,'Position']
+mycoplasma_proms[inds,]
+
+#the promoters genomic location
+interv <- seq_along(mycoplasma_CP006916.3_char)
+plot(interv, type = 'n', ylab = '', xlab = 'Sequence (nts)', yaxt = 'n', xlim = range(interv))
+abline(v = pos , col = 'darkred')
+
+
+#the interseting small cluster sequence
+
+mycoplasma_seqs[inds]
+library(ggseqlogo)
+library(ggplot2)
+
+#logo for [-50;50] interval
+mycoplasma_peculiar_E01cluster_short_seqs <- sapply(mycoplasma_seqs[inds], function(x) {substr(x, start = 100, stop = 200)})
+ggseqlogo(mycoplasma_peculiar_E01cluster_short_seqs,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+
+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)
+#does the cluster representatives differ from the universe?
+
+
+#logo for [-150;50] interval
+
+ggseqlogo(mycoplasma_seqs[inds],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+
+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:200, labels = -150:50)
+#does the cluster representatives differ from the universe?
+
+#ape sweater plot
+
+library(ape)
+
+mycoplasma_peculiar_E01cluster_short_seqs_chars <- lapply(mycoplasma_peculiar_E01cluster_short_seqs, FUN = function(x) {strsplit(x, split = '')[[1]]})
+image.DNAbin(as.DNAbin(mycoplasma_peculiar_E01cluster_short_seqs_chars))
+
+#string bidtance for the cluster
+library(Biostrings)
+range(stringDist(x = mycoplasma_peculiar_E01cluster_short_seqs, method = 'lev'))
+
+plot(hclust(stringDist(x = mycoplasma_peculiar_E01cluster_short_seqs, method = 'lev')), labels = F)
 ```
 
 ```{r Same for scaled versions}
@@ -1296,8 +1348,6 @@ cuplcl(t(scale(t(synechocystis_E01), center = T, scale = T)), method = 'ward', k
 cuplcl(t(scale(t(mycoplasma_E01), center = T, scale = T)), method = 'ward', k = 4)
 
 ```
-
-
 
 ```{r cluster analysis for various properties and 3 bacteria, EP}
 library(fastcluster)
@@ -1327,9 +1377,57 @@ abline(v = 0, lty = 3)
 pos <- mycoplasma_proms[inds,'Position']
 mycoplasma_proms[inds,]
 #the promoters genomic location
-interv <- 2.5e5:4.75e5
+interv <- seq_along(mycoplasma_CP006916.3_char)
 plot(interv, type = 'n', ylab = '', xlab = 'Sequence (nts)', yaxt = 'n', xlim = range(interv))
 abline(v = pos , col = 'darkred')
+
+
+#the interseting small cluster sequence
+
+mycoplasma_seqs[inds]
+library(ggseqlogo)
+library(ggplot2)
+
+#logo for [-50;50] interval
+mycoplasma_peculiar_EPcluster_short_seqs <- sapply(mycoplasma_seqs[inds], function(x) {substr(x, start = 100, stop = 200)})
+ggseqlogo(mycoplasma_peculiar_EPcluster_short_seqs,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+
+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)
+#does the cluster representatives differ from the universe?
+
+
+#logo for [-150;50] interval
+
+ggseqlogo(mycoplasma_seqs[inds],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+
+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:200, labels = -150:50)
+#does the cluster representatives differ from the universe?
+
+#string bidtance for the cluster
+library(Biostrings)
+range(stringDist(x = mycoplasma_peculiar_EPcluster_short_seqs, method = 'lev'))
+#3 peculiar cluster promoters and their relation to heatshock expression from FIsunov et al.
+
+mycoplasma_peculiar_EPcluster_short_seqs_chars <- lapply(mycoplasma_peculiar_EPcluster_short_seqs, FUN = function(x) {strsplit(x, split = '')[[1]]})
+image.DNAbin(as.DNAbin(mycoplasma_peculiar_EPcluster_short_seqs_chars))
+
+#small intersting clusters for Mycoplsma - on E01 and EP
+
+par(mfrow = c(2,1))
+image.DNAbin(as.DNAbin(mycoplasma_peculiar_EPcluster_short_seqs_chars))
+image.DNAbin(as.DNAbin(mycoplasma_peculiar_EPcluster_short_seqs_chars))
+
+
+
+par(mfrow = c(2,1),
+    mar = rep(1.25, 4))
+boxplot(as.numeric(gsub(as.vector(mycoplasma_proms[inds,'Control1']), pattern = ',', replacement = '.')),
+as.numeric(gsub(as.vector(mycoplasma_proms[inds,'Control2']), pattern = ',', replacement = '.')),
+as.numeric(gsub(as.vector(mycoplasma_proms[inds,'Heatshock1']), pattern = ',', replacement = '.')),
+as.numeric(gsub(as.vector(mycoplasma_proms[inds,'Heatshock2']), pattern = ',', replacement = '.')))
+
+boxplot(as.numeric(gsub(as.vector(mycoplasma_proms[,'Control1']), pattern = ',', replacement = '.')),
+as.numeric(gsub(as.vector(mycoplasma_proms[,'Control2']), pattern = ',', replacement = '.')),
+as.numeric(gsub(as.vector(mycoplasma_proms[,'Heatshock1']), pattern = ',', replacement = '.')),
+as.numeric(gsub(as.vector(mycoplasma_proms[,'Heatshock2']), pattern = ',', replacement = '.')))
 
 
 #NB  Papazisi et al. (2003) reported that the predicted oriC region of M. gallisepticum was located between the dnaN and dnaA genes. The predicted oriC region contains five DnaA box sequences, with the consensus sequence 5′-TTWTMHAMA-3′... 180 nts long
@@ -1371,8 +1469,14 @@ cuplcl(t(scale(t(mycoplasma_GC), center = T, scale = T)), method = 'ward', k = 4
 
 ```
 
+
+```{r Reading in transription units data}
+
+TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
+```
+
 Promoter numbers and genenames
-```{r}
+```{r E01 clusters population and GOstats}
 cut_ward_ecoli_E01 <- cutree(ward_ecoli_E01, k = 4)
 
 table(cut_ward_ecoli_E01)
@@ -1389,13 +1493,6 @@ for (i in unique(cut_ward_ecoli_E01)) {
   ecoli_E01_promoters_clusters <- rbind(ecoli_E01_promoters_clusters, tmp1)
 }
 
-
-#cuplcl way
-
-
-#reading in transription units data
-
-TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
 
 #promoters to genes (complete set)
 
@@ -1465,45 +1562,7 @@ colnames(dfGO_ecoli_E01) <- c('group', 'Entrezid')
 # #save(dfGO_ecoli_E01, file = '/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_E01.rda')
 ###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
 ```
-```{r Data for GO, eval=FALSE }
 
-library(org.EcK12.eg.db)
-
-#not found in regulon TUset
- # absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
-
-  
-Entrezid <- c()
-group <- c()
-
-LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
-names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
-for ( i in  seq_along(LIST)) {
-#  if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
-  #  tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
- # }
-  
-  #handling absent genes
-  for (gene in LIST[[i]]){
-     get(x = gene, envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)
-  }
-  mget(x= as.character(LIST[[i]]), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)
-  Entrezid <- c(Entrezid, unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))
-  group <- c(group,  rep(i, length(unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))))
- # dfGO <- rbind(dfGO, cbind(Entrezid, group))
-}
-
-dfGO <- data.frame(Entrezid = Entrezid, group = group)
-                   
-                   
-#colnames(dfGO) <- c('Entrezids', 'group')
-save(dfGO, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
-
-
-genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='groupGO', OrgDb='org.EcK12.eg.db')
-genes_formula@compareClusterResult
-
-```
 
 
 
@@ -1573,3 +1632,224 @@ View(df_summary_clust4) #sugar metabolism
 
 names(df_clust2)
 
+```
+
+
+
+```{r cluster analysis for various properties and 3 bacteria, d1}
+library(fastcluster)
+ward_ecoli_d1 <- hclust.vector(d1, method = 'ward')
+ward_synechocystis_d1 <- hclust.vector(synechocystis_d1, method = 'ward')
+ward_mycoplasma_d1 <- hclust.vector(mycoplasma_d1, method = 'ward')
+
+par(mfrow = c (1,3))
+
+plot(ward_ecoli_d1, labels = F)
+plot(ward_synechocystis_d1, labels = F)
+plot(ward_mycoplasma_d1, labels = F)
+
+cuplcl(d1, method = 'ward', k = 4, main = 'E. coli, d1')
+cuplcl(synechocystis_d1, method = 'ward', k = 4, main = 'Synechocystis, d1')
+cuplcl(mycoplasma_d1, method = 'ward', k = 4, main = 'Mycoplasma gallisepticum, d1')
+
+```
+
+Promoter numbers and genenames
+```{r d1 clusters population and GOstats}
+cut_ward_ecoli_d1 <- cutree(ward_ecoli_d1, k = 4)
+
+table(cut_ward_ecoli_d1)
+
+ecoli_d1_promoters_clusters <- c()
+for (i in unique(cut_ward_ecoli_d1)) {
+ assign(paste0('ecoli_d1_clust_', i),
+       exp_names[which(cut_ward_ecoli_d1 ==i)])
+  
+  #alternatively
+  tmp <- exp_names[which(cut_ward_ecoli_d1 ==i)]
+  tmp1 <- cbind(rep(i, length(tmp)), tmp)
+  
+  ecoli_d1_promoters_clusters <- rbind(ecoli_d1_promoters_clusters, tmp1)
+}
+
+
+#promoters to genes (complete set)
+
+genes_from_promoters_list <- c()
+for (i in seq_along(exp_names)){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == exp_names[i])])
+  if(length(tmp) ==0) {tmp <- NA}
+  tmp <- paste0(tmp, collapse = ',')
+  genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
+}
+
+
+#all the genes universe without repeating and 2 jr more names in 1 vector member
+
+fixed_vectors_genes_from_promoters_list <- strsplit(paste0(genes_from_promoters_list, collapse = ','), split = ',')[[1]]
+fixed_vectors_genes_from_promoters_list <-fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
+
+#clusters of genes as fixed vectors
+for (i in unique(cut_ward_ecoli_d1)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_ecoli_d1 == i)], collapse = ','), split = ',')[[1]]
+  if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
+  assign(paste0('genes_clust', i), unique(genes_clust_tmp))
+}
+
+
+## Bimap interface:
+# Convert the object to a list
+xx <- as.list(org.EcK12.egALIAS2EG)
+# Remove pathway identifiers that do not map to any entrez gene id
+xx <- xx[!is.na(xx)]
+
+#common names in universe (xx) and the samples
+
+setdiffed <- setdiff(fixed_vectors_genes_from_promoters_list, names(xx))
+fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[!fixed_vectors_genes_from_promoters_list%in%setdiffed]
+entrezIds <- mget(fixed_vectors_genes_from_promoters_list, envir=org.EcK12.egALIAS2EG)
+  ###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+
+#common names in universe (xx) and the clusters 1-4
+
+setdiffed_clust1 <- setdiff(genes_clust1, names(xx))
+fixed_genes_clust1 <- genes_clust1[!genes_clust1%in%setdiffed_clust1]
+entrezIds_clust1 <- mget(fixed_genes_clust1, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust2 <- setdiff(genes_clust2, names(xx))
+fixed_genes_clust2 <- genes_clust2[!genes_clust2%in%setdiffed_clust2]
+entrezIds_clust2 <- mget(fixed_genes_clust2, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust3 <- setdiff(genes_clust3, names(xx))
+fixed_genes_clust3 <- genes_clust3[!genes_clust3%in%setdiffed_clust3]
+entrezIds_clust3 <- mget(fixed_genes_clust3, envir=org.EcK12.egALIAS2EG)
+
+setdiffed_clust4 <- setdiff(genes_clust4, names(xx))
+fixed_genes_clust4 <- genes_clust4[!genes_clust4%in%setdiffed_clust4]
+entrezIds_clust4 <- mget(fixed_genes_clust4, envir=org.EcK12.egALIAS2EG)
+
+dfGO_ecoli_d1 <- as.data.frame(rbind(cbind(rep(1, length(entrezIds_clust1)), as.character(entrezIds_clust1)),
+      cbind(rep(2, length(entrezIds_clust2)), as.character(entrezIds_clust2)),
+      cbind(rep(3, length(entrezIds_clust3)), as.character(entrezIds_clust3)),
+      cbind(rep(4, length(entrezIds_clust4)), as.character(entrezIds_clust4))
+))
+
+colnames(dfGO_ecoli_d1) <- c('group', 'Entrezid')
+  
+# #save(dfGO_ecoli_d1, file = '/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_d1.rda')
+###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+```
+
+
+
+
+```{r GO statistics using GOstats for d1}
+library(GOstats)
+library(Category)
+library(DBI)
+library(org.EcK12.eg.db)
+
+load('/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_d1.rda')
+
+entrezUniverse <- as.character(dfGO_ecoli_d1$Entrezid)
+
+selectedEntrezIds_clust1 <- as.character(dfGO_ecoli_d1$Entrezid[which(dfGO_ecoli_d1$group == 1)])
+selectedEntrezIds_clust2 <- as.character(dfGO_ecoli_d1$Entrezid[which(dfGO_ecoli_d1$group == 2)])
+selectedEntrezIds_clust3 <- as.character(dfGO_ecoli_d1$Entrezid[which(dfGO_ecoli_d1$group == 3)])
+selectedEntrezIds_clust4 <- as.character(dfGO_ecoli_d1$Entrezid[which(dfGO_ecoli_d1$group == 4)])
+
+#setting cutoff value
+hgCutoff <- 0.0005
+#hgCutoff <- 0.1
+
+#selecting onthology
+
+ontology <- 'BP'
+#ontology <- 'MF'
+
+for (i in 1:4) {
+params <- new("GOHyperGParams",
+ geneIds=get(paste0('selectedEntrezIds_clust', i)),
+ universeGeneIds=entrezUniverse,
+ annotation="org.EcK12.eg.db",
+ ontology=ontology,
+ pvalueCutoff=hgCutoff,
+ conditional=FALSE,
+ testDirection="over")
+
+  hgOver_clust <- hyperGTest(params)
+  
+  assign(x = paste0('df_summary_clust', i), summary(hgOver_clust))
+}
+
+
+View(df_summary_clust1) #-
+View(df_summary_clust2) #ion transport
+View(df_summary_clust3) # citrate cycle, monosacharide
+View(df_summary_clust4) #lipid metabolism
+#We would also like to perform a conditional test.  Instead of having to de ne a new
+#GO-HyperGParamsinstance  by  hand,  we  can  create  a  copy  and  update  just  the  parameter  of interest.
+#paramsCond <- params
+#conditional(paramsCond) <- TRUE
+#hgCondOver <- hyperGTest(paramsCond)
+
+
+#hgOver_clust1 <- hyperGTest(params_clust1)
+#hgOver_clust2 <- hyperGTest(params_clust2)
+#hgOver_clust3 <- hyperGTest(params_clust3)
+#hgOver_clust4 <- hyperGTest(params_clust4)
+
+
+#df_clust1 <- summary(hgOver_clust1)
+#df_clust2 <- summary(hgOver_clust2)
+#df_clust3 <- summary(hgOver_clust3)
+#df_clust4 <- summary(hgOver_clust4)
+
+########cbind(rbind(df_clust2, df_clust3, df_clust4), (df_clust2, df_clust3, df_clust4)
+
+names(df_clust2)
+
+```
+
+
+```{r Data for GO, eval=FALSE }
+
+library(org.EcK12.eg.db)
+
+#not found in regulon TUset
+ # absent_genenames <- c('cpxQ', 'insD', 'efeU_1', "efeU_2", "sroD", 'tcyJ', "gadF", "istR-1","istR-2", "phnE_1", "phnE_2", "dgcT", "ilvG_1", "ilvG_2"  )
+
+  
+Entrezid <- c()
+group <- c()
+
+LIST <- list(genes_clust1, genes_clust2, genes_clust3, genes_clust4)
+names(LIST) <- c('cl1', 'cl2', 'cl3', 'cl4')
+for ( i in  seq_along(LIST)) {
+#  if ('TRUE' %in% unique(absent_genenames %in% LIST[[i]])) {
+  #  tmp <- LIST[[i]][-which(LIST[[i]] %in% absent_genenames)]
+ # }
+  
+  #handling absent genes
+  for (gene in LIST[[i]]){
+     get(x = gene, envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)
+  }
+  mget(x= as.character(LIST[[i]]), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)
+  Entrezid <- c(Entrezid, unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))
+  group <- c(group,  rep(i, length(unlist(mget(x= as.character(tmp), envir=org.EcK12.eg.db::org.EcK12.egALIAS2EG)))))
+ # dfGO <- rbind(dfGO, cbind(Entrezid, group))
+}
+
+dfGO <- data.frame(Entrezid = Entrezid, group = group)
+                   
+                   
+#colnames(dfGO) <- c('Entrezids', 'group')
+save(dfGO, file = '/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
+
+
+genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='groupGO', OrgDb='org.EcK12.eg.db')
+genes_formula@compareClusterResult
+
+```
