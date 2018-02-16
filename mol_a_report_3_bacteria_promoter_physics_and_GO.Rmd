@@ -467,7 +467,7 @@ plot(to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist, main = 'E. c
 
 
 
-```{r two bacteria promoters mixture - all the characteristics, eval=F}
+```{r three bacteria promoters mixture - all the characteristics, eval=F}
 library(fastcluster)
 library(dendextend)
 cex.main = 2
@@ -478,19 +478,19 @@ par(mfrow = c(5,1),
 
 to_plot_wards <- list()
 for (i in c('E01', 'd1', 'GC', 'EP')){
-  both_tmp <- rbind(get(i), get(paste0('synechocystis_', i)))
-  ward_both_tmp<- hclust.vector(scale(both_tmp, center = T, scale = T), method = 'ward')
+  three_tmp <- rbind(get(i), get(paste0('synechocystis_', i)), get(paste0('mycoplasma_', i)))
+  ward_three_tmp<- hclust.vector(t(scale(t(three_tmp), center = T, scale = T)), method = 'ward') #!!
 
-  colvec_ward_both_tmp <- c(rep('orange', length(exp_tsss)),rep('darkgreen',length(synechocystis_proms$X1.TSS)))[order.dendrogram(ward_both_tmp %>% as.dendrogram )]
+  colvec_ward_three_tmp <- c(rep('orange', length(exp_tsss)), rep('darkgreen',length(synechocystis_proms$X1.TSS)), rep('magenta',length(mycoplasma_proms$Position)))[order.dendrogram(ward_three_tmp %>% as.dendrogram )]
 
-  ward_both_tmp %>% as.dendrogram %>% color_branches(k = length(ward_both_tmp$order), col = colvec_ward_both_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_both_tmp$height)*.2) -> to_plot_ward_both_tmp
+  ward_three_tmp %>% as.dendrogram %>% color_branches(k = length(ward_three_tmp$order), col = colvec_ward_three_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_three_tmp$height)*.2) -> to_plot_ward_three_tmp
 
-  plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
+  plot(to_plot_ward_three_tmp, labels = F, main = paste0('E.coli, Synechocystis sp., and Mycoplasma gallisepticum promoters (', i, ')'), cex.main = cex.main )
   
-  assign(paste0('to_plot_wards', i), ward_both_tmp)
+  assign(paste0('to_plot_wards', i), ward_three_tmp)
 }
 
-plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
+plot(to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
 ```
 
 
