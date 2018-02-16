@@ -163,14 +163,9 @@ boxplot(whole_mycoplasma_EP$mpot, ylim = ylim)
 Loading data on sequences of different types (promoters, non-promoters, genes, islands, and lowscore) from .Rdata files (must be copied separetely)
 ```{r}
 
-# #load('/home/mikhail/Documents/Script_2016_all/spline_dataset_pro.Rdata')
-load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
-#load('spline_dataset_notpro.Rdata')
-#load('spline_dataset_gen.Rdata')
-#load('spline_dataset_isl.Rdata')
-#load('dataset_lowscore.Rdata')
 
-##dataset_notpro[[1488]]<-NULL # to close to the left flank
+load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+
 ```
 
 
@@ -284,31 +279,6 @@ synechocystis_proms <- (read.csv('https://raw.githubusercontent.com/FVortex/diff
 
 ```
 
-```{r Checking whether the strain is correct, eval=F}
-tmp_forward <- synechocystis_proms$X1.TSS[3]
-tmp_reverse <- synechocystis_proms$X1.TSS[1]
-synechocystis_proms$X4.strand[1:10] #3 is forward
-synechocystis_proms$X6.observed.sequence[1]
-
-substr(reverseComplement_synechocystis_NC_000911.1, start = tmp_reverse - 15, stop = tmp_reverse+15)
-
-#synechocystis_proms$X6.observed.sequence[3]
-#substr(synechocystis_NC_000911.1, start = tmp_forward - 15, stop = tmp_forward+15)
-
-
-which.synechocystis_proms.fwd <- which(synechocystis_proms$X4.strand=='fwd')
-which.synechocystis_proms.rev <- which(synechocystis_proms$X4.strand=='rev')
-
-greped_forward <- sapply(synechocystis_proms$X6.observed.sequence[which.synechocystis_proms.fwd], FUN = function(x) {grep(x, synechocystis_NC_000911.1)})
-length(greped_forward)
-greped_reverse <- sapply(synechocystis_proms$X6.observed.sequence[which.synechocystis_proms.rev], FUN = function(x) {grep(x, synechocystis_NC_000911.1)})
-length(greped_reverse)
-length(synechocystis_proms$X1.TSS)
-```
-
-Extracting data on all promoters and on experimentaly found ones - including previosely calculated electrostatic potential profiles for Synechosystis
-Creating matrices for data on activation energy ('E01') and size ('d1'). The matrices is 699*201 - 699 promoters sequences, 201 value for a physical property profile
-to 5'-end for both strands 
 
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
@@ -373,22 +343,7 @@ synechocystis_EP<-rbind(synechocystis_EPforward, t(apply(synechocystis_EPreverse
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r  Reading in M. gallisepticum strain S6 promoters }
+```{r  Reading in M. gallisepticum strain S6 promoters from Fisunov et al.}
 
 mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/mycoplasma_gallisepticum_fisunov_2016.csv', header = T)
 
@@ -396,28 +351,6 @@ plot(seq_along(mycoplasma_CP006916.3_char), type = 'n')
 abline(v = mycoplasma_proms$Position, col = 'red')
 
 table(mycoplasma_proms$Strand)
-```
-
-```{r Checking whether the strain is correct 1, eval=F}
-tmp_forward <- synechocystis_proms$X1.TSS[3]
-tmp_reverse <- synechocystis_proms$X1.TSS[1]
-synechocystis_proms$X4.strand[1:10] #3 is forward
-synechocystis_proms$X6.observed.sequence[1]
-
-substr(reverseComplement_synechocystis_NC_000911.1, start = tmp_reverse - 15, stop = tmp_reverse+15)
-
-#synechocystis_proms$X6.observed.sequence[3]
-#substr(synechocystis_NC_000911.1, start = tmp_forward - 15, stop = tmp_forward+15)
-
-
-which.synechocystis_proms.fwd <- which(synechocystis_proms$X4.strand=='fwd')
-which.synechocystis_proms.rev <- which(synechocystis_proms$X4.strand=='rev')
-
-greped_forward <- sapply(synechocystis_proms$X6.observed.sequence[which.synechocystis_proms.fwd], FUN = function(x) {grep(x, synechocystis_NC_000911.1)})
-length(greped_forward)
-greped_reverse <- sapply(synechocystis_proms$X6.observed.sequence[which.synechocystis_proms.rev], FUN = function(x) {grep(x, synechocystis_NC_000911.1)})
-length(greped_reverse)
-length(synechocystis_proms$X1.TSS)
 ```
 
 Right flank needs to be extended by 250 nts
@@ -489,34 +422,10 @@ mycoplasma_EP<-rbind(mycoplasma_EPforward, t(apply(mycoplasma_EPreverse, 1, rev)
 ```
 
 
+```{r Plotting characteristics profiles for 3 bacteria, eval=F}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Extracting data on all promoters and on experimentaly found ones - including previosely calculated electrostatic potential profiles for Synechosystis
-Creating matrices for data on activation energy ('E01') and size ('d1'). The matrices is 699*201 - 699 promoters sequences, 201 value for a physical property profile
-to 5'-end for both strands 
-
-
-
-
-```{r Plotting characteristics profiles for 3 bacteria}
-
-par(mfrow = c(4,3))
+par(mfrow = c(4,3),
+    mar = rep(0.5,4))
 
 matplot(E01, type = 'l', col = 1)
 matplot(d1, type = 'l', col = 1)
@@ -539,23 +448,21 @@ matplot(mycoplasma_EP, type = 'l', col = 1)
 ```{r string distance}
 library(Biostrings)
 
+mycoplasma_synechocystis_e.coli_proms_strings <- sapply(c(mycoplasma_seqs, synechocystis_seqs, seqs),  function(x) {paste0(x, collapse = '')})
+mycoplasma_synechocystis_e.coli_proms_DNAStringSet <- DNAStringSet(mycoplasma_synechocystis_e.coli_proms_strings)
+
+mycoplasma_synechocystis_e.coli_proms_stringdist<- stringDist(mycoplasma_synechocystis_e.coli_proms_DNAStringSet, method = 'levenshtein')
+
+ward_mycoplasma_synechocystis_e.coli_proms_stringdist<- hclust(mycoplasma_synechocystis_e.coli_proms_stringdist, method = 'ward.D2')
+
+plot(ward_mycoplasma_synechocystis_e.coli_proms_stringdist, labels = F)
+
+colvec_mycoplasma_synechocystis_e.coli_proms<- c(rep('magenta', length(mycoplasma_proms$Position)), rep('darkgreen', length(synechocystis_proms$X1.TSS)),rep('orange', length(exp_tsss)))
+
+ward_mycoplasma_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_mycoplasma_synechocystis_e.coli_proms_stringdist$order), col = colvec_mycoplasma_synechocystis_e.coli_proms[order.dendrogram(ward_mycoplasma_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_mycoplasma_synechocystis_e.coli_proms_stringdist$height)*0.2)%>% circlize_dendrogram(labels=F, dend_track_height = 0.95) -> to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist
 
 
-synechocystis_e.coli_proms_strings <- sapply(c(synechocystis_seqs, seqs),  function(x) {paste0(x, collapse = '')})
-synechocystis_e.coli_proms_DNAStringSet <- DNAStringSet(synechocystis_e.coli_proms_strings)
-
-synechocystis_e.coli_proms_stringdist <- stringDist(synechocystis_e.coli_proms_DNAStringSet, method = 'levenshtein')
-
-ward_synechocystis_e.coli_proms_stringdist <- hclust(synechocystis_e.coli_proms_stringdist, method = 'ward.D2')
-
-plot(ward_synechocystis_e.coli_proms_stringdist, labels = F)
-
-colvec_synechocystis_e.coli_proms <- c(rep('darkgreen', length(synechocystis_proms$X1.TSS)),
-rep('orange', length(exp_tsss)))
-ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_synechocystis_e.coli_proms_stringdist$order), col = colvec_synechocystis_e.coli_proms[order.dendrogram(ward_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_synechocystis_e.coli_proms_stringdist$height)*0.2)%>% circlize_dendrogram(labels=F, dend_track_height = 0.95) -> to_plot_ward_synechocystis_e.coli_proms_stringdist
-
-
-#plot(to_plot_ward_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance')
+plot(to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist, main = 'E. coli, Synechocystis sp., and Mycoplasma gallisepticum promoters: DNA Levenshtein distance')
 ```
 
 
