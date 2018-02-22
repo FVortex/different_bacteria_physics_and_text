@@ -349,7 +349,7 @@ mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/differen
 plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', main = 'Mycoplasma gallisepticum promoters location', xlab = 'Sequence (nts)', yaxt = 'n')
 abline(v = mycoplasma_proms$Position, col = 'red')
 
-table(mycoplasma_proms$Strand)
+#table(mycoplasma_proms$Strand)
 ```
 
 Right flank needs to be extended by 250 nts
@@ -851,7 +851,7 @@ Promoter numbers and genenames
 library(org.EcK12.eg.db)
 cut_ward_ecoli_E01 <- cutree(ward_ecoli_E01, k = 4)
 
-table(cut_ward_ecoli_E01)
+#table(cut_ward_ecoli_E01)
 
 ecoli_E01_promoters_clusters <- c()
 for (i in unique(cut_ward_ecoli_E01)) {
@@ -1030,7 +1030,7 @@ Promoter numbers and genenames
 ```{r d1 clusters population and GOstats, warning=FALSE, message=FALSE, cache=TRUE}
 cut_ward_ecoli_d1 <- cutree(ward_ecoli_d1, k = 4)
 
-table(cut_ward_ecoli_d1)
+#table(cut_ward_ecoli_d1)
 
 ecoli_d1_promoters_clusters <- c()
 for (i in unique(cut_ward_ecoli_d1)) {
@@ -1560,7 +1560,7 @@ cut_ecoli_1500sidd <- cutree(ward_ecoli_1500sidd, k = 4)
 #removing  prmoters of cluster 2 (largest)
 
 clusters_2_3_4_numbers <- which(cut_ecoli_1500sidd!=2)
-str(clusters_2_3_4_numbers)
+#str(clusters_2_3_4_numbers)
 
 # 3 small clusters plotted together
 
@@ -1613,11 +1613,11 @@ cuplcl(data = t(sidds_synechocystis_1500), method = 'ward', k = 4, main = 'Synec
 
 
 cut_sidds_synechocystis_1500 <- cutree(ward_sidds_synechocystis_1500, k = 4)
-table(cut_sidds_synechocystis_1500)
+#table(cut_sidds_synechocystis_1500)
 #removing  prmoters of cluster 2 (largest)
 
 synechocystis_clusters_2_3_4_numbers <- which(cut_sidds_synechocystis_1500!=1)
-str(synechocystis_clusters_2_3_4_numbers)
+#str(synechocystis_clusters_2_3_4_numbers)
 
 # 3 small clusters plotted together
 
