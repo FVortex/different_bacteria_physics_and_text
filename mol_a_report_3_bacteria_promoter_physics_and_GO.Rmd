@@ -877,7 +877,7 @@ for (i in seq_along(exp_names)){
 }
 
 
-#all the genes universe without repeating and 2 jr more names in 1 vector member
+#all the genes universe without repeating and 2 or more names in 1 vector member
 
 fixed_vectors_genes_from_promoters_list <- strsplit(paste0(genes_from_promoters_list, collapse = ','), split = ',')[[1]]
 fixed_vectors_genes_from_promoters_list <-fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
@@ -978,7 +978,7 @@ params <- new("GOHyperGParams",
 }
 
 
-#View(df_summary_clust1) #primarly nucleoside metabolisim and ion transport
+head(df_summary_clust1) #primarly nucleoside metabolisim and ion transport
 #View(df_summary_clust2) #suflur,bicarbonic acid, aldehyde metabolism
 #View(df_summary_clust3) #biogenesis, aerobic respiration
 #View(df_summary_clust4) #sugar metabolism
@@ -1616,14 +1616,14 @@ cut_sidds_synechocystis_1500 <- cutree(ward_sidds_synechocystis_1500, k = 4)
 #table(cut_sidds_synechocystis_1500)
 #removing  prmoters of cluster 2 (largest)
 
-synechocystis_clusters_2_3_4_numbers <- which(cut_sidds_synechocystis_1500!=1)
+synechocystis_clusters_2_3_4_numbers <- which(cut_sidds_synechocystis_1500!=4)
 #str(synechocystis_clusters_2_3_4_numbers)
 
 # 3 small clusters plotted together
 
 
 `Sequence (nts)` <- -750:750
-matplot(`Sequence (nts)`, sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers],ty='l',lty =1, col=1, lwd =0.5, main = 'Mycoplasma gallisepticum, 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
+matplot(`Sequence (nts)`, sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers],ty='l',lty =1, col=1, lwd =0.5, main = 'Synechocystis sp., 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
 
 #clusterization of the 3 clusters profiles only
 
@@ -1634,7 +1634,7 @@ ward_sidds_synechocystis_small_clusters <- hclust.vector(t(sidds_synechocystis_1
 
 
 #cur and plot the new clusterization results
-cuplcl(data = t(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]), method = 'ward', k = 3, main = 'Mycoplasma gallisepticum, 3 small clusters SIDD')
+cuplcl(data = t(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]), method = 'ward', k = 3, main = 'Synechocystis sp., 3 small clusters SIDD')
 
 #sums by rows for reduced (3 small clusters only) dataset
 
@@ -1642,13 +1642,13 @@ cuplcl(data = t(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers])
 `Sequence (nts)` <- -750:750
 
 sidds_sums_on_positions_synechocystis_3_clusters <- rowSums(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers])
-matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_3_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis gallisepticum, 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
+matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_3_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis sp., 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
 
 library(diptest)
 diptest::dip.test(x = sidds_sums_on_positions_synechocystis_3_clusters, simulate.p.value = T, B = 10000)
 #and for complete set of Synechocystis profiles
 
 sidds_sums_on_positions_synechocystis_all_clusters <- rowSums(sidds_synechocystis_1500)
-matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_all_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis gallisepticum, 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
+matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_all_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis sp., 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
 
 ```
