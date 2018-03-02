@@ -2050,6 +2050,8 @@ as.character(sapply(dataset_pro, FUN = function(x) {x$strand})),
 as.character(sapply(dataset_pro, FUN = function(x) {x$evidence})),
 as.character(sapply(dataset_pro, FUN = function(x) {x$genename}))))
 
-write.csv(dataset_pro_df, file = '/home/jane/Документы/Misha/mol_a_2018/dataset_pro_df.csv')
+rownames(dataset_pro_df) <- names(dataset_pro)
+colnames(dataset_pro_df) <- c('TSS', 'strand', 'evidence', 'genename')
+write.csv(dataset_pro_df, file = '/home/jane/Документы/Misha/mol_a_2018/new_different_bacteria_physics_an_text /dataset_pro_df.csv')
 ```
 
