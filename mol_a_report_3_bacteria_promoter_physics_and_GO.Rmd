@@ -134,9 +134,10 @@ dynchars<-function(seq, interval_size) {
 ```
 
 First to set interval size for dynchars
-```{r Genome-wide characteristics profiels for three bacteria, warning=FALSE, message=FALSE, cache=TRUE}
+```{r Genome-wide characteristics profiles for three bacteria, warning=FALSE, message=FALSE, cache=TRUE}
 
 interval_size <- 100
+
 whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = interval_size)
 whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref =  1)
 
@@ -484,14 +485,14 @@ for (i in c('E01', 'd1', 'GC', 'EP')){
 
   ward_three_tmp %>% as.dendrogram %>% color_branches(k = length(ward_three_tmp$order), col = colvec_ward_three_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_three_tmp$height)*.2) -> to_plot_ward_three_tmp
 
-  plot(to_plot_ward_three_tmp, labels = F, main = paste0('E.coli, Synechocystis sp., and Mycoplasma gallisepticum promoters (', i, ')'), cex.main = cex.main )
+  plot(to_plot_ward_three_tmp, labels = F, main = paste0('E. coli, Synechocystis sp., and Mycoplasma gallisepticum promoters (', i, ')'), cex.main = cex.main )
   
   assign(paste0('to_plot_wards', i), ward_three_tmp)
 }
 
-plot(to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist, main = 'E. coli and Synechocystis promoters: DNA Levenshtein distance', cex.main = cex.main )
+plot(to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist, main = 'E. coli, Synechocystis sp., and Mycoplasma gallisepticum promoters: DNA Levenshtein distance', cex.main = cex.main )
 
-legend('topright', legend = c('E.coli', 'Synechocystis sp.', 'Mycoplasma gallisepticum'), fill = rev(unique(colvec_mycoplasma_synechocystis_e.coli_proms)), bty = 'n')
+legend('topright', legend = c('E. coli', 'Synechocystis sp.', 'Mycoplasma gallisepticum'), fill = rev(unique(colvec_mycoplasma_synechocystis_e.coli_proms)), bty = 'n')
 ```
 
 
@@ -1555,7 +1556,7 @@ ward_synechocystis_e.coli_proms_sidd %>% as.dendrogram %>% color_branches(k = le
   
 
 plot(to_plot_ward_synechocystis_e.coli_proms_sidd, labels = F, main = 'E. coli and Synechocystis sp. promoters, SIDD profiles')
-legend('topright', legend = c('E.coli', 'Synechocystis sp.'), fill = c('darkgreen', 'orange'))
+legend('topright', legend = c('E. coli', 'Synechocystis sp.'), fill = c('darkgreen', 'orange'))
 
 ```
 
@@ -1579,7 +1580,7 @@ legend('topright', legend = c('E.coli', 'Synechocystis sp.'), fill = c('darkgree
 #tanglegram(to_plot_wardsd1, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
 
 #tanglegram(to_plot_wardsGC, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
-  #plot(to_plot_ward_both_tmp, labels = F, main = paste0('E.coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
+  #plot(to_plot_ward_both_tmp, labels = F, main = paste0('E. coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
   #  }
   #}
 #}
@@ -1976,7 +1977,13 @@ ward_mycoplasma_proms_stringdist %>% as.dendrogram %>% color_branches(k = 6) %>%
 cut_ward_mycoplasma_proms_stringdist <- cutree(ward_mycoplasma_proms_stringdist, k = 3)
 table(cut_ward_mycoplasma_proms_stringdist)
 
+
+#for the strain used in Fisunov et al. no oriC coordinates available
+#other strains comprise  rep_origin 1..1876 /note="putative oriC"
+#the sequence appears to be present in the genome used at the same position
+
 plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum levenstien distance, 2 small clusters (both 13 members) positions')
+abline(v = 1:1876, lty =2)
 abline(v = mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 2)], col = 'darkred')
 abline(v = mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 3)], col = 'darkblue')
 
@@ -2032,5 +2039,17 @@ par(mfrow = c (3,1))
 plot(compet_result$V3, type = 'l',ylim = 0:1)
 plot(compet_result$V4, type = 'l',ylim = 0:1)
 plot(compet_result$V5, type = 'l',ylim = 0:1)
+```
+
+
+```{r spline_dataset_pro.rdata to .scv}
+
+
+dataset_pro_df <- as.data.frame(cbind(as.numeric(sapply(dataset_pro, FUN = function(x) {x$tss})),
+as.character(sapply(dataset_pro, FUN = function(x) {x$strand})),
+as.character(sapply(dataset_pro, FUN = function(x) {x$evidence})),
+as.character(sapply(dataset_pro, FUN = function(x) {x$genename}))))
+
+write.csv(dataset_pro_df, file = '/home/jane/Документы/Misha/mol_a_2018/dataset_pro_df.csv')
 ```
 
