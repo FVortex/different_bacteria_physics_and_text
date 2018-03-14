@@ -66,71 +66,203 @@ reverseComplement_mycoplasma_CP006916.3<-unlist(strsplit(mycoplasma_CP006916.3, 
 
 
 
-Dynamical properties calculation from within R using octave script translated according to Grinevich et al., 2013
-Creating function for dynamical properties calculation
+New function for physical properties calculation 
 
 ```{r dynchars function }
+if(!require(ape)){stop('Code requires library "ape".\n')}
+if(!require(reldna)){stop('Code requires library "reldna".\n')}
+if(!require(parallel)){stop('Code requires library "parallel".\n')}
+if(!require(Biostrings)){stop('Code requires library "Biostrings".\n')}
 
-dynchars<-function(seq, interval_size) {
-  if (missing(seq))
-    stop("Need to specify sequence (as a vector of chars)")
-  
-  if (missing(interval_size))
-    stop("Need to specify interval size")
-  
+get_forward_subseq <- function(seq, tss, boundaries) {
+  return(as.character(
+    DNAString(seq,
+              start = tss-boundaries[1],
+              nchar = sum(boundaries)+1)))
+}
+
+get_reverse_subseq <- function(seq, tss, boundaries) {
+  return(as.character(
+    reverseComplement(
+      DNAString(seq,
+                start = tss-boundaries[2],
+                nchar = sum(boundaries)+1))))
+}
+
+get_forward_substring <- function(seq, tss, boundaries) {
+   return(seq[(tss-boundaries[1]):(tss+boundaries[2])])
+}
+
+get_reverse_substring <- function(seq, tss, boundaries) {
+  res <- rev(chartr("ATGC", "TACG", seq[(tss-boundaries[2]):(tss+boundaries[1])]))
+  return(res)
+}
+
+cut_char_vec <- function(char_vec, tss, boundaries, strand) {
+  res <- switch(strand,
+         forward = char_vec[(tss-boundaries[1]):(tss+boundaries[2])],
+         reverse = char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
+         )
+  return(res)
+}
+
+#' Title
+#'
+#' @param seq full sequence (chromosome)
+#' @param interval requested interval
+#' @param tss
+#' @param strand DNA strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+dynchars <- function(seq, average_interval_size, tss, boundaries, strand=c('forward','reverse')) {
+
+  if (missing(average_interval_size))
+  stop("Need to specify average_interval_size")
+
   if(!is.character(seq))
     stop("Sequence must be a character vector containing A, C, G, T letters only")
+  #make sure no small letters are present
+  seq <- toupper(seq)
+  # if((tss - average_interval_size < 1) || (tss + average_interval_size > length(seq)))
+  #   stop("Considered average_interval_size exceeds the size of the sequence")
   
-  seq<-toupper(seq)
-  seq<-c(seq, seq[2:(interval_size)])
+  # seq <- switch(strand, 
+  #               forward = seq,
+  #               reverse = as.character(reverseComplement(DNAString(seq))))
+  # seq <- unlist(strsplit(seq, ''))
+  # seq <- toupper(seq)
   
+  boundaries <- boundaries + average_interval_size %/% 2
+  
+  seq <- cut_char_vec(seq, tss, boundaries, strand)
+
+  # strand <- match.arg(strand)
+  # seq <- switch(strand,
+  #             forward=get_forward_substring(seq, tss, boundaries),
+  #             reverse=get_forward_substring(seq, tss, boundaries))#get_reverse_substring(seq, tss, boundaries))
+
   a<-3.4*10^(-10)
-  I<-c(7.6, 4.8, 8.2, 4.1)*10^(-44)
+  #I<-c(7.6, 4.8, 8.2, 4.1)*10^(-44)
   K<-c(227, 155, 220, 149)*10^(-20)
   V<-c(2.09, 1.43, 3.12, 2.12)*10^(-20)
-  tau<-c(127, 99, 140, 84)
-  
-  csA<-cumsum(seq=='A') 
+
+  csA<-cumsum(seq=='A')
   csT<-cumsum(seq=='T')
   csG<-cumsum(seq=='G')
   csC<-cumsum(seq=='C')
 
-  countA = csA[interval_size:length(csA)]-c(0, csA[1:(length(csA)-interval_size)])
-  countT = csT[interval_size:length(csT)]-c(0, csT[1:(length(csT)-interval_size)])
-  countG = csG[interval_size:length(csG)]-c(0, csG[1:(length(csG)-interval_size)])
-  countC = csC[interval_size:length(csC)]-c(0, csC[1:(length(csC)-interval_size)])
-  
-  M<-cbind(countA, countT, countG, countC)/interval_size
-  M_comp<-cbind(countT, countA, countC, countG)/interval_size
-  M_comp<-apply(t(M_comp),1,rev) 
-  Is<-as.numeric(M%*%I)#! numeric conversion
-  Ks<-as.numeric(M%*%K)
-  Vs<-as.numeric(M%*%V)
-  
-  E01<-(8*(Ks*Vs)^0.5)* 6E23 / 4184
-  d1<-((Ks*a^2)/Vs)^(0.5)/a;
-  c1<-(Ks*a^2/Is)^0.5
-  m1<-E01/c1/6.011E-26
-  taus1<-as.numeric(M%*%tau) #!as.numeric conversion
-  gc1 = M[,3] + M[,4]
-  
-  Is<-as.numeric(M_comp%*%I)#! numeric conversion
-  Ks<-as.numeric(M_comp%*%K)
-  Vs<-as.numeric(M_comp%*%V)
+  countA = csA[average_interval_size:length(csA)]-c(0, csA[1:(length(csA)-average_interval_size)])
+  countT = csT[average_interval_size:length(csT)]-c(0, csT[1:(length(csT)-average_interval_size)])
+  countG = csG[average_interval_size:length(csG)]-c(0, csG[1:(length(csG)-average_interval_size)])
+  countC = csC[average_interval_size:length(csC)]-c(0, csC[1:(length(csC)-average_interval_size)])
 
-  
-  E02<- 8*(Ks*Vs)^0.5  * 6E23 / 4184;
-  d2<-((Ks*a^2)/Vs)^(0.5)/a;
-  c2<-(Ks*a^2/Is)^0.5;
-  m2<-E02/c2/6.011E-26;
-  taus2<-as.numeric(M_comp%*%tau)
-  gc2 = M_comp[,3] + M_comp[,4]
+  M <- cbind(countA, countT, countG, countC)/average_interval_size
 
-  dynchars_return<-list(E01=E01, d1=d1, c1=c1, m1=m1, taus1=taus1, gc1=gc1, E02=E02, d2=d2, c2=c2, m2=m2, taus2=taus2, gc2=gc2)
-  
+  #Is <- as.numeric(M%*%I)#! numeric conversion
+  Ks <- as.numeric(M %*% K)
+  Vs <- as.numeric(M %*% V)
+
+  E0 <- (8*(Ks*Vs)^0.5)* 6E23 / 4184
+  d <- ((Ks*a^2)/Vs)^(0.5)/a;
+  gc = M[,3] + M[,4]
+
+  dynchars_return <- list(E0=E0, d=d, gc=gc)
   return(dynchars_return)
-  
 }
+
+#' Title
+#'
+#' @param tss_position
+#' @param extended_string -- vector of characters
+#' @param ep_interval
+#' @param zout
+#' @param strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_EP_on_interval <- function(tss_position, extended_string, ep_interval=c(270, 130), zout=-540:179, strand=c('forward','reverse')) {
+  #lseqspline1D(substr(e.coli_U00096.2, exp_tsss[i]-250, exp_tsss[i]+150), bound=c(50, 350), ref=251 )
+  # strand<- match.arg(strand)
+  #extended_string <- unlist(strsplit(extended_string, ''))
+  # subseq <-switch(strand,
+  #                 forward = get_forward_substring(extended_string, tss_position, ep_interval),
+  #                 reverse = get_reverse_substring(extended_string, tss_position, ep_interval))
+  # subseq <- paste0(subseq, collapse = "")
+  
+  # subseq <- switch(strand,
+  #                  forward = get_forward_subseq(extended_string, tss_position, ep_interval),
+  #                  reverse = get_reverse_subseq(extended_string, tss_position, ep_interval))
+  # subseq <- switch(strand,
+  #                  forward = get_forward_substring(extended_string, tss_position, ep_interval),
+  #                  reverse = get_reverse_substring(extended_string, tss_position, ep_interval))
+  # subseq <- as.character(subseq)
+  subseq <- as.character(cut_char_vec(extended_string, tss_position, ep_interval, strand))
+  subseq <- paste0(subseq, collapse = "")
+  p <- lseqspline1D(
+    subseq,
+    bound=c(50, 350),
+    ref=271)
+  return(p$mpot[p$x %in% zout])
+}
+
+#' Title
+#'
+#' @param dnaSeq
+#' @param dynamic_interval
+#' @param tss_position
+#' @param ep_interval
+#' @param zout
+#' @param strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_profile <- function(dnaSeq, average_interval_size, tss_position, dynamic_interval, ep_interval=c(270, 130), zout=-540:179, strand=c('forward','reverse')) {
+  #ep_interval = c(163, 213) for reverse, for forward c(267, 217), zout - the same
+  #seq, average_interval_size, tss, boundaries, strand=c('forward','reverse')
+  #dnaSeq <- unlist(strsplit(dnaSeq, ''))
+  dynRes <- dynchars(dnaSeq, average_interval_size, tss_position,  dynamic_interval, strand)
+  epRes <- calculate_EP_on_interval(tss_position, dnaSeq, ep_interval, zout, strand)
+  return(c(dynRes$E0, dynRes$d, epRes, dynRes$gc))
+}
+
+#average_interval_size 200
+#dynamic_interval -150;50
+
+
+#sample calculation
+
+seq <- substr(e.coli_U00096.2, start = 1, stop = 10000)
+# #seq <- 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaccccccccccccccccccccccccccccccccccccccccccccc'
+vec_seq <- strsplit(seq, split = '')[[1]]
+
+get_forward_subseq(seq = seq, tss = 20, boundaries = c(10, 23))
+
+get_reverse_subseq(seq = seq, tss = 30, boundaries = c(10, 23))
+
+as.character(cut_char_vec(vec_seq, tss = 50, boundaries = c(15,15), strand = 'reverse'))
+
+dynchars(seq = vec_seq, average_interval_size = 200, tss = 2000, boundaries = c(150,50),strand = 'forward')
+
+
+boundaries <- boundaries + average_interval_size %/% 2
+  
+cut_char_vec(vec_seq, tss, boundaries, strand)
+
+  # strand <- match.arg(strand)
+
+
+calculate_EP_on_interval(tss_position = 1000, extended_string = vec_seq, ep_interval = c(10, 10))
+
+
+calculate_profile(dnaSeq = (strsplit('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaccccccccccccccccccccccccccccccccccccccccccccc', split = '')[[1]]), average_interval_size = 30, dynamic_interval = c(10, 30), tss_position = 50, ep_interval = 30)
+
 ```
 
 First to set interval size for dynchars
