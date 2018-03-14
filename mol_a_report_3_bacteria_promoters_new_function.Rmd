@@ -251,27 +251,35 @@ as.character(cut_char_vec(vec_seq, tss = 50, boundaries = c(15,15), strand = 're
 dynchars(seq = vec_seq, average_interval_size = 200, tss = 2000, boundaries = c(150,50),strand = 'forward')
 
 
-boundaries <- boundaries + average_interval_size %/% 2
-  
-cut_char_vec(vec_seq, tss, boundaries, strand)
-
   # strand <- match.arg(strand)
 
 
-calculate_EP_on_interval(tss_position = 1000, extended_string = vec_seq, ep_interval = c(10, 10))
+calculate_EP_on_interval(tss_position = 1000, extended_string = vec_seq, ep_interval = c(350, 150), strand = 'forward') #Ep demands vector!
 
 
-calculate_profile(dnaSeq = (strsplit('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaccccccccccccccccccccccccccccccccccccccccccccc', split = '')[[1]]), average_interval_size = 30, dynamic_interval = c(10, 30), tss_position = 50, ep_interval = 30)
 
+calculate_profile(dnaSeq = vec_seq, average_interval_size = 30, dynamic_interval = c(10, 30), tss_position = 1000, ep_interval = c(350, 150))
+
+
+#reverse strand for dynchars - problems
+get_forward_substring(strsplit('aaaaaaaaaaaaaaaaaaacccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', split = '')[[1]], tss = 20, boundaries = c(10,10))
+get_reverse_substring(strsplit('aaaaaaaaaaaaaaaaaaacccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', split = '')[[1]], tss = 20, boundaries = c(10,10))
 ```
 
-First to set interval size for dynchars
+First to set parameters for dynchars
 ```{r Genome-wide characteristics profiles for three bacteria, warning=FALSE, message=FALSE, cache=TRUE}
+average_interval_size <- 200
+dynamic_interval <- c(150, 50)
 
-interval_size <- 100
+whole_e.coli_dynchars_forward <- dynchars(e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = length(e.coli_U00096.2_char) , boundaries = c(0,  length(e.coli_U00096.2_char)), strand = 'forward')
 
-whole_e.coli_dynchars <- dynchars(e.coli_U00096.2_char, interval_size = interval_size)
-whole_e.coli_EP <- lseqspline1D(e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref =  1)
+whole_e.coli_dynchars_reverse <- dynchars(e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = length(e.coli_U00096.2_char)/2 , boundaries = c(100,  length(e.coli_U00096.2_char) - 100), strand = 'reverse')#!
+
+str(whole_e.coli_dynchars_forward)
+
+whole_e.coli_EP_forward <- calculate_EP_on_interval(extended_string = e.coli_U00096.2,tss_position = length(e.coli_U00096.2_char)/2, ep_interval = c(1, nchar(e.coli_U00096.2)), strand = 'forward')
+
+whole_e.coli_EP_reverse <- calculate_EP_on_interval(extended_string = e.coli_U00096.2,tss_position = length(e.coli_U00096.2_char)/2, ep_interval = c(1, nchar(e.coli_U00096.2)), strand = 'reverse')
 
 whole_synechocystis_dynchars <- dynchars(synechocystis_NC_000911.1_char, interval_size = interval_size)
 whole_synechocystis_EP <- lseqspline1D(synechocystis_NC_000911.1, bound = c(1, nchar(synechocystis_NC_000911.1)), width = 1, ref =  1)
