@@ -2086,8 +2086,8 @@ table(cut_ward_mycoplasma_proms_stringdist)
 
 plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum levenstien distance, 2 small clusters (both 13 members) positions')
 abline(v = 1:1876, lty =2)
-abline(v = mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 2)], col = 'darkred')
-abline(v = mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 3)], col = 'darkblue')
+abline(v = mycoplasma_proms$TSS[which(cut_ward_mycoplasma_proms_stringdist == 2)], col = 'darkred')
+abline(v = mycoplasma_proms$TSS[which(cut_ward_mycoplasma_proms_stringdist == 3)], col = 'darkblue')
 
 #both clusters fall into 2 two groups. What is the distance between their location?
 
