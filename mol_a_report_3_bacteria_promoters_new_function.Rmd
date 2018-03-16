@@ -341,45 +341,51 @@ to 5'-end for both strands
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
 ```{r E. coli promoters physics, warning=FALSE, message=FALSE, cache=TRUE}
-for (i in c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse')) {
+for (i in paste0('ecoli_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
   assign(i, c())
 }
 # #zout<- -480:239 #better use default
-
-
+#halfsize of the genome to use in a fucntion run
+interv <- 500
 for (i in 1:length(exp_tsss)) {
   if (exp_strands[i]=='forward') {
-     seqsforward<-c(seqsforward, substr(e.coli_U00096.2, start = exp_tsss[i] - 150, stop = exp_tsss[i] + 50))
-     
-    E01forward<-rbind(E01forward, dynchars(seq = e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = exp_tsss[i], boundaries = c(150, 50), strand = 'forward')$E0)
-    d1forward<-rbind(d1forward, dynchars(seq = e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = exp_tsss[i], boundaries = c(150, 50), strand = 'forward')$d)
-    GCforward<-rbind(E01forward, dynchars(seq = e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = exp_tsss[i], boundaries = c(150, 50), strand = 'forward')$gc)
+    
+    ecoli_seqsforward <- c(ecoli_seqsforward, get_forward_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(150, 50)))
+   # # 
+
+    seq_tmp_forward <- strsplit(get_forward_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(interv, interv-1)), split = '')[[1]] #used in profiles calculation
+    
+    ecoli_E01forward<-rbind(ecoli_E01forward, dynchars(seq = seq_tmp_forward , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    ecoli_d1forward<-rbind(ecoli_d1forward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    ecoli_GCforward<-rbind(ecoli_GCforward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
    
-    EPforward <- rbind(EPforward, 
-                       calculate_EP_on_interval(extended_string = e.coli_U00096.2_char, tss_position = exp_tsss[i], ep_interval = c(350, 150), strand = 'forward' ))
+    ecoli_EPforward <- rbind(ecoli_EPforward, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_forward, tss_position = interv+1, strand = 'forward' ))
     
      } else {
-    seqsreverse<- c(seqsreverse, strReverse(substr(e.coli_U00096.2, start = exp_tsss[i] - 50, stop = exp_tsss[i] + 150))) #intervals for reverse strand are different
-     E01reverse<-rbind(E01reverse, dynchars(seq = e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = exp_tsss[i], boundaries = c(150, 50), strand = 'reverse')$E0)
-    d1reverse<-rbind(d1reverse, dynchars(seq = e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = exp_tsss[i], boundaries = c(150, 50), strand = 'reverse')$d)
-    GCreverse<-rbind(E01reverse, dynchars(seq = e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = exp_tsss[i], boundaries = c(150, 50), strand = 'reverse')$gc)
-   
-    EPreverse <- rbind(EPreverse, 
-                       calculate_EP_on_interval(extended_string = e.coli_U00096.2_char, tss_position = exp_tsss[i], ep_interval = c(350, 150), strand = 'reverse' ))
+    ecoli_seqsreverse <- c(ecoli_seqsreverse, get_reverse_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(150, 50)))
     
+    seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(interv, interv-1)), split = '')[[1]] #used in profiles calculation
+    
+    ecoli_E01reverse<-rbind(ecoli_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$E0)
+    ecoli_d1reverse<-rbind(ecoli_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$d)
+    ecoli_GCreverse<-rbind(ecoli_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$gc)
+   
+    ecoli_EPreverse <- rbind(ecoli_EPreverse, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'reverse' ))
     
     }
 }
 
 
 #merging matrices for forward and reverse strands  together
-seqs <- toupper(c(seqsforward, seqsreverse))
-E01<-rbind( E01forward, E01reverse)
+ecoli_seqs <- toupper(c(ecoli_seqsforward, ecoli_seqsreverse))
+ecoli_E01<-rbind(ecoli_E01forward, ecoli_E01reverse)
 #aeos2<-rbind(aeos2forward, aeos2reverse)
-d1<-rbind( d1forward, d1reverse)
+ecoli_d1<-rbind(ecoli_d1forward, ecoli_d1reverse)
 #aeos4<-rbind(aeos4forward, aeos4reverse)
-GC<-rbind( GCforward, GCreverse)
-EP<-rbind( EPforward, EPreverse)
+ecoli_GC <- rbind(ecoli_GCforward, ecoli_GCreverse)
+ecoli_EP<-rbind(ecoli_EPforward, ecoli_EPreverse)
 ```
 
 
@@ -389,38 +395,48 @@ EP<-rbind( EPforward, EPreverse)
 
 synechocystis_proms <- (read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/synechocystis_proms_datasets_1015154108_sd01.csv', skip = 14, header = T))
 colnames(synechocystis_proms) <- c('TSS', 'p.start', 'p.end', 'strand', 'read', 'observed sequence')
+
+#to unify strands names
+levels(synechocystis_proms$strand) <- c('forward', 'reverse')
+
 ```
 
 
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
 ```{r Synechocystis proms physics, warning=FALSE, message=FALSE, cache=TRUE}
-
-
-for (i in c('synechocystis_seqsforward', 'synechocystis_seqsreverse', 'synechocystis_E01forward', 'synechocystis_E01reverse', 'synechocystis_d1forward', 'synechocystis_d1reverse', 'synechocystis_GCforward', 'synechocystis_GCreverse', 'synechocystis_EPforward', 'synechocystis_EPreverse')) {
+for (i in paste0('synechocystis_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
   assign(i, c())
 }
+# #zout<- -480:239 #better use default
+#halfsize of the genome to use in a fucntion run
+interv <- 500
+for (i in 1:length(synechocystis_proms$TSS)) {
+  if (synechocystis_proms$strand[i]=='forward') {
+    
+    synechocystis_seqsforward <- c(synechocystis_seqsforward, get_forward_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(150, 50)))
+   # # 
 
-for (i in 1:length(exp_tsss)) {
-  if (synechocystis_proms[i]=='forward') {
-     synechocystis_seqsforward <- c(synechocystis_seqsforward, substr(synechocystis_NC_000911.1, start = synechocystis_proms[i] - 150, stop = synechocystis_proms[i] + 50))
-     
-    synechocystis_E01forward<-rbind(synechocystis_E01forward, dynchars(seq = synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = synechocystis_proms[i], boundaries = c(150, 50), strand = 'forward')$E0)
-    synechocystis_d1forward<-rbind(synechocystis_d1forward, dynchars(seq = synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = synechocystis_proms[i], boundaries = c(150, 50), strand = 'forward')$d)
-    synechocystis_GCforward<-rbind(synechocystis_GCforward, dynchars(seq = synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = synechocystis_proms[i], boundaries = c(150, 50), strand = 'forward')$gc)
+    seq_tmp_forward <- strsplit(get_forward_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    synechocystis_E01forward<-rbind(synechocystis_E01forward, dynchars(seq = seq_tmp_forward , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    synechocystis_d1forward<-rbind(synechocystis_d1forward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    synechocystis_GCforward<-rbind(synechocystis_GCforward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
    
     synechocystis_EPforward <- rbind(synechocystis_EPforward, 
-                       calculate_EP_on_interval(extended_string = synec, tss_position = exp_tsss[i], ep_interval = c(350, 150), strand = 'forward' ))
+                       calculate_EP_on_interval(extended_string = seq_tmp_forward, tss_position = interv+1, strand = 'forward' ))
     
      } else {
-  synechocystis_seqsreverse<- c(synechocystis_seqsreverse, strReverse(substr(synechocystis_NC_000911.1, start = synechocystis_proms[i] - 50, stop = synechocystis_proms[i] + 150))) #intervals for reverse strand are different
-     
-    synechocystis_E01forward<-rbind(synechocystis_E01forward, dynchars(seq = synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = synechocystis_proms[i], boundaries = c(150, 50), strand = 'forward')$E0)
-    synechocystis_d1forward<-rbind(synechocystis_d1forward, dynchars(seq = synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = synechocystis_proms[i], boundaries = c(150, 50), strand = 'forward')$d)
-    synechocystis_GCforward<-rbind(synechocystis_GCforward, dynchars(seq = synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = synechocystis_proms[i], boundaries = c(150, 50), strand = 'forward')$gc)
+    synechocystis_seqsreverse <- c(synechocystis_seqsreverse, get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(150, 50)))
+    
+    seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = exp_tsss[i], boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    synechocystis_E01reverse<-rbind(synechocystis_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$E0)
+    synechocystis_d1reverse<-rbind(synechocystis_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$d)
+    synechocystis_GCreverse<-rbind(synechocystis_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$gc)
    
-    synechocystis_EPforward <- rbind(synechocystis_EPforward, 
-                       calculate_EP_on_interval(extended_string = synec, tss_position = exp_tsss[i], ep_interval = c(350, 150), strand = 'forward' ))
+    synechocystis_EPreverse <- rbind(synechocystis_EPreverse, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'reverse' ))
     
     }
 }
@@ -428,14 +444,12 @@ for (i in 1:length(exp_tsss)) {
 
 #merging matrices for forward and reverse strands  together
 synechocystis_seqs <- toupper(c(synechocystis_seqsforward, synechocystis_seqsreverse))
-synechocystis_E01<-rbind(synechocystis_E01forward, t(apply(synechocystis_E01reverse, 1, rev)))
+synechocystis_E01<-rbind(synechocystis_E01forward, synechocystis_E01reverse)
 #aeos2<-rbind(aeos2forward, aeos2reverse)
-synechocystis_d1<-rbind(synechocystis_d1forward, t(apply(synechocystis_d1reverse, 1, rev)))
+synechocystis_d1<-rbind(synechocystis_d1forward, synechocystis_d1reverse)
 #aeos4<-rbind(aeos4forward, aeos4reverse)
-synechocystis_GC<-rbind(synechocystis_GCforward, t(apply(synechocystis_GCreverse, 1, rev)))
-
-synechocystis_EP<-rbind(synechocystis_EPforward, t(apply(synechocystis_EPreverse, 1, rev)))
-
+synechocystis_GC <- rbind(synechocystis_GCforward, synechocystis_GCreverse)
+synechocystis_EP<-rbind(synechocystis_EPforward, synechocystis_EPreverse)
 ```
 
 
@@ -444,52 +458,62 @@ synechocystis_EP<-rbind(synechocystis_EPforward, t(apply(synechocystis_EPreverse
 ```{r  Reading in M. gallisepticum strain S6 promoters from Fisunov et al.}
 
 mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/mycoplasma_gallisepticum_fisunov_2016.csv', header = T)
-
-#plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', main = 'Mycoplasma gallisepticum promoters location', xlab = 'Sequence (nts)', yaxt = 'n', bty = 'n', asp = 1)
-#abline(v = mycoplasma_proms$Position, col = 'red')
-
-#table(mycoplasma_proms$Strand)
+colnames(mycoplasma_proms)[1:2] <- c('strand', 'TSS')
+#to unify strands names
+tmp <- (factor(mycoplasma_proms$strand))
+levels(tmp)<- c('forward', 'reverse')
+mycoplasma_proms$strand <- tmp
 ```
 
 Right flank needs to be extended by 250 nts
 ```{r Mycoplasma extension}
-extended_by <- 250
-extended_mycoplasma_CP006916.3 <- paste0(mycoplasma_CP006916.3,
-                                         substr(mycoplasma_CP006916.3, nchar(mycoplasma_CP006916.3)-extended_by, nchar(mycoplasma_CP006916.3)))
+extended_by <- 500 #both flanks
+extended_mycoplasma_CP006916.3 <- paste0(substr(mycoplasma_CP006916.3, nchar(mycoplasma_CP006916.3)-extended_by, nchar(mycoplasma_CP006916.3)),
+                                         mycoplasma_CP006916.3,
+                                         substr(mycoplasma_CP006916.3, 1, extended_by))
+                                         
 
 extended_mycoplasma_CP006916.3_char <- strsplit(extended_mycoplasma_CP006916.3, split = '')[[1]]
 ```
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
 ```{r mycoplasma proms physics, warning=FALSE, message=FALSE, cache=TRUE}
-
-
-for (i in c('mycoplasma_seqsforward', 'mycoplasma_seqsreverse', 'mycoplasma_E01forward', 'mycoplasma_E01reverse', 'mycoplasma_d1forward', 'mycoplasma_d1reverse', 'mycoplasma_GCforward', 'mycoplasma_GCreverse', 'mycoplasma_EPforward', 'mycoplasma_EPreverse')) {
+for (i in paste0('mycoplasma_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
   assign(i, c())
 }
-for (i in 1:length(mycoplasma_proms$Position)) {
-  if (mycoplasma_proms$Strand[i]=='1') {
-     mycoplasma_seqsforward <- c(mycoplasma_seqsforward, substr(mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i] - 150, stop = mycoplasma_proms$Position[i] + 50))
-     
-    mycoplasma_E01forward<-rbind(mycoplasma_E01forward, dynchars(seq = mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = mycoplasma_proms$Position[i], boundaries = c(150, 50), strand = 'forward')$E0)
-    mycoplasma_d1forward<-rbind(mycoplasma_d1forward, dynchars(seq = mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = mycoplasma_proms$Position[i], boundaries = c(150, 50), strand = 'forward')$d)
-    mycoplasma_GCforward<-rbind(mycoplasma_GCforward, dynchars(seq = mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = mycoplasma_proms$Position[i], boundaries = c(150, 50), strand = 'forward')$gc)
+# #zout<- -480:239 #better use default
+#halfsize of the genome to use in a fucntion run
+interv <- 500
+for (i in 1:length(mycoplasma_proms$TSS)) {
+  if (mycoplasma_proms$strand[i]=='forward') {
+    
+    mycoplasma_seqsforward <- c(mycoplasma_seqsforward, get_forward_subseq(seq = extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i] + extended_by, boundaries = c(150, 50)))
+   # #! note all TSS are shifted
+
+    seq_tmp_forward <- strsplit(get_forward_subseq(seq = extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i]+ extended_by, boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    mycoplasma_E01forward<-rbind(mycoplasma_E01forward, dynchars(seq = seq_tmp_forward , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    mycoplasma_d1forward<-rbind(mycoplasma_d1forward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    mycoplasma_GCforward<-rbind(mycoplasma_GCforward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
    
     mycoplasma_EPforward <- rbind(mycoplasma_EPforward, 
-                       calculate_EP_on_interval(extended_string = synec, tss_position = exp_tsss[i], ep_interval = c(350, 150), strand = 'forward' ))
+                       calculate_EP_on_interval(extended_string = seq_tmp_forward, tss_position = interv+1, strand = 'forward' ))
     
      } else {
-  mycoplasma_seqsreverse<- c(mycoplasma_seqsreverse, strReverse(substr(mycoplasma_CP006916.3_char, start = mycoplasma_proms$Position[i] - 50, stop = mycoplasma_proms$Position[i] + 150))) #intervals for reverse strand are different
-     
-    mycoplasma_E01forward<-rbind(mycoplasma_E01forward, dynchars(seq = mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = mycoplasma_proms$Position[i], boundaries = c(150, 50), strand = 'forward')$E0)
-    mycoplasma_d1forward<-rbind(mycoplasma_d1forward, dynchars(seq = mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = mycoplasma_proms$Position[i], boundaries = c(150, 50), strand = 'forward')$d)
-    mycoplasma_GCforward<-rbind(mycoplasma_GCforward, dynchars(seq = mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = mycoplasma_proms$Position[i], boundaries = c(150, 50), strand = 'forward')$gc)
+    mycoplasma_seqsreverse <- c(mycoplasma_seqsreverse, get_reverse_subseq(seq = extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i]+ extended_by, boundaries = c(150, 50)))
+    
+    seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i]+ extended_by, boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    mycoplasma_E01reverse<-rbind(mycoplasma_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$E0)
+    mycoplasma_d1reverse<-rbind(mycoplasma_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$d)
+    mycoplasma_GCreverse<-rbind(mycoplasma_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$gc)
    
-    mycoplasma_EPforward <- rbind(mycoplasma_EPforward, 
-                       calculate_EP_on_interval(extended_string = mycoplasma_CP006916.3_char, tss_position = exp_tsss[i], ep_interval = c(350, 150), strand = 'forward' ))
+    mycoplasma_EPreverse <- rbind(mycoplasma_EPreverse, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'reverse' ))
     
     }
 }
+
 
 #merging matrices for forward and reverse strands  together
 mycoplasma_seqs <- toupper(c(mycoplasma_seqsforward, mycoplasma_seqsreverse))
@@ -497,7 +521,7 @@ mycoplasma_E01<-rbind(mycoplasma_E01forward, mycoplasma_E01reverse)
 #aeos2<-rbind(aeos2forward, aeos2reverse)
 mycoplasma_d1<-rbind(mycoplasma_d1forward, mycoplasma_d1reverse)
 #aeos4<-rbind(aeos4forward, aeos4reverse)
-mycoplasma_GC<-rbind(mycoplasma_GCforward, mycoplasma_GCreverse)
+mycoplasma_GC <- rbind(mycoplasma_GCforward, mycoplasma_GCreverse)
 mycoplasma_EP<-rbind(mycoplasma_EPforward, mycoplasma_EPreverse)
 
 ```
