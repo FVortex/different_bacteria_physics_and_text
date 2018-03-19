@@ -57,7 +57,7 @@ Reading in M. gallisepticum strain S6 genome (CP006916.3 assembly), creating rev
 ```{r Reading in M. gallisepticum strain S6 genome (CP006916.3 assembly), warning=FALSE, message=FALSE, cache=TRUE}
 
 mycoplasma_CP006916.3<- toupper(paste0(read.GenBank(access.nb = 'CP006916.3', as.character = T)$CP006916.3, collapse = ''))
-reverseComplement_mycoplasms_CP006916.3<- as.character(reverseComplement(DNAString(mycoplasma_CP006916.3)))
+reverseComplement_mycoplasma_CP006916.3<- as.character(reverseComplement(DNAString(mycoplasma_CP006916.3)))
 
 mycoplasma_CP006916.3_char<-unlist(strsplit(mycoplasma_CP006916.3, ''))
 reverseComplement_mycoplasma_CP006916.3<-unlist(strsplit(mycoplasma_CP006916.3, ''))
@@ -279,8 +279,8 @@ whole_e.coli_dynchars_forward <- dynchars((e.coli_U00096.2_char), average_interv
 #for genome-wide vector using pseudoTSS at the center cause error. The vector is obtained using reversed initially genome
 whole_e.coli_dynchars_reverse <- dynchars(reverseComplement_e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = length(e.coli_U00096.2_char)/2 , boundaries = c(0,  length(e.coli_U00096.2_char)), strand = 'forward')
 
-str(whole_e.coli_dynchars_forward)
-str(whole_e.coli_dynchars_reverse)
+# #str(whole_e.coli_dynchars_forward)
+# #str(whole_e.coli_dynchars_reverse)
 
 whole_e.coli_EP_forward <- lseqspline1D(s = e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref = nchar(e.coli_U00096.2)/2)
 
@@ -291,12 +291,44 @@ whole_e.coli_EP_reverse <- lseqspline1D(s = reverseComplement_e.coli_U00096.2, b
 whole_synechocystis_dynchars_forward <- dynchars((synechocystis_NC_000911.1_char), average_interval_size = average_interval_size, tss = length(synechocystis_NC_000911.1_char)/2 , boundaries = c(0,  length(synechocystis_NC_000911.1_char)), strand = 'forward')
 whole_synechocystis_dynchars_reverse <- dynchars(reverseComplement_synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = length(reverseComplement_synechocystis_NC_000911.1_char)/2 , boundaries = c(0,  length(reverseComplement_synechocystis_NC_000911.1_char)), strand = 'forward')
 
+whole_synechocystis_EP_forward <- lseqspline1D(s = e.coli_U00096.2, bound = c(1, nchar(synechocystis_NC_000911.1)), width = 1, ref = nchar(e.coli_U00096.2)/2)
+
+whole_synechocystis_EP_reverse <- lseqspline1D(s = reverseComplement_synechocystis_NC_000911.1, bound = c(1, nchar(reverseComplement_synechocystis_NC_000911.1)), width = 1, ref = nchar(reverseComplement_synechocystis_NC_000911.1)/2)
 #same for mycoplasma
 
 whole_mycoplasma_dynchars_forward <- dynchars((mycoplasma_CP006916.3_char), average_interval_size = average_interval_size, tss = length(mycoplasma_CP006916.3_char)/2 , boundaries = c(0,  length(mycoplasma_CP006916.3_char)), strand = 'forward')
 whole_mycoplasma_dynchars_reverse <- dynchars(reverseComplement_mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = length(reverseComplement_mycoplasma_CP006916.3_char)/2 , boundaries = c(0,  length(reverseComplement_mycoplasma_CP006916.3_char)), strand = 'forward')
 
-plot(whole_e.coli_dynchars$E0, ty = 'l')
+whole_mycoplasma_EP_forward <- lseqspline1D(s = mycoplasma_CP006916.3, bound = c(1, nchar(mycoplasma_CP006916.3)), width = 1, ref = nchar(mycoplasma_CP006916.3)/2)
+
+whole_mycoplasma_EP_reverse <- lseqspline1D(s = reverseComplement_mycoplasma_CP006916.3, bound = c(1, nchar(reverseComplement_mycoplasma_CP006916.3)), width = 1, ref = nchar(reverseComplement_mycoplasma_CP006916.3)/2)
+# #plot(whole_e.coli_dynchars$E0, ty = 'l')
+
+par(mfrow = c(4,3),
+    mar = rep(0.8,4))
+ylim_E0 <- c(200, 250)
+boxplot(c(whole_e.coli_dynchars_forward$E0, whole_e.coli_dynchars_reverse$E0), main = 'E. coli whole genome: E0', ylim = ylim_E0)
+boxplot(c(whole_synechocystis_dynchars_forward$E0, whole_synechocystis_dynchars_reverse$E0), main = 'Synechocystis sp. whole genome: E0', ylim = ylim_E0)
+boxplot(c(whole_mycoplasma_dynchars_forward$E0, whole_mycoplasma_dynchars_reverse$E0), main = 'Mycoplasma whole genome: E0', ylim = ylim_E0)
+
+
+ylim_d <- c(8, 10)
+boxplot(c(whole_e.coli_dynchars_forward$d, whole_e.coli_dynchars_reverse$d), main = 'E. coli whole genome: d', ylim = ylim_d)
+boxplot(c(whole_synechocystis_dynchars_forward$d, whole_synechocystis_dynchars_reverse$d), main = 'Synechocystis sp. whole genome: d', ylim = ylim_d)
+boxplot(c(whole_mycoplasma_dynchars_forward$d, whole_mycoplasma_dynchars_reverse$d), main = 'Mycoplasma whole genome: d', ylim = ylim_d)
+
+ylim_gc <- c(0, 1)
+boxplot(c(whole_e.coli_dynchars_forward$gc, whole_e.coli_dynchars_reverse$gc), main = 'E. coli whole genome: gc', ylim = ylim_gc)
+boxplot(c(whole_synechocystis_dynchars_forward$gc, whole_synechocystis_dynchars_reverse$gc), main = 'Synechocystis sp. whole genome: gc', ylim = ylim_gc)
+boxplot(c(whole_mycoplasma_dynchars_forward$gc, whole_mycoplasma_dynchars_reverse$gc), main = 'Mycoplasma whole genome: gc', ylim = ylim_gc)
+
+ylim_EP <- range(whole_e.coli_EP_forward)*1.1
+boxplot(c(whole_e.coli_EP_forward, whole_e.coli_EP_reverse), main = 'E. coli whole genome: EP', ylim = ylim_EP)
+boxplot(c(whole_synechocystis_EP_forward, whole_synechocystis_EP_reverse), main = 'Synechocystis sp. whole genome: EP', ylim = ylim_EP)
+boxplot(c(whole_mycoplasma_EP_forward, whole_mycoplasma_EP_reverse), main = 'Mycoplasma whole genome: EP', ylim = ylim_EP)
+
+boxplot(c(whole_e.coli_dynchars_forward$d, whole_e.coli_dynchars_reverse$d), main = 'E. coli whole genome: d')
+boxplot(c(whole_e.coli_dynchars_forward$gc, whole_e.coli_dynchars_reverse$gc), main = 'E. coli whole genome: GC')
 
 ```
 
@@ -307,13 +339,12 @@ Alternatively dataset_pro as data frame is available on github
 
 # #load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
 dataset_pro_df <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/dataset_pro_df.csv')
-str(dataset_pro_df)
+# #str(dataset_pro_df)
 ```
 
-Extracting data on all promoters and on experimentaly found ones - including previosely calculated electrostatic potential profiles
+Extracting data on promoters.
 ```{r}
 pro_names <- as.character(dataset_pro_df$X)
-
 which.experimental <- sapply(dataset_pro_df$evidence, function(x) {x == 'experimental'})
 exp_names <- as.character(dataset_pro_df$X[which.experimental])
 exp_tsss <-dataset_pro_df$TSS[which.experimental]
@@ -396,7 +427,7 @@ ecoli_EP<-rbind(ecoli_EPforward, ecoli_EPreverse)
 synechocystis_proms <- (read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/synechocystis_proms_datasets_1015154108_sd01.csv', skip = 14, header = T))
 colnames(synechocystis_proms) <- c('TSS', 'p.start', 'p.end', 'strand', 'read', 'observed sequence')
 
-#to unify strands names
+#to unify strands names for all bacteria
 levels(synechocystis_proms$strand) <- c('forward', 'reverse')
 
 ```
@@ -465,7 +496,7 @@ levels(tmp)<- c('forward', 'reverse')
 mycoplasma_proms$strand <- tmp
 ```
 
-Right flank needs to be extended by 250 nts
+Right flank needs to be extended by 500 nts
 ```{r Mycoplasma extension}
 extended_by <- 500 #both flanks
 extended_mycoplasma_CP006916.3 <- paste0(substr(mycoplasma_CP006916.3, nchar(mycoplasma_CP006916.3)-extended_by, nchar(mycoplasma_CP006916.3)),
@@ -527,30 +558,7 @@ mycoplasma_EP<-rbind(mycoplasma_EPforward, mycoplasma_EPreverse)
 ```
 
 
-```{r Plotting characteristics profiles for 3 bacteria, eval=F}
-
-par(mfrow = c(4,3),
-    mar = rep(0.5,4))
-
-matplot(E01, type = 'l', col = 1)
-matplot(d1, type = 'l', col = 1)
-matplot(GC, type = 'l', col = 1)
-matplot(EP, type = 'l', col = 1)
-
-matplot(synechocystis_E01, type = 'l', col = 1)
-matplot(synechocystis_d1, type = 'l', col = 1)
-matplot(synechocystis_GC, type = 'l', col = 1)
-matplot(synechocystis_EP, type = 'l', col = 1)
-
-matplot(mycoplasma_E01, type = 'l', col = 1)
-matplot(mycoplasma_d1, type = 'l', col = 1)
-matplot(mycoplasma_GC, type = 'l', col = 1)
-matplot(mycoplasma_EP, type = 'l', col = 1)
-
-```
-
-
-```{r string distance, warning=FALSE, message=FALSE, cache=TRUE}
+```{r string distance for 3 bacteria together, warning=FALSE, message=FALSE, cache=TRUE}
 
 mycoplasma_synechocystis_e.coli_proms_strings <- sapply(c(mycoplasma_seqs, synechocystis_seqs, seqs),  function(x) {paste0(x, collapse = '')})
 mycoplasma_synechocystis_e.coli_proms_DNAStringSet <- DNAStringSet(mycoplasma_synechocystis_e.coli_proms_strings)
