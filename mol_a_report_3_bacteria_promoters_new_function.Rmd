@@ -101,10 +101,16 @@ get_reverse_substring <- function(seq, tss, boundaries) {
 }
 
 cut_char_vec <- function(char_vec, tss, boundaries, strand) {
-  res <- switch(strand,
-         forward = char_vec[(tss-boundaries[1]):(tss+boundaries[2])],
-         reverse = char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
-         )
+#  res <- switch(strand,
+ #        forward = char_vec[(tss-boundaries[1]):(tss+boundaries[2])],
+  #       reverse = char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
+   #      )
+  res <- c()
+  if (strand == 'forward'){
+    res <- char_vec[(tss-boundaries[1]):(tss+boundaries[2])]
+  } else if (strand == 'forward') {
+    res <- char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
+  }
   return(res)
 }
 
