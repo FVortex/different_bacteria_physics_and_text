@@ -60,7 +60,6 @@ mycoplasma_CP006916.3<- toupper(paste0(read.GenBank(access.nb = 'CP006916.3', as
 reverseComplement_mycoplasma_CP006916.3<- as.character(reverseComplement(DNAString(mycoplasma_CP006916.3)))
 
 mycoplasma_CP006916.3_char<-unlist(strsplit(mycoplasma_CP006916.3, ''))
-reverseComplement_mycoplasma_CP006916.3<-unlist(strsplit(mycoplasma_CP006916.3, ''))
 
 reverseComplement_mycoplasma_CP006916.3_char<-unlist(strsplit(reverseComplement_mycoplasma_CP006916.3, ''))
 
@@ -322,13 +321,12 @@ boxplot(c(whole_e.coli_dynchars_forward$gc, whole_e.coli_dynchars_reverse$gc), m
 boxplot(c(whole_synechocystis_dynchars_forward$gc, whole_synechocystis_dynchars_reverse$gc), main = 'Synechocystis sp. whole genome: gc', ylim = ylim_gc)
 boxplot(c(whole_mycoplasma_dynchars_forward$gc, whole_mycoplasma_dynchars_reverse$gc), main = 'Mycoplasma whole genome: gc', ylim = ylim_gc)
 
-ylim_EP <- range(whole_e.coli_EP_forward)*1.1
-boxplot(c(whole_e.coli_EP_forward, whole_e.coli_EP_reverse), main = 'E. coli whole genome: EP', ylim = ylim_EP)
-boxplot(c(whole_synechocystis_EP_forward, whole_synechocystis_EP_reverse), main = 'Synechocystis sp. whole genome: EP', ylim = ylim_EP)
-boxplot(c(whole_mycoplasma_EP_forward, whole_mycoplasma_EP_reverse), main = 'Mycoplasma whole genome: EP', ylim = ylim_EP)
+ylim_EP <- c(-0.07, -0.005)
+boxplot(c(whole_e.coli_EP_forward$mpot, whole_e.coli_EP_reverse$mpot), main = 'E. coli whole genome: EP', ylim = ylim_EP)
+boxplot(c(whole_synechocystis_EP_forward$mpot, whole_synechocystis_EP_reverse$mpot), main = 'Synechocystis sp. whole genome: EP', ylim = ylim_EP)
+boxplot(c(whole_mycoplasma_EP_forward$mpot, whole_mycoplasma_EP_reverse$mpot ), main = 'Mycoplasma whole genome: EP', ylim = ylim_EP)
 
-boxplot(c(whole_e.coli_dynchars_forward$d, whole_e.coli_dynchars_reverse$d), main = 'E. coli whole genome: d')
-boxplot(c(whole_e.coli_dynchars_forward$gc, whole_e.coli_dynchars_reverse$gc), main = 'E. coli whole genome: GC')
+
 
 ```
 
@@ -351,7 +349,7 @@ exp_tsss <-dataset_pro_df$TSS[which.experimental]
 exp_strands <- as.character(dataset_pro_df$strand[which.experimental])
 ```
 
-# # # Changing genomic coordinate used for dataset_... - TSS is according to 5'-end for both strands 
+# # # Changing genomic coordinate used for dataset_... - TSS is according to 5'-end of forward strand for both strands as it is in RegulonDB
 ```{r}
 
 exp_tsss[which(exp_strands=='reverse')] <- nchar(e.coli_U00096.2)-exp_tsss[which(exp_strands=='reverse')]
