@@ -105,7 +105,7 @@ cut_char_vec <- function(char_vec, tss, boundaries, strand) {
  #        forward = char_vec[(tss-boundaries[1]):(tss+boundaries[2])],
   #       reverse = char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
    #      )
-  res <- c()
+ # res <- c()
   if (strand == 'forward'){
     res <- char_vec[(tss-boundaries[1]):(tss+boundaries[2])]
   } else if (strand == 'forward') {
@@ -244,38 +244,17 @@ calculate_profile <- function(dnaSeq, average_interval_size, tss_position, dynam
 #dynamic_interval -150;50
 
 
-#sample calculation
+```
 
-seq <- substr(e.coli_U00096.2, start = 1, stop = 10000)
-# #seq <- 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaccccccccccccccccccccccccccccccccccccccccccccc'
-vec_seq <- strsplit(seq, split = '')[[1]]
-
-get_forward_subseq(seq = seq, tss = 20, boundaries = c(10, 23))
-
-get_reverse_subseq(seq = seq, tss = 30, boundaries = c(10, 23))
-
-as.character(cut_char_vec(vec_seq, tss = 50, boundaries = c(15,15), strand = 'reverse'))
-
-dynchars(seq = vec_seq, average_interval_size = 200, tss = 2000, boundaries = c(150,50),strand = 'forward')
-
-
-  # strand <- match.arg(strand)
-
-
-calculate_EP_on_interval(tss_position = 1000, extended_string = vec_seq, ep_interval = c(350, 150), strand = 'forward') #Ep demands vector!
-
-
-
-calculate_profile(dnaSeq = vec_seq, average_interval_size = 30, dynamic_interval = c(10, 30), tss_position = 1000, ep_interval = c(350, 150))
-
-
-#reverse strand for dynchars - problems
-get_forward_substring(strsplit('aaaaaaaaaaaaaaaaaaacccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', split = '')[[1]], tss = 20, boundaries = c(10,10))
-get_reverse_substring(strsplit('aaaaaaaaaaaaaaaaaaacccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', split = '')[[1]], tss = 20, boundaries = c(10,10))
+```{r, code=readLines("/home/jane/Документы/Misha/mol_a_2018/new_physics_functions.R")}
 ```
 
 First to set parameters for dynchars
 ```{r Genome-wide characteristics profiles for three bacteria, warning=FALSE, message=FALSE, cache=TRUE}
+
+
+###source("/home/jane/Документы/Misha/mol_a_2018/new_physics_functions.R")
+
 average_interval_size <- 200
 dynamic_interval <- c(150, 50)
 
@@ -376,6 +355,12 @@ to 5'-end for both strands
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
 ```{r E. coli promoters physics, warning=FALSE, message=FALSE, cache=TRUE}
+
+average_interval_size <- 200
+dynamic_interval <- c(150, 50)
+
+
+
 for (i in paste0('ecoli_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
   assign(i, c())
 }
