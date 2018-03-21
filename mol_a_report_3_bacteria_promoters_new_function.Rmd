@@ -549,7 +549,7 @@ mycoplasma_EP<-rbind(mycoplasma_EPforward, mycoplasma_EPreverse)
 
 ```{r string distance for 3 bacteria together, warning=FALSE, message=FALSE, cache=TRUE}
 
-mycoplasma_synechocystis_e.coli_proms_strings <- sapply(c(mycoplasma_seqs, synechocystis_seqs, seqs),  function(x) {paste0(x, collapse = '')})
+mycoplasma_synechocystis_e.coli_proms_strings <- sapply(c(mycoplasma_seqs, synechocystis_seqs, ecoli_seqs),  function(x) {paste0(x, collapse = '')})
 mycoplasma_synechocystis_e.coli_proms_DNAStringSet <- DNAStringSet(mycoplasma_synechocystis_e.coli_proms_strings)
 
 mycoplasma_synechocystis_e.coli_proms_stringdist<- stringDist(mycoplasma_synechocystis_e.coli_proms_DNAStringSet, method = 'levenshtein')
