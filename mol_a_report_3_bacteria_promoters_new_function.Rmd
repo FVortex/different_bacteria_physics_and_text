@@ -354,7 +354,7 @@ to 5'-end for both strands
 
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
-```{r E. coli promoters physics, warning=FALSE, message=FALSE, cache=TRUE}
+```{r E. coli promoters physics, warning=FALSE, message=FALSE, cache=FALSE}
 
 average_interval_size <- 200
 dynamic_interval <- c(150, 50)
@@ -424,7 +424,7 @@ levels(synechocystis_proms$strand) <- c('forward', 'reverse')
 
 
 Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
-```{r Synechocystis proms physics, warning=FALSE, message=FALSE, cache=TRUE}
+```{r Synechocystis proms physics, warning=FALSE, message=FALSE, cache=FALSE}
 for (i in paste0('synechocystis_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
   assign(i, c())
 }
@@ -449,7 +449,7 @@ for (i in 1:length(synechocystis_proms$TSS)) {
      } else {
     synechocystis_seqsreverse <- c(synechocystis_seqsreverse, get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(150, 50)))
     
-    seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = exp_tsss[i], boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
     
     synechocystis_E01reverse<-rbind(synechocystis_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$E0)
     synechocystis_d1reverse<-rbind(synechocystis_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$d)
