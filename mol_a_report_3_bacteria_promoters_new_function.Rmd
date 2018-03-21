@@ -600,7 +600,7 @@ legend('topright', legend = c('E. coli', 'Synechocystis sp.', 'Mycoplasma gallis
 
 #better way to find oligos frequnces with biostrigs
 all_seqs_oligos_freq <- c()
-for (i in list(seqs, synechocystis_seqs, mycoplasma_seqs, e.coli_U00096.2, synechocystis_NC_000911.1, mycoplasma_CP006916.3)){
+for (i in list(ecoli_seqs, synechocystis_seqs, mycoplasma_seqs, e.coli_U00096.2, synechocystis_NC_000911.1, mycoplasma_CP006916.3)){
   ###print(length(i))
   tmp <- DNAString(paste0(unlist(i), collapse = ''))
   
