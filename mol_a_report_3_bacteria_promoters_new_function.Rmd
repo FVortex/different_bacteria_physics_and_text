@@ -2144,7 +2144,7 @@ plot(compet_result$V5, type = 'l',ylim = 0:1)
 ```
 
 
-```{r spline_dataset_pro.rdata to .scv}
+```{r spline_dataset_pro.rdata to .scv, eval=FALSE}
 
 
 dataset_pro_df <- as.data.frame(cbind(as.numeric(sapply(dataset_pro, FUN = function(x) {x$tss})),
