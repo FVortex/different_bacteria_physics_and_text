@@ -460,10 +460,9 @@ for (i in 1:length(synechocystis_proms$TSS)) {
     synechocystis_GCreverse<-rbind(synechocystis_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
    
     synechocystis_EPreverse <- rbind(synechocystis_EPreverse, 
-                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1,  'forward' )) #strings themselves are reversed
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1,  strand = 'forward' )) #strings themselves are reversed
     
-     }
-  print(i)
+    }
 }
 
 
