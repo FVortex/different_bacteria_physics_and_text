@@ -70,7 +70,7 @@ reverseComplement_mycoplasma_CP006916.3_char<-unlist(strsplit(reverseComplement_
 
 New functions for physical properties calculation 
 
-```{r dynchars function }
+```{r dynchars function, eval=FALSE}
 if(!require(ape)){stop('Code requires library "ape".\n')}
 if(!require(reldna)){stop('Code requires library "reldna".\n')}
 if(!require(parallel)){stop('Code requires library "parallel".\n')}
@@ -292,7 +292,8 @@ whole_mycoplasma_EP_reverse <- lseqspline1D(s = reverseComplement_mycoplasma_CP0
 ```{r Genome-wide properties statistics}
 
 par(mfrow = c(4,3),
-    mar = rep(0.8,4))
+    mar = rep(0.9,4),
+    oma = rep(1.1,4))
 ylim_E0 <- c(200, 250)
 boxplot(c(whole_e.coli_dynchars_forward$E0, whole_e.coli_dynchars_reverse$E0), main = 'E. coli whole genome: E0', ylim = ylim_E0)
 boxplot(c(whole_synechocystis_dynchars_forward$E0, whole_synechocystis_dynchars_reverse$E0), main = 'Synechocystis sp. whole genome: E0', ylim = ylim_E0)
@@ -390,12 +391,12 @@ for (i in 1:length(exp_tsss)) {
     
     seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(interv, interv-1)), split = '')[[1]] #used in profiles calculation
     
-    ecoli_E01reverse<-rbind(ecoli_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$E0)
-    ecoli_d1reverse<-rbind(ecoli_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$d)
-    ecoli_GCreverse<-rbind(ecoli_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$gc)
+    ecoli_E01reverse<-rbind(ecoli_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0) #strings are already reversed
+    ecoli_d1reverse<-rbind(ecoli_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    ecoli_GCreverse<-rbind(ecoli_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
    
     ecoli_EPreverse <- rbind(ecoli_EPreverse, 
-                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'reverse' ))
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'forward' ))
     
     }
 }
@@ -454,12 +455,12 @@ for (i in 1:length(synechocystis_proms$TSS)) {
     
     seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
     
-    synechocystis_E01reverse<-rbind(synechocystis_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$E0)
-    synechocystis_d1reverse<-rbind(synechocystis_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$d)
-    synechocystis_GCreverse<-rbind(synechocystis_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$gc)
+    synechocystis_E01reverse<-rbind(synechocystis_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    synechocystis_d1reverse<-rbind(synechocystis_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    synechocystis_GCreverse<-rbind(synechocystis_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
    
     synechocystis_EPreverse <- rbind(synechocystis_EPreverse, 
-                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'reverse' ))
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1,  'forward' )) #strings themselves are reversed
     
     }
 }
@@ -527,12 +528,12 @@ for (i in 1:length(mycoplasma_proms$TSS)) {
     
     seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i]+ extended_by, boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
     
-    mycoplasma_E01reverse<-rbind(mycoplasma_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$E0)
-    mycoplasma_d1reverse<-rbind(mycoplasma_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$d)
-    mycoplasma_GCreverse<-rbind(mycoplasma_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'reverse')$gc)
+    mycoplasma_E01reverse<-rbind(mycoplasma_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    mycoplasma_d1reverse<-rbind(mycoplasma_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    mycoplasma_GCreverse<-rbind(mycoplasma_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
    
     mycoplasma_EPreverse <- rbind(mycoplasma_EPreverse, 
-                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'reverse' ))
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'forward' )) #strings themselves are reversed
     
     }
 }
@@ -549,7 +550,7 @@ mycoplasma_EP<-rbind(mycoplasma_EPforward, mycoplasma_EPreverse)
 
 ```
 
-
+Textual analysis - string distance
 ```{r string distance for 3 bacteria together, warning=FALSE, message=FALSE, cache=TRUE}
 
 mycoplasma_synechocystis_e.coli_proms_strings <- sapply(c(mycoplasma_seqs, synechocystis_seqs, ecoli_seqs),  function(x) {paste0(x, collapse = '')})
@@ -559,7 +560,7 @@ mycoplasma_synechocystis_e.coli_proms_stringdist<- stringDist(mycoplasma_synecho
 
 ward_mycoplasma_synechocystis_e.coli_proms_stringdist<- hclust(mycoplasma_synechocystis_e.coli_proms_stringdist, method = 'ward.D2')
 
-colvec_mycoplasma_synechocystis_e.coli_proms<- c(rep('magenta', length(mycoplasma_proms$Position)), rep('darkgreen', length(synechocystis_proms$X1.TSS)),rep('orange', length(exp_tsss)))
+colvec_mycoplasma_synechocystis_e.coli_proms<- c(rep('magenta', length(mycoplasma_proms$TSS)), rep('darkgreen', length(synechocystis_proms$TSS)),rep('orange', length(exp_tsss)))
 
 ward_mycoplasma_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_mycoplasma_synechocystis_e.coli_proms_stringdist$order), col = colvec_mycoplasma_synechocystis_e.coli_proms[order.dendrogram(ward_mycoplasma_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_mycoplasma_synechocystis_e.coli_proms_stringdist$height)*0.2) -> to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist
 
@@ -583,7 +584,7 @@ for (i in c('E01', 'd1', 'GC', 'EP')){
   three_tmp <- rbind(get(paste0('ecoli_', i)), get(paste0('synechocystis_', i)), get(paste0('mycoplasma_', i)))
   ward_three_tmp<- hclust.vector(t(scale(t(three_tmp), center = T, scale = T)), method = 'ward') #!!
 
-  colvec_ward_three_tmp <- c(rep('orange', length(exp_tsss)), rep('darkgreen',length(synechocystis_proms$X1.TSS)), rep('magenta',length(mycoplasma_proms$Position)))[order.dendrogram(ward_three_tmp %>% as.dendrogram )]
+  colvec_ward_three_tmp <- c(rep('orange', length(exp_tsss)), rep('darkgreen',length(synechocystis_proms$TSS)), rep('magenta',length(mycoplasma_proms$TSS)))[order.dendrogram(ward_three_tmp %>% as.dendrogram )]
 
   ward_three_tmp %>% as.dendrogram %>% color_branches(k = length(ward_three_tmp$order), col = colvec_ward_three_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_three_tmp$height)*.2) -> to_plot_ward_three_tmp
 
@@ -601,7 +602,7 @@ legend('topright', legend = c('E. coli', 'Synechocystis sp.', 'Mycoplasma gallis
 
 ```{r substring occurences, warning=FALSE, message=FALSE, cache=TRUE, fig.width = 10, fig.asp = 1}
 
-#better way to find oligos frequnces with biostrigs
+#better way to find oligos frequnces with biostrings
 all_seqs_oligos_freq <- c()
 for (i in list(ecoli_seqs, synechocystis_seqs, mycoplasma_seqs, e.coli_U00096.2, synechocystis_NC_000911.1, mycoplasma_CP006916.3)){
   ###print(length(i))
@@ -768,10 +769,10 @@ par(mfrow = c(2,1),
     oma = rep(2,4))
 `Sequence (nts)` <- -150:51
 inds <- which(cutree(ward_mycoplasma_E01, k = 3) == 3)
-matplot(`Sequence (nts)`, t(mycoplasma_E01[inds,]), type = 'l', col = 1, main = 'Mycoplasma gallisepticum: small (13 promoters) cluster E01 profiles', ylab = 'E01 value' )
+matplot(`Sequence (nts)`, t(mycoplasma_E01[inds,]), type = 'l', col = 1, main = 'Mycoplasma gallisepticum: small (13 promoters)\n cluster E01 profiles', ylab = 'E01 value' )
 abline(v = 0, lty = 3)
 
-pos <- mycoplasma_proms[inds,'Position']
+pos <- mycoplasma_proms[inds,'TSS']
 ##mycoplasma_proms[inds,]
 
 #the promoters genomic location
@@ -786,14 +787,14 @@ abline(v = pos , col = 'darkred')
 
 #logo for [-50;50] interval
 mycoplasma_peculiar_E01cluster_short_seqs <- sapply(mycoplasma_seqs[inds], function(x) {substr(x, start = 100, stop = 200)})
-ggseqlogo(mycoplasma_peculiar_E01cluster_short_seqs,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)+coord_fixed(ratio = 8)
+ggseqlogo(mycoplasma_peculiar_E01cluster_short_seqs,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)+coord_fixed(ratio = 20)
 #does the cluster representatives differ from the universe?
 
 
 #logo for [-150;50] interval
 
 ggseqlogo(mycoplasma_seqs[inds],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+
-scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:200, labels = -150:50)+coord_fixed(ratio = 8)
+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:200, labels = -150:50)+coord_fixed(ratio = 20)
 #does the cluster representatives differ from the universe?
 
 #ape sweater plot
@@ -838,7 +839,7 @@ inds <- which(cutree(ward_mycoplasma_EP, k = 3) == 3)
 matplot(`Sequence (angstrom)`, t(mycoplasma_EP[inds,]), type = 'l', col = 1, main = 'Mycoplasma gallisepticum: small (13 promoters) cluster EP profiles', ylab = 'EP value' )
 abline(v = 0, lty = 3)
 
-pos <- mycoplasma_proms[inds,'Position']
+pos <- mycoplasma_proms[inds,'TSS']
 ##mycoplasma_proms[inds,]
 #the promoters genomic location
 interv <- seq_along(mycoplasma_CP006916.3_char)
@@ -853,14 +854,14 @@ abline(v = pos , col = 'darkred')
 #logo for [-50;50] interval
 mycoplasma_peculiar_EPcluster_short_seqs <- sapply(mycoplasma_seqs[inds], function(x) {substr(x, start = 100, stop = 200)})
 ggseqlogo(mycoplasma_peculiar_EPcluster_short_seqs,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+
-scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)+coord_fixed(ratio = 8)
+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)+coord_fixed(ratio = 20)
 #does the cluster representatives differ from the universe?
 
 
 #logo for [-150;50] interval
 
 ggseqlogo(mycoplasma_seqs[inds],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+
-scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:200, labels = -150:50)+coord_fixed(ratio = 8)
+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:200, labels = -150:50)+coord_fixed(ratio = 20)
 #does the cluster representatives differ from the universe?
 
 #string bidtance for the cluster
@@ -909,7 +910,7 @@ cuplcl(t(scale(t(mycoplasma_GC), center = T, scale = T)), method = 'ward', main 
 
 ```
 
-
+Transcription units data for conversion promoters to genenames.
 ```{r Reading in transription units data, warning=FALSE, message=FALSE, cache=TRUE}
 
 TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
@@ -1046,8 +1047,10 @@ params <- new("GOHyperGParams",
   
   assign(x = paste0('df_summary_clust', i), summary(hgOver_clust))
 }
+```
 
-
+GO enrichment  for clusters on E0 profiles
+```{r GO, E0}
 head(df_summary_clust1,  20) #primarly nucleoside metabolisim and ion transport
 head(df_summary_clust2,  20) #suflur,bicarbonic acid, aldehyde metabolism
 head(df_summary_clust3,  20) #biogenesis, aerobic respiration
@@ -1231,8 +1234,9 @@ params <- new("GOHyperGParams",
 #View(df_summary_clust2) #ion transport
 #View(df_summary_clust3) # citrate cycle, monosacharide
 # #View(df_summary_clust4) #lipid metabolism
-
-
+```
+GO enrichment  for clusters on d profiles
+```{r GO, d}
 head(df_summary_clust1,  20)  #-
 head(df_summary_clust2,  20)#ion transport
 head(df_summary_clust3,  20)# citrate cycle, monosacharide
@@ -1398,7 +1402,9 @@ params <- new("GOHyperGParams",
 #View(df_summary_clust2) #ion transport
 #View(df_summary_clust3) # citrate cycle, monosacharide
 # #View(df_summary_clust4) #lipid metabolism
-
+```
+GO enrichment  for clusters on d profiles
+```{r GO, GC}
 
 head(df_summary_clust1,  20) # alcohol metabolic process, translation
 head(df_summary_clust2,  20) #organic acid and sulfur
@@ -1565,7 +1571,9 @@ params <- new("GOHyperGParams",
 #View(df_summary_clust2) #ion transport
 #View(df_summary_clust3) # citrate cycle, monosacharide
 # #View(df_summary_clust4) #lipid metabolism
-
+```
+GO enrichment  for clusters on EP profiles
+```{r GO, EP}
 
 head(df_summary_clust1,  20)  #-
 head(df_summary_clust2,  20)#ion transport
@@ -1634,435 +1642,6 @@ genes_formula <- compareCluster(Entrezid~group, data=dfGO, fun='groupGO', OrgDb=
 genes_formula@compareClusterResult
 
 ```
-##SIDD
-loading previously saved SIDD profiles
-```{r SIDD clusterization, warning=FALSE, message=FALSE, cache=TRUE}
-
-sidds_ecoli <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_ecoli.csv')[,-1] #rownumbers in column1
-
-sidds_syn <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis.csv')[,-1] #rownumbers in column1
-
-
-
-library(fastcluster)
-synechocystis_e.coli_proms_sidds <- cbind(sidds_ecoli, sidds_syn)
-
-
-ward_synechocystis_e.coli_proms_sidd <- hclust.vector(t(synechocystis_e.coli_proms_sidds), method = 'ward')
-
-#plot(ward_synechocystis_e.coli_proms_sidd, labels = F)
-
-colvec_ward_synechocystis_e.coli_proms_sidd <- c(rep('darkgreen', length(synechocystis_proms$X1.TSS)),
-rep('orange', length(exp_tsss)))
-ward_synechocystis_e.coli_proms_sidd %>% as.dendrogram %>% color_branches(k = length(ward_synechocystis_e.coli_proms_sidd$order), col = colvec_ward_synechocystis_e.coli_proms_sidd[order.dendrogram(ward_synechocystis_e.coli_proms_sidd %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_synechocystis_e.coli_proms_sidd$height)*0.2) -> to_plot_ward_synechocystis_e.coli_proms_sidd #circlize_dendrogram(labels=F, dend_track_height = 0.95) 
-  
-
-plot(to_plot_ward_synechocystis_e.coli_proms_sidd, labels = F, main = 'E. coli and Synechocystis sp. promoters, SIDD profiles')
-legend('topright', legend = c('E. coli', 'Synechocystis sp.'), fill = c('darkgreen', 'orange'))
-
-```
-
-
-```{r #tanglegrams3, cache=T}
-
-#labels(to_plot_wards[[1]]) <- labels(to_plot_wards[[2]]) <- as.character(labels(to_plot_wards[[2]]))
-
-
-#for (i in c('E01', 'd1', 'GC', 'EP')){
-#for (j in c('E01', 'd1', 'GC', 'EP')){
-
- #   if (i == j) {next} else {
-      
-#tanglegram(to_plot_wardsE01, to_plot_wardsd1, lwd = 0.2, lab.cex = 1E-10)
-#tanglegram(to_plot_wardsE01, to_plot_wardsGC, lwd = 0.2, lab.cex = 1E-10)
-#tanglegram(to_plot_wardsE01, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
-
-
-#tanglegram(to_plot_wardsd1, to_plot_wardsGC, lwd = 0.2, lab.cex = 1E-10)
-#tanglegram(to_plot_wardsd1, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
-
-#tanglegram(to_plot_wardsGC, to_plot_wardsEP, lwd = 0.2, lab.cex = 1E-10)
-  #plot(to_plot_ward_both_tmp, labels = F, main = paste0('E. coli and Synechocystis promoters (', i, ')'), cex.main = cex.main )
-  #  }
-  #}
-#}
-```
-
-
-```{r E. coli 1500 nts long sidd, warning=FALSE, message=FALSE, cache=TRUE}
-# sidds_syn <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv' )[,-1]
-
-matplot(sidds_ecoli,ty='l',lty =1, col=1, lwd =0.5, main = 'SIDD profiles, E. coli')
-
-ward_ecoli_1500sidd<- hclust.vector(t(sidds_ecoli), method = 'ward')
-#plot(ward_ecoli_1500sidd, labels = F)
-cut_ecoli_1500sidd <- cutree(ward_ecoli_1500sidd, k = 4)
-
-cuplcl(data = t(sidds_ecoli), method = 'ward', main = 'SIDD E. coli', k = 4)
-#`Sequence (nts)` <- -750:750
-#par(mfrow = c(3,2))
-#plot(ward_synechocystis_1500sidd, labels = F)
-#for (i in unique(cut_synechocystis_1500sidd)){
-  #matplot(`Sequence (nts)`, sidds_syn[, which(cut_synechocystis_1500sidd==i)], type = 'l', lty = 1, col=i)
- # abline(v = -10:10*100, lty =3, col = 'darkgrey', lwd =2)
-#}
-```
-
-
-```{r Synechocystis 1500 nts long sidd, warning=FALSE, message=FALSE, cache=TRUE}
-# sidds_syn <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv' )[,-1]
-
-matplot(sidds_syn,ty='l',lty =1, col=1, lwd =0.5, main = 'SIDD, Synechocystis sp.')
-
-ward_synechocystis_1500sidd<- hclust.vector(t(sidds_syn), method = 'ward')
-#plot(ward_synechocystis_1500sidd, labels = F)
-cut_synechocystis_1500sidd <- cutree(ward_synechocystis_1500sidd, k = 4)
-
-cuplcl(data = t(sidds_syn), method = 'ward', main = 'SIDD Synechocystis sp.', k = 4)
-#`Sequence (nts)` <- -750:750
-#par(mfrow = c(3,2))
-#plot(ward_synechocystis_1500sidd, labels = F)
-#for (i in unique(cut_synechocystis_1500sidd)){
-  #matplot(`Sequence (nts)`, sidds_syn[, which(cut_synechocystis_1500sidd==i)], type = 'l', lty = 1, col=i)
- # abline(v = -10:10*100, lty =3, col = 'darkgrey', lwd =2)
-#}
-```
-
-
-
-```{r Whole-genome SIDD vectors, warning=FALSE, message=FALSE, cache=TRUE, eval = FALSE}
-load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_2500_500.rda')
-load('/home/jane/Документы/Misha/mol_a_2018/whole_e.coli_sidd_5000_1000.rda')
-load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
-
-exp_pro_numbers<- which(sapply(dataset_pro, function(x) {x$evidence =='experimental' })==T)
-exp_pro_tsss <- sapply(dataset_pro, function(x){x$tss})[exp_pro_numbers]
-
-
-par(mfrow = c(2,1))
-interv <- 1:100000
-plot(whole_e.coli_sidd_2500_500[interv], type = 'l')
-abline(v = exp_pro_tsss, col = 2 )
-plot(whole_e.coli_sidd_5000_1000[interv], type = 'l')
-abline(v = exp_pro_tsss, col = 2 )
-
-exp_pro_sidd_2500_500 <- sapply(exp_pro_tsss, function(x) {whole_e.coli_sidd_2500_500[(x-1000):(x+1000)]})
-matplot(exp_pro_sidd_2500_500, type = 'l', col =1, lwd =0.3)
-
-exp_pro_sidd_5000_1000 <- sapply(exp_pro_tsss, function(x) {whole_e.coli_sidd_5000_1000[(x-1000):(x+1000)]})
-matplot(exp_pro_sidd_5000_1000, type = 'l', col =1, lwd =0.3)
-```
-
-
-```{r Rollaply max, warning=FALSE, message=FALSE, cache=TRUE, eval = FALSE}
-library(zoo)
-
-rollmax_whole_e.coli_sidd_2500_500 <- rollmax(x = whole_e.coli_sidd_2500_500, k = 250)
-
-rollmax_whole_e.coli_sidd_5000_1000 <- rollmax(x = whole_e.coli_sidd_5000_1000, k = 250)
-
-
-par(mfrow = c(2,1),
-    mar = rep(0.7,4))
-interv <- 1:50000
-plot(rollmax_whole_e.coli_sidd_2500_500[interv], type = 'l')
-abline(v = exp_pro_tsss, col = 2 )
-plot(rollmax_whole_e.coli_sidd_5000_1000[interv], type = 'l')
-abline(v = exp_pro_tsss, col = 2 )
-
-which_rollmax_whole_e.coli_sidd_2500_500_0.95 <- which(rollmax_whole_e.coli_sidd_2500_500>0.95)
-which_rollmax_whole_e.coli_sidd_5000_1000_0.95 <- which(rollmax_whole_e.coli_sidd_5000_1000>0.95)                                              
-#how big is a moltem part of the genome (nts)
-length(which_rollmax_whole_e.coli_sidd_2500_500_0.95)
-length(which_rollmax_whole_e.coli_sidd_5000_1000_0.95)
-
-par(mfrow = c(2,1),
-    mar = rep(0.7,4))
-interv <- 1:500000
-plot(rollmax_whole_e.coli_sidd_2500_500[interv], type = 'n')
-points(x = which_rollmax_whole_e.coli_sidd_2500_500_0.95, y = rep(0.95, length(which_rollmax_whole_e.coli_sidd_2500_500_0.95)), pch = '|', col = 2)
-abline(v = exp_pro_tsss, col = 'darkgreen' )
-
-plot(rollmax_whole_e.coli_sidd_5000_1000[interv], type = 'n')
-points(x = which_rollmax_whole_e.coli_sidd_5000_1000_0.95, y = rep(0.95, length(which_rollmax_whole_e.coli_sidd_5000_1000_0.95)), pch = '|', col = 2)
-abline(v = exp_pro_tsss, col = 'darkgreen' )
-
-#which regions are melted for different split sets
-interv <- 300000:400000
-plot(rollmax_whole_e.coli_sidd_2500_500[interv], type = 'n')
-points(x = which_rollmax_whole_e.coli_sidd_2500_500_0.95, y = rep(0.95, length(which_rollmax_whole_e.coli_sidd_2500_500_0.95)), pch = '|', col = 2)
-text(x = 0, y =0.95, labels = '2500-500\n fragments', cex = 0.7)
-points(x = which_rollmax_whole_e.coli_sidd_5000_1000_0.95, y = rep(0.75, length(which_rollmax_whole_e.coli_sidd_5000_1000_0.95)), pch = '|', col = 2)
-text(x = 0, y =0.75, labels = '5000-1000\n fragments', cex = 0.7)
-points(x = exp_pro_tsss, y = rep(0.55, length(exp_pro_tsss)), pch = '|', col = 'darkblue')
-text(x = 0, y =0.55, labels = 'Experimentally\n evidenced\n promoters', cex = 0.7)
-
-```
-Column 1 contains numbers and is removed 
-```{r CHecking bimodality for SIDD for all promoters, warning=FALSE, message=FALSE, cache=TRUE, eval = FALSE}
-
-interv <- 750:2250
-interv <- 500:2500
-####interv <- 900:2100
-####interv <- 1000:2000
-
-sums_sidds_ecoli <- apply(sidds_ecoli[,-1], 2, function(x) {sum(x[interv])})
-
-sums_sidds_syn <- apply(sidds_syn[,-1], 2, function(x) {sum(x[interv])})
-
-
-#svg('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/densities_auc_sidd_2_bacteria.svg', height = 10, width = 10)
-par(mfrow = c(2,1))
-hist(sums_sidds_ecoli, breaks = 15, freq = F, xlab = 'AUC for 1500 nts-long SIDD profile', main = 'Histogram of E. coli Promoters AUC SIDD Data\n with Kernel Density Plot')
-lines(density(sums_sidds_ecoli, na.rm = T))
-
-
-hist(sums_sidds_syn, breaks = 15, freq = F, xlab = 'AUC for 1500 nts-long SIDD profile', main = 'Histogram of Synechocystis sp. Promoters AUC SIDD Data\n with Kernel Density Plot')
-lines(density(sums_sidds_syn, na.rm = T))
-
-#dev.off()
-
-library(diptest)
-diptest_sums_sidds_ecoli <- dip.test(sums_sidds_ecoli, simulate.p.value = T, B = 20000) #D = 0.055838, p-value < 2.2e-16 for 1500 nts -long interval
-# D = 0.029814, p-value = 1e-04 for 2000 nts
-diptest_sums_sidds_ecoli
-
-diptest_sums_sidds_syn<- dip.test(sums_sidds_syn, simulate.p.value = T, B = 20000) #D = 0.037924, p-value < 2.2e-16 for 1500 nts -long interval
-#D = 0.045919, p-value < 2.2e-16 for 2000 nts
-diptest_sums_sidds_syn
-```
-
-
-```{r if dynamic properties ditributed unimodally, eval=FALSE}
-
-
-funcs <- c('sum', 'mean', 'median', 'max')
-
-for (i in funcs){
-  assign(paste0(i,' _E01_e.coli_promoters'), apply(ecoli_E01, MARGIN = 1, FUN = i))
-}
-
-
-par(mfrow = c(2,2))
-for (i in funcs){
-  plot(density(get(paste0(i,'_E01_e.coli_promoters'))))
-}
-
-
-for (i in funcs){
-  assign(paste0(i,'_d1_e.coli_promoters'), apply(ecoli_d1, MARGIN = 1, FUN = i))
-}
-
-
-par(mfrow = c(2,2))
-for (i in funcs){
-  plot(density(get(paste0(i,'_d1_e.coli_promoters'))))
-}
-
-
-for (i in funcs){
-  assign(paste0(i,'_GC_e.coli_promoters'), apply(ecoli_gc, MARGIN = 1, FUN = i))
-}
-
-
-par(mfrow = c(2,2))
-for (i in funcs){
-  plot(density(get(paste0(i,'_GC_e.coli_promoters'))))
-}
-
-for (i in funcs){
-  assign(paste0(i,'_EP_e.coli_promoters'), apply(ecoli_gc, MARGIN = 1, FUN = i))
-}
-
-
-par(mfrow = c(2,2))
-for (i in funcs){
-  plot(density(get(paste0(i,'_GC_e.coli_promoters'))))
-}
-
-
-```
-
-```{r GO statistics using GOstats, warning=FALSE, message=FALSE, cache=TRUE, eval=FALSE}
-library(GOstats)
-library(Category)
-library(DBI)
-library(org.EcK12.eg.db)
-
-# #load('/home/jane/Документы/Misha/mol_a_2018/different_bacteria_physics_an_text/ecoli_sidd_clustering_df_to_go.rda')
-
-entrezUniverse <- as.character(dfGO$Entrezid)
-selectedEntrezIds_clust2 <- as.character(dfGO$Entrezid[which(dfGO$group == 2)])
-selectedEntrezIds_clust3 <- as.character(dfGO$Entrezid[which(dfGO$group == 3)])
-selectedEntrezIds_clust4 <- as.character(dfGO$Entrezid[which(dfGO$group == 4)])
-
-#setting cutoff value
-hgCutoff <- 0.001
-#hgCutoff <- 0.1
-
-#selecting onthology
-
-ontology <- 'BP'
-#ontology <- 'MF'
-
-params_clust2 <- new("GOHyperGParams",
- geneIds=selectedEntrezIds_clust2,
- universeGeneIds=entrezUniverse,
- annotation="org.EcK12.eg.db",
- ontology=ontology,
- pvalueCutoff=hgCutoff,
- conditional=FALSE,
- testDirection="over")
-
-params_clust3 <- new("GOHyperGParams",
- geneIds=selectedEntrezIds_clust3,
- universeGeneIds=entrezUniverse,
- annotation="org.EcK12.eg.db",
- ontology=ontology,
- pvalueCutoff=hgCutoff,
- conditional=FALSE,
- testDirection="over")
-
-params_clust4 <- new("GOHyperGParams",
- geneIds=selectedEntrezIds_clust4,
- universeGeneIds=entrezUniverse,
- annotation="org.EcK12.eg.db",
- ontology=ontology,
- pvalueCutoff=hgCutoff,
- conditional=FALSE,
- testDirection="over")
-
-#We would also like to perform a conditional test.  Instead of having to de ne a new
-#GO-HyperGParamsinstance  by  hand,  we  can  create  a  copy  and  update  just  the  parameter  of interest.
-#paramsCond <- params
-#conditional(paramsCond) <- TRUE
-#hgCondOver <- hyperGTest(paramsCond)
-
-
-
-hgOver_clust2 <- hyperGTest(params_clust2)
-hgOver_clust3 <- hyperGTest(params_clust3)
-hgOver_clust4 <- hyperGTest(params_clust4)
-
-
-
-df_clust2 <- summary(hgOver_clust2)
-df_clust3 <- summary(hgOver_clust3)
-df_clust4 <- summary(hgOver_clust4)
-
-########cbind(rbind(df_clust2, df_clust3, df_clust4), (df_clust2, df_clust3, df_clust4)
-
-names(df_clust2)
-#View(summary(hgOver, pvalue=0.01))
-```
-
-##Clusterization with large cluster excluded
-```{r E. coli sidd, warning=FALSE, message=FALSE, cache=TRUE}
-# sidds_syn <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv' )[,-1]
-matplot(sidds_ecoli,ty='l',lty =1, col=1, lwd =0.5)
-
-sidds_ecoli_1500 <- sidds_ecoli[750:2250,-1]#row 1 nreeds to be removed since it is a rownumbers
-
-ward_ecoli_1500sidd<- hclust.vector(t(sidds_ecoli_1500), method = 'ward') 
-#plot(ward_ecoli_1500sidd, labels = F)
-cut_ecoli_1500sidd <- cutree(ward_ecoli_1500sidd, k = 4)
-#        table(cut_ecoli_1500sidd)
-#removing  prmoters of cluster 2 (largest)
-
-clusters_2_3_4_numbers <- which(cut_ecoli_1500sidd!=1)
-#str(clusters_2_3_4_numbers)
-
-# 3 small clusters plotted together
-
-matplot(sidds_ecoli_1500[,clusters_2_3_4_numbers],ty='l',lty =1, col=1, lwd =0.5)
-
-#clusterization of the 3 clusters profiles only
-
-sidds_ecoli_small_clusters <- sidds_ecoli_1500[,clusters_2_3_4_numbers]
-ward_ecoli_small_clusters <- hclust.vector(t(sidds_ecoli_1500[,clusters_2_3_4_numbers]), method = 'ward')
-
-#plot(ward_ecoli_small_clusters, labels = F)
-
-
-#cur and plot the new clusterization results
-cuplcl(data = t(sidds_ecoli_small_clusters), method = 'ward', k = 3, main = 'E. coli SIDD profiles: 3 small clusters')
-#`Sequence (nts)` <- -750:750
-#par(mfrow = c(3,2))
-#plot(ward_synechocystis_1500sidd, labels = F)
-#for (i in unique(cut_synechocystis_1500sidd)){
-  #matplot(`Sequence (nts)`, sidds_syn[, which(cut_synechocystis_1500sidd==i)], type = 'l', lty = 1, col=i)
- # abline(v = -10:10*100, lty =3, col = 'darkgrey', lwd =2)
-#}
-```
-
-
-```{r Synechocystis 1500 nts long sidd1, warning=FALSE, message=FALSE, cache=TRUE}
-# sidds_syn <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/sidds_synechocystis_1500nts.csv' )[,-1]
-
-matplot(sidds_syn,ty='l',lty =1, col=1, lwd =0.5)
-
-ward_synechocystis_1500sidd<- hclust.vector(t(sidds_syn), method = 'ward')
-#plot(ward_synechocystis_1500sidd, labels = F)
-cut_synechocystis_1500sidd <- cutree(ward_synechocystis_1500sidd, k = 4)
-
-
-#`Sequence (nts)` <- -750:750
-#par(mfrow = c(3,2))
-#plot(ward_synechocystis_1500sidd, labels = F)
-#for (i in unique(cut_synechocystis_1500sidd)){
-  #matplot(`Sequence (nts)`, sidds_syn[, which(cut_synechocystis_1500sidd==i)], type = 'l', lty = 1, col=i)
- # abline(v = -10:10*100, lty =3, col = 'darkgrey', lwd =2)
-#}
-
-
-sidds_synechocystis_1500 <- sidds_syn[750:2250,-1]#row 1 nreeds to be removed since it is a rownumbers
-
-ward_sidds_synechocystis_1500 <- hclust.vector(t(sidds_synechocystis_1500), method = 'ward') 
-#plot(ward_sidds_synechocystis_1500, labels = F)
-cuplcl(data = t(sidds_synechocystis_1500), method = 'ward', k = 4, main = 'Synechocystis sp., SIDD')
-
-
-cut_sidds_synechocystis_1500 <- cutree(ward_sidds_synechocystis_1500, k = 4)
-#table(cut_sidds_synechocystis_1500)
-#removing  prmoters of cluster 2 (largest)
-
-synechocystis_clusters_2_3_4_numbers <- which(cut_sidds_synechocystis_1500!=1)
-#str(synechocystis_clusters_2_3_4_numbers)
-
-# 3 small clusters plotted together
-
-par(mfrow = c(1,1),
-    oma = rep(1.5,4))
-`Sequence (nts)` <- -750:750
-matplot(`Sequence (nts)`, sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers],ty='l',lty =1, col=1, lwd =0.5, main = 'Synechocystis sp., 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
-
-#clusterization of the 3 clusters profiles only
-
-sidds_synechocystis_small_clusters <- sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]
-ward_sidds_synechocystis_small_clusters <- hclust.vector(t(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]), method = 'ward')
-
-#plot(ward_sidds_synechocystis_small_clusters, labels = F)
-
-
-#cur and plot the new clusterization results
-cuplcl(data = t(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers]), method = 'ward', k = 3, main = 'Synechocystis sp., 3 small clusters SIDD')
-
-#sums by rows for reduced (3 small clusters only) dataset
-
-
-`Sequence (nts)` <- -750:750
-
-sidds_sums_on_positions_synechocystis_3_clusters <- rowSums(sidds_synechocystis_1500[,synechocystis_clusters_2_3_4_numbers])
-matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_3_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis sp., 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
-
-library(diptest)
-diptest::dip.test(x = sidds_sums_on_positions_synechocystis_3_clusters, simulate.p.value = T, B = 10000)
-#and for complete set of Synechocystis profiles
-
-sidds_sums_on_positions_synechocystis_all_clusters <- rowSums(sidds_synechocystis_1500)
-matplot(`Sequence (nts)`, sidds_sums_on_positions_synechocystis_all_clusters ,ty='l',lty =1, col=1, lwd = 1, main = 'Synechocystis sp., 3 small clusters SIDD\n (66 / 634) promoters', ylab =  'Opening probability')
-
-```
 
 ```{r Mycoplasma small peculiar cluster sequences, message=FALSE, fig.width = 10, fig.asp = 1}
 
@@ -2102,7 +1681,12 @@ for (i in unique(cut_ward_mycoplasma_proms_stringdist)){
     tmps[[i]] <-  tmp
 }
 
-ggseqlogo(tmps,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:400, labels = -200:200)+coord_fixed(ratio = 6)
+# to labelso only certain positions
+vec <- rep('', 401)
+labels <- -200:200
+vec[seq(1, length(-200:200), 25)] <- labels[seq(1, length(-200:200), 25)]
+
+ggseqlogo(tmps,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:400, labels = vec)+coord_fixed(ratio = 10)
 ```
 
 ```{r appendix:  coli O127:H6 isolate EPEC1 genome assembly, chromosome: 1 GenBank: LT903847.1 , eval=FALSE}
