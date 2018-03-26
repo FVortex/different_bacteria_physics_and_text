@@ -249,7 +249,7 @@ calculate_profile <- function(dnaSeq, average_interval_size, tss_position, dynam
 
 Custom fucntions cause problem with knitr.
 They are evaluated using separate script
-```{r, code=readLines("/home/mikhail/Documents/mol_a_2017/new_physics_functions.R")}
+```{r, code=readLines('/home/jane/Документы/Misha/mol_a_2018/new_physics_functions.R')}
 ```
 
 First to set parameters for dynchars and calculate genome-wide sequences.

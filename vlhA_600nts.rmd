@@ -226,16 +226,16 @@ substr(reverseComplement_mycoplasma_CP006916.3, nchar(reverseComplement_mycoplas
 ```
 
 ```{r All the vlhA}
-vlha_600 <- read.fasta('/home/mikhail/Documents/mol_a_2017/vlhA_600nts.fasta', seqonly = F, as.string = T)
-length(vlha_60)
+vlha_600 <- read.fasta('/home/jane/Документы/Misha/mol_a_2018/new_different_bacteria_physics_an_text /vlhA_600nts.fasta', seqonly = F, as.string = T)
+length(vlha_600)
 str(vlha_600)
 table(sapply(vlha_600, nchar))
 
-which(sapply(vlha_600, nchar) ==601)
+# #which(sapply(vlha_600, nchar) ==601)
 ###str(lapply(vlha, FUN = function(x) {tmp <- attr(x, which = 'name')  tmp}))
 
 
-vlha <- read.fasta('/home/mikhail/Documents/mol_a_2017/vlhA.fasta', seqonly = F, as.string = T)
+# #vlha <- read.fasta('/home/mikhail/Documents/mol_a_2017/vlhA.fasta', seqonly = F, as.string = T)
 length(vlha_600)
 str(vlha_600)
 
@@ -244,7 +244,7 @@ forwards <- c()
 complements <- c()
 reverseComplements <- c()
 
-for (i in vlha){
+for (i in vlha_600){
  forwards <- c(forwards, (grepl(toupper(i[1]), x = mycoplasma_CP006916.3)))
  complements <- c(complements, (grepl(toupper(i[1]), x = complement_mycoplasma_CP006916.3)))
  reverseComplements <- c(reverseComplements, (grepl(toupper(i[1]), x = reverseComplement_mycoplasma_CP006916.3)))
@@ -252,42 +252,42 @@ for (i in vlha){
 
 sapply(list(forwards, complements, reverseComplements), function(x) {which(x == TRUE)})
 
-labels <- -rev(1:nchar(vlha$HFMG94VAA_RS01210))
-labels[seq(1, nchar(vlha$HFMG94VAA_RS01210), by = 25)]
+labels <- -rev(1:nchar(vlha_600$HFMG94VAA_RS01210))
+labels[seq(1, nchar(vlha_600$HFMG94VAA_RS01210), by = 25)]
 
 labels_new <- rep('', length(labels))
-labels_new[seq(1, nchar(vlha$HFMG94VAA_RS01210), by = 25)] <- labels[seq(1, nchar(vlha$HFMG94VAA_RS01210), by = 25)]
+labels_new[seq(1, nchar(vlha_600$HFMG94VAA_RS01210), by = 25)] <- labels[seq(1, nchar(vlha_600$HFMG94VAA_RS01210), by = 25)]
 
-ggseqlogo(sapply(vlha, FUN = function(x) {paste0(toupper(x), collapse = '')}),  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно начала кодирующей последовательности (п.н.)", limits=1:nchar(vlha$HFMG94VAA_RS01210), labels =labels_new)+coord_fixed(ratio = 40)
+ggseqlogo(sapply(vlha_600, FUN = function(x) {paste0(toupper(x), collapse = '')}),  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно начала кодирующей последовательности (п.н.)", limits=1:nchar(vlha_600$HFMG94VAA_RS01210), labels =labels_new)+coord_fixed(ratio = 40)
 
 
-boxplot(lapply(vlha, GC))
+boxplot(lapply(vlha_600, Biostrings::GC))
 
 
 
 dyn_int <- 25
 
-Ldyn <- lapply(vlha, FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = dyn_int, tss = 190, boundaries = c(160, 70), strand = 'forward')})
+Ldyn <- lapply(vlha_600, FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = dyn_int, tss = 190, boundaries = c(160, 70), strand = 'forward')})
 `Sequence (nts)` <- -rev(seq_along(Ldyn$HFMG94VAA_RS01210$E0))
 #E0
 mat_dyn <- sapply(Ldyn, function(x) {x$E0})
-means_to_mat <- c(NA, apply(na.omit(mat_dyn),  MARGIN = 1, FUN = median), NA)
-matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.25,  col = 1, ylab = 'Open states activation energy (kcal/mole)', main = 'Open states activation energy (sliding window 25 nts)\n for 441 vlhA sequences')
+means_to_mat <- c( apply(na.omit(mat_dyn),  MARGIN = 1, FUN = median))
+matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.1,  col = 1, ylab = 'Open states activation energy (kcal/mole)', main = paste('Open states activation energy (sliding window', dyn_int, 'nts)\n for 441 vlhA sequences'))
 lines(`Sequence (nts)`, means_to_mat, col = 'magenta', lwd = 2)
 
 gaa_repeats <- -155:-130
 approx_tsss <- max(gaa_repeats)+50
 
-segments(x0 = min(gaa_repeats), y0 = 275, x1 = max(gaa_repeats), y1 = 275, lwd = 3, col = 'darkred')
+segments(x0 = min(gaa_repeats), y0 = max(mat_dyn), x1 = max(gaa_repeats), y1 = max(mat_dyn), lwd = 3, col = 'darkred')
 # #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
 abline(v = approx_tsss, lty=2, lwd = 2)
-legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'), lwd = 2)
 
 #gc
 
 mat_dyn <- sapply(Ldyn, function(x) {x$gc})
-means_to_mat <- c(NA, apply(na.omit(mat_dyn),  MARGIN = 1, FUN = median), NA)
-matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.25,  col = 1, ylab = 'GC-content (25nts-long sliding window)', main = 'GC-content (25nts-long sliding window)\n for 441 vlhA sequences')
+means_to_mat <- c(apply(na.omit(mat_dyn),  MARGIN = 1, FUN = median))
+matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.25,  col = 1, ylab = 'GC-content', main = paste('GC-content (sliding window', dyn_int, 'nts)\n for 441 vlhA sequences'))
 lines(`Sequence (nts)`, means_to_mat, col = 'magenta', lwd = 2)
 
 gaa_repeats <- -155:-130
@@ -296,16 +296,17 @@ approx_tsss <- max(gaa_repeats)+50
 segments(x0 = min(gaa_repeats), y0 = max(mat_dyn, na.rm = T), x1 = max(gaa_repeats), y1 = max(mat_dyn, na.rm = T), lwd = 3, col = 'darkred')
 # #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
 abline(v = approx_tsss, lty=2, lwd = 2)
-legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'), lwd = 2)
+
 
 #bendability
 
-Lbend <- lapply(vlha, FUN = function(x) {bendability(s = x, bound =  c(1, nchar(vlha$HFMG94VAA_RS01210)), width = 1)})
+Lbend <- lapply(vlha_600, FUN = function(x) {bendability(s = x, bound =  c(1, nchar(vlha_600$HFMG94VAA_RS01210)), width = 1)})
 `Sequence (nts)` <- -rev(seq_along(Lbend$HFMG94VAA_RS01210))
 #E0
 mat_bend <- sapply(Lbend, function(x) {x})
 means_to_mat <- c(NA, NA, apply(na.omit(mat_bend),  MARGIN = 1, FUN = median), NA, NA, NA)
-matplot(`Sequence (nts)`, mat_bend, type = 'l', lwd = 0.25,  col = 1, ylab = 'Bendability', main = 'Bendability\n for 441 vlhA sequences')
+matplot(`Sequence (nts)`, mat_bend, type = 'l', lwd = 0.09,  col = 1, ylab = 'Bendability', main = 'Bendability\n for 441 vlhA sequences')
 lines(`Sequence (nts)`, means_to_mat, col = 'magenta', lwd = 2)
 
 gaa_repeats <- -155:-130
@@ -314,32 +315,45 @@ approx_tsss <- max(gaa_repeats)+50
 segments(x0 = min(gaa_repeats), y0 = max(mat_bend, na.rm = T), x1 = max(gaa_repeats), y1 =  max(mat_bend, na.rm = T), lwd = 3, col = 'darkred')
 # #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
 abline(v = approx_tsss, lty=2, lwd = 2)
-legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'), lwd = 2)
 
 #EP
-
-Lep <- lapply(vlha, FUN = function(x) {
-  p <- lseqspline1D(s = x, bound = c(1, nchar(vlha$HFMG94VAA_RS01210)), width = 1, ref = 190)
+zout <- -540:179
+Lep <- lapply(vlha_600, FUN = function(x) {
+  p <- lseqspline1D(s = x, bound = c(1, nchar(vlha_600$HFMG94VAA_RS01210)), width = 1, ref = 600-80)
 (p$mpot[p$x %in% zout])
 })
 `Sequence (angstrom)` <- -rev(seq_along(Lep$HFMG94VAA_RS01210))
-#E0
+#EP
+
+
+# #length(samp$x)-which(samp$x %in% -50:-75)
+# #mp$mpot[samp$x %in% -50:-135]) #respective to TSS
+# #(p$mpot[p$x %in% zout])
+
 mat_ep <- sapply(Lep, function(x) {x})
 means_to_mat <- c(apply(na.omit(mat_ep),  MARGIN = 1, FUN = median))
-matplot(`Sequence (angstrom)`, mat_ep, type = 'l', lwd = 0.25,  col = 1, ylab = 'Electrostatic potential', main = 'Electrostatic potential\n for 441 vlhA sequences')
+matplot(`Sequence (angstrom)`, mat_ep, type = 'l', lwd = 0.1,  col = 1, ylab = 'Electrostatic potential', main = 'Electrostatic potential\n for 441 vlhA sequences')
 lines(`Sequence (angstrom)`, means_to_mat, col = 'magenta', lwd = 2)
 
-gaa_repeats <- -155:-130*2.75
-approx_tsss <- -80*2.75
+# #gaa_repeats <- -155:-130*2.75
+# #approx_tsss <- -80*2.75
 
-segments(x0 = min(gaa_repeats), y0 = max(mat_ep, na.rm = T), x1 = max(gaa_repeats), y1 =  max(mat_ep, na.rm = T), lwd = 3, col = 'darkred')
+samp <-  lseqspline1D(s = vlha_600$HFMG94VAA_RS01210, bound = c(1, nchar(vlha_600$HFMG94VAA_RS01210)), width = 1, ref = 600-80)
+
+approx_tsss_angstrom <- -(length(samp$x) - which(samp$x ==0))
+gaa_repeats_angstrom <- -(length(samp$x)-which(samp$x %in% -50:-150))
+# #gaa_repeats_angstrom <- approx_tsss_angstrom + c(-50, -85)*3.4
+
+
+segments(x0 = min(gaa_repeats_angstrom), y0 = max(mat_ep, na.rm = T), x1 = max(gaa_repeats_angstrom), y1 =  max(mat_ep, na.rm = T), lwd = 3, col = 'darkred')
 # #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
-abline(v = approx_tsss, lty=2, lwd = 2)
-legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
-
-
+abline(v = approx_tsss_angstrom, lty=2, lwd = 2)
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'), lwd = 2)
 
 ```
+
+
 ```{r non-vlhA promoters from Fisunov et al., 2016}
 
 mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/mycoplasma_gallisepticum_fisunov_2016.csv', header = T)
@@ -361,21 +375,36 @@ substr(reverseComplement_mycoplasms_CP006916.3, nchar(reverseComplement_mycoplas
 mycoplasma_strings <- c()
 for (i in seq_along(mycoplasma_proms$Position)){
   if (mycoplasma_proms$Strand[i] == '1'){ #initial strand name
-   tmp <- substr(mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-200, stop = mycoplasma_proms$Position[i]+200)
+   tmp <- substr(mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-520, stop = mycoplasma_proms$Position[i]+80) #to compare with intervals
   } else {
-    tmp <- substr(complement_mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-200, stop = mycoplasma_proms$Position[i]+200)
+    tmp <- substr(complement_mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-520, stop = mycoplasma_proms$Position[i]+80)
    }
    mycoplasma_strings <- c(mycoplasma_strings, tmp)  
   
 }
 
+mycoplasma_strings <- mycoplasma_strings[-which(nchar(mycoplasma_strings)<600)]
+
+
+#sweater plot for all non-vlhA promoters
+mycoplasma_chars <- lapply(mycoplasma_strings, FUN = function(x) {strsplit(x, split = '')[[1]]})
+DNAbin <- as.DNAbin(mycoplasma_chars)
+labels(DNAbin) <- NULL
+image.DNAbin(DNAbin)
+
+
+DNAbin <- as.DNAbin(lapply(mycoplasma_chars, FUN = function(x) {x[350:600]}))
+labels(DNAbin) <- NULL
+image.DNAbin(DNAbin)
+
 #one promoter is too close to a flank
 
-which(sapply(mycoplasma_strings, nchar)!=401)
-#351
 
-mycoplasma_strings <- mycoplasma_strings[-which(sapply(mycoplasma_strings, nchar)!=401)]
 
+
+#logos
+
+ggseqlogo(mycoplasma_strings,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:400, labels = labels_new)+coord_fixed(ratio = 40)+ylim(c(0,2))
 #mycoplasma_proms_strings <- sapply(mycoplasma_strings,  function(x) {paste0(x, collapse = '')})
 mycoplasma_proms_DNAStringSet <- DNAStringSet(mycoplasma_strings)
 
@@ -694,5 +723,39 @@ matplot(sapply(Lep, function(x) {x$E0}), type = 'l', col = 1)
 
 ```
 
+```{r vlhA groups accroding GAA-repeats length}
+
+
+vlha_600[grep(pattern = '[^(gaa)](gaa){12}[^(gaa)]', x = vlha_600)]
+
+ggseqlogo(vlha_600[grep(pattern = '[^(gaa)](gaa){11}[^(gaa)]', x = vlha_600)][[1]][1], ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:nchar(vlha_600$HFMG94VAA_RS00305), labels = 1:nchar(vlha_600$HFMG94VAA_RS00305))+coord_fixed(ratio = 40)
+#which_10 <- grep(pattern = '[^(gaa)](gaa){10}[^(gaa)]', x = vlha_600)
+which_11 <- grep(pattern = '[^(gaa)](gaa){11}[^(gaa)]', x = vlha_600)
+which_12 <- grep(pattern = '[^(gaa)](gaa){12}[^(gaa)]', x = vlha_600)
+which_13 <- grep(pattern = '[^(gaa)](gaa){13}[^(gaa)]', x = vlha_600)
+
+
+which_7 <- grep(pattern = '[^(gaa)](gaa){7}[^(gaa)]', x = vlha_600)
+which_8 <- grep(pattern = '[^(gaa)](gaa){8}[^(gaa)]', x = vlha_600)
+which_9 <- grep(pattern = '[^(gaa)](gaa){9}[^(gaa)]', x = vlha_600)
+which_7 <- grep(pattern = '[^(gaa)](gaa){7}[^(gaa)]', x = vlha_600)
+
+vlha_600_chars <- lapply(vlha_600, FUN = function(x) {strsplit(x, split = '')[[1]]})
+# #
+DNAbin <- as.DNAbin(vlha_600_chars)
+labels(DNAbin) <- NULL
+image.DNAbin(DNAbin)
+
+
+DNAbin <- as.DNAbin(lapply(vlha_600_chars, FUN = function(x) {x[350:600]}))
+labels(DNAbin) <- NULL
+image.DNAbin(DNAbin)
+
+regexpr(pattern='[^(gaa)](gaa){3}[^(gaa)]', text = 'hjhjhjgaagaagaahjhjgaaaaaaahj')
+
 ```
+
+
+
+
 
