@@ -1,0 +1,698 @@
+---
+  title: "Mycoplasma_vs_Synechocystis_vs_E.coli"
+author: "Mikhail Orlov"
+date: '6 ноября 2017 г '
+output:
+  html_document: default
+pdf_document: default
+---
+  
+  ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Clearing workspace, setting working directory and loading R packages
+```{r, message=FALSE}
+rm(list=ls())
+
+#setwd('/home/mikhail/Documents/Script_2016_all/PCA/')
+
+library(R.matlab)
+library(seqinr)
+library(factoextra)
+#library(data.table)
+library(caret)
+#library(doMC)
+library(Biostrings)
+library(ape)
+library(reldna)
+library(fastcluster)
+library(dendextend)
+library(ggplot2)
+library(ggseqlogo)
+
+
+```
+
+```{r strReverse funtcion, message = FALSE}
+## a useful function: rev() for strings
+strReverse <- function(x)
+        sapply(lapply(strsplit(x, NULL), rev), paste, collapse="")
+
+if(!require(ape)){stop('Code requires library "ape".\n')}
+if(!require(reldna)){stop('Code requires library "reldna".\n')}
+if(!require(parallel)){stop('Code requires library "parallel".\n')}
+if(!require(Biostrings)){stop('Code requires library "Biostrings".\n')}
+
+get_forward_subseq <- function(seq, tss, boundaries) {
+  return(as.character(
+    DNAString(seq,
+              start = tss-boundaries[1],
+              nchar = sum(boundaries)+1)))
+}
+
+get_reverse_subseq <- function(seq, tss, boundaries) {
+  return(as.character(
+    reverseComplement(
+      DNAString(seq,
+                start = tss-boundaries[2],
+                nchar = sum(boundaries)+1))))
+}
+
+get_forward_substring <- function(seq, tss, boundaries) {
+   return(seq[(tss-boundaries[1]):(tss+boundaries[2])])
+}
+
+get_reverse_substring <- function(seq, tss, boundaries) {
+  res <- rev(chartr("ATGC", "TACG", seq[(tss-boundaries[2]):(tss+boundaries[1])]))
+  return(res)
+}
+
+cut_char_vec <- function(char_vec, tss, boundaries, strand) {
+  res <- switch(strand,
+         forward = char_vec[(tss-boundaries[1]):(tss+boundaries[2])],
+         reverse = char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
+         )
+  return(res)
+}
+
+#' Title
+#'
+#' @param seq full sequence (chromosome)
+#' @param interval requested interval
+#' @param tss
+#' @param strand DNA strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+dynchars <- function(seq, average_interval_size, tss, boundaries, strand=c('forward','reverse')) {
+
+  if (missing(average_interval_size))
+  stop("Need to specify average_interval_size")
+
+  if(!is.character(seq))
+    stop("Sequence must be a character vector containing A, C, G, T letters only")
+  #make sure no small letters are present
+  seq <- toupper(seq)
+  # if((tss - average_interval_size < 1) || (tss + average_interval_size > length(seq)))
+  #   stop("Considered average_interval_size exceeds the size of the sequence")
+  
+  # seq <- switch(strand, 
+  #               forward = seq,
+  #               reverse = as.character(reverseComplement(DNAString(seq))))
+  # seq <- unlist(strsplit(seq, ''))
+  # seq <- toupper(seq)
+  
+  boundaries <- boundaries + average_interval_size %/% 2
+  
+  seq <- cut_char_vec(seq, tss, boundaries, strand)
+
+  # strand <- match.arg(strand)
+  # seq <- switch(strand,
+  #             forward=get_forward_substring(seq, tss, boundaries),
+  #             reverse=get_forward_substring(seq, tss, boundaries))#get_reverse_substring(seq, tss, boundaries))
+
+  a<-3.4*10^(-10)
+  #I<-c(7.6, 4.8, 8.2, 4.1)*10^(-44)
+  K<-c(227, 155, 220, 149)*10^(-20)
+  V<-c(2.09, 1.43, 3.12, 2.12)*10^(-20)
+
+  csA<-cumsum(seq=='A')
+  csT<-cumsum(seq=='T')
+  csG<-cumsum(seq=='G')
+  csC<-cumsum(seq=='C')
+
+  countA = csA[average_interval_size:length(csA)]-c(0, csA[1:(length(csA)-average_interval_size)])
+  countT = csT[average_interval_size:length(csT)]-c(0, csT[1:(length(csT)-average_interval_size)])
+  countG = csG[average_interval_size:length(csG)]-c(0, csG[1:(length(csG)-average_interval_size)])
+  countC = csC[average_interval_size:length(csC)]-c(0, csC[1:(length(csC)-average_interval_size)])
+
+  M <- cbind(countA, countT, countG, countC)/average_interval_size
+
+  #Is <- as.numeric(M%*%I)#! numeric conversion
+  Ks <- as.numeric(M %*% K)
+  Vs <- as.numeric(M %*% V)
+
+  E0 <- (8*(Ks*Vs)^0.5)* 6E23 / 4184
+  d <- ((Ks*a^2)/Vs)^(0.5)/a;
+  gc = M[,3] + M[,4]
+
+  dynchars_return <- list(E0=E0, d=d, gc=gc)
+  return(dynchars_return)
+}
+
+#' Title
+#'
+#' @param tss_position
+#' @param extended_string -- vector of characters
+#' @param ep_interval
+#' @param zout
+#' @param strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_EP_on_interval <- function(tss_position, extended_string, ep_interval=c(270, 130), zout=-540:179, strand=c('forward','reverse')) {
+  #lseqspline1D(substr(e.coli_U00096.2, exp_tsss[i]-250, exp_tsss[i]+150), bound=c(50, 350), ref=251 )
+  # strand<- match.arg(strand)
+  #extended_string <- unlist(strsplit(extended_string, ''))
+  # subseq <-switch(strand,
+  #                 forward = get_forward_substring(extended_string, tss_position, ep_interval),
+  #                 reverse = get_reverse_substring(extended_string, tss_position, ep_interval))
+  # subseq <- paste0(subseq, collapse = "")
+  
+  # subseq <- switch(strand,
+  #                  forward = get_forward_subseq(extended_string, tss_position, ep_interval),
+  #                  reverse = get_reverse_subseq(extended_string, tss_position, ep_interval))
+  # subseq <- switch(strand,
+  #                  forward = get_forward_substring(extended_string, tss_position, ep_interval),
+  #                  reverse = get_reverse_substring(extended_string, tss_position, ep_interval))
+  # subseq <- as.character(subseq)
+  subseq <- as.character(cut_char_vec(extended_string, tss_position, ep_interval, strand))
+  subseq <- paste0(subseq, collapse = "")
+  p <- lseqspline1D(
+    subseq,
+    bound=c(50, 350),
+    ref=271)
+  return(p$mpot[p$x %in% zout])
+}
+
+#' Title
+#'
+#' @param dnaSeq
+#' @param dynamic_interval
+#' @param tss_position
+#' @param ep_interval
+#' @param zout
+#' @param strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_profile <- function(dnaSeq, average_interval_size, tss_position, dynamic_interval, ep_interval=c(270, 130), zout=-540:179, strand=c('forward','reverse')) {
+  #ep_interval = c(163, 213) for reverse, for forward c(267, 217), zout - the same
+  #seq, average_interval_size, tss, boundaries, strand=c('forward','reverse')
+  #dnaSeq <- unlist(strsplit(dnaSeq, ''))
+  dynRes <- dynchars(dnaSeq, average_interval_size, tss_position,  dynamic_interval, strand)
+  epRes <- calculate_EP_on_interval(tss_position, dnaSeq, ep_interval, zout, strand)
+  return(c(dynRes$E0, dynRes$d, epRes, dynRes$gc))
+}
+```
+
+
+
+
+```{r From scratch Mycopplasma galllisepticum peuliar clusters}
+mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/mycoplasma_gallisepticum_fisunov_2016.csv', header = T)
+
+mycoplasma_CP006916.3 <- toupper(paste0(read.GenBank(access.nb = 'CP006916.3', as.character = T)$CP006916.3, collapse = ''))
+complement_mycoplasma_CP006916.3<- as.character(Biostrings::complement(DNAString(mycoplasma_CP006916.3)))
+reverseComplement_mycoplasma_CP006916.3<- as.character(Biostrings::reverseComplement(DNAString(mycoplasma_CP006916.3)))
+
+mycoplasma_CP006916.3_char<-unlist(strsplit(mycoplasma_CP006916.3, ''))
+#####!reverseComplement_mycoplasma_CP006916.3<-unlist(strsplit(mycoplasma_CP006916.3, ''))
+
+reverseComplement_mycoplasma_CP006916.3_char<-unlist(strsplit(reverseComplement_mycoplasma_CP006916.3, ''))
+
+#checking forward and reverse complement
+
+substr(mycoplasma_CP006916.3, 1, 200)
+substr(complement_mycoplasma_CP006916.3, 1, 200)
+substr(reverseComplement_mycoplasma_CP006916.3, nchar(reverseComplement_mycoplasma_CP006916.3)-199, nchar(reverseComplement_mycoplasma_CP006916.3))
+```
+
+```{r All the vlhA}
+vlha_600 <- read.fasta('/home/mikhail/Documents/mol_a_2017/vlhA_600nts.fasta', seqonly = F, as.string = T)
+length(vlha_60)
+str(vlha_600)
+table(sapply(vlha_600, nchar))
+
+which(sapply(vlha_600, nchar) ==601)
+###str(lapply(vlha, FUN = function(x) {tmp <- attr(x, which = 'name')  tmp}))
+
+
+vlha <- read.fasta('/home/mikhail/Documents/mol_a_2017/vlhA.fasta', seqonly = F, as.string = T)
+length(vlha_600)
+str(vlha_600)
+
+#search for the sequnces in the genome
+forwards <- c()
+complements <- c()
+reverseComplements <- c()
+
+for (i in vlha){
+ forwards <- c(forwards, (grepl(toupper(i[1]), x = mycoplasma_CP006916.3)))
+ complements <- c(complements, (grepl(toupper(i[1]), x = complement_mycoplasma_CP006916.3)))
+ reverseComplements <- c(reverseComplements, (grepl(toupper(i[1]), x = reverseComplement_mycoplasma_CP006916.3)))
+}
+
+sapply(list(forwards, complements, reverseComplements), function(x) {which(x == TRUE)})
+
+labels <- -rev(1:nchar(vlha$HFMG94VAA_RS01210))
+labels[seq(1, nchar(vlha$HFMG94VAA_RS01210), by = 25)]
+
+labels_new <- rep('', length(labels))
+labels_new[seq(1, nchar(vlha$HFMG94VAA_RS01210), by = 25)] <- labels[seq(1, nchar(vlha$HFMG94VAA_RS01210), by = 25)]
+
+ggseqlogo(sapply(vlha, FUN = function(x) {paste0(toupper(x), collapse = '')}),  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно начала кодирующей последовательности (п.н.)", limits=1:nchar(vlha$HFMG94VAA_RS01210), labels =labels_new)+coord_fixed(ratio = 40)
+
+
+boxplot(lapply(vlha, GC))
+
+
+
+dyn_int <- 25
+
+Ldyn <- lapply(vlha, FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = dyn_int, tss = 190, boundaries = c(160, 70), strand = 'forward')})
+`Sequence (nts)` <- -rev(seq_along(Ldyn$HFMG94VAA_RS01210$E0))
+#E0
+mat_dyn <- sapply(Ldyn, function(x) {x$E0})
+means_to_mat <- c(NA, apply(na.omit(mat_dyn),  MARGIN = 1, FUN = median), NA)
+matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.25,  col = 1, ylab = 'Open states activation energy (kcal/mole)', main = 'Open states activation energy (sliding window 25 nts)\n for 441 vlhA sequences')
+lines(`Sequence (nts)`, means_to_mat, col = 'magenta', lwd = 2)
+
+gaa_repeats <- -155:-130
+approx_tsss <- max(gaa_repeats)+50
+
+segments(x0 = min(gaa_repeats), y0 = 275, x1 = max(gaa_repeats), y1 = 275, lwd = 3, col = 'darkred')
+# #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
+abline(v = approx_tsss, lty=2, lwd = 2)
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
+
+#gc
+
+mat_dyn <- sapply(Ldyn, function(x) {x$gc})
+means_to_mat <- c(NA, apply(na.omit(mat_dyn),  MARGIN = 1, FUN = median), NA)
+matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.25,  col = 1, ylab = 'GC-content (25nts-long sliding window)', main = 'GC-content (25nts-long sliding window)\n for 441 vlhA sequences')
+lines(`Sequence (nts)`, means_to_mat, col = 'magenta', lwd = 2)
+
+gaa_repeats <- -155:-130
+approx_tsss <- max(gaa_repeats)+50
+
+segments(x0 = min(gaa_repeats), y0 = max(mat_dyn, na.rm = T), x1 = max(gaa_repeats), y1 = max(mat_dyn, na.rm = T), lwd = 3, col = 'darkred')
+# #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
+abline(v = approx_tsss, lty=2, lwd = 2)
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
+
+#bendability
+
+Lbend <- lapply(vlha, FUN = function(x) {bendability(s = x, bound =  c(1, nchar(vlha$HFMG94VAA_RS01210)), width = 1)})
+`Sequence (nts)` <- -rev(seq_along(Lbend$HFMG94VAA_RS01210))
+#E0
+mat_bend <- sapply(Lbend, function(x) {x})
+means_to_mat <- c(NA, NA, apply(na.omit(mat_bend),  MARGIN = 1, FUN = median), NA, NA, NA)
+matplot(`Sequence (nts)`, mat_bend, type = 'l', lwd = 0.25,  col = 1, ylab = 'Bendability', main = 'Bendability\n for 441 vlhA sequences')
+lines(`Sequence (nts)`, means_to_mat, col = 'magenta', lwd = 2)
+
+gaa_repeats <- -155:-130
+approx_tsss <- max(gaa_repeats)+50
+
+segments(x0 = min(gaa_repeats), y0 = max(mat_bend, na.rm = T), x1 = max(gaa_repeats), y1 =  max(mat_bend, na.rm = T), lwd = 3, col = 'darkred')
+# #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
+abline(v = approx_tsss, lty=2, lwd = 2)
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
+
+#EP
+
+Lep <- lapply(vlha, FUN = function(x) {
+  p <- lseqspline1D(s = x, bound = c(1, nchar(vlha$HFMG94VAA_RS01210)), width = 1, ref = 190)
+(p$mpot[p$x %in% zout])
+})
+`Sequence (angstrom)` <- -rev(seq_along(Lep$HFMG94VAA_RS01210))
+#E0
+mat_ep <- sapply(Lep, function(x) {x})
+means_to_mat <- c(apply(na.omit(mat_ep),  MARGIN = 1, FUN = median))
+matplot(`Sequence (angstrom)`, mat_ep, type = 'l', lwd = 0.25,  col = 1, ylab = 'Electrostatic potential', main = 'Electrostatic potential\n for 441 vlhA sequences')
+lines(`Sequence (angstrom)`, means_to_mat, col = 'magenta', lwd = 2)
+
+gaa_repeats <- -155:-130*2.75
+approx_tsss <- -80*2.75
+
+segments(x0 = min(gaa_repeats), y0 = max(mat_ep, na.rm = T), x1 = max(gaa_repeats), y1 =  max(mat_ep, na.rm = T), lwd = 3, col = 'darkred')
+# #arrows(x0 = approx_tsss, y0 = 280, x1 = approx_tsss, y1 = 255, col = 'darkred', lwd = 3)
+abline(v = approx_tsss, lty=2, lwd = 2)
+legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values'), lty = c(1,2,1), col = c('darkred', 'black', 'magenta'))
+
+
+
+```
+```{r non-vlhA promoters from Fisunov et al., 2016}
+
+mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/mycoplasma_gallisepticum_fisunov_2016.csv', header = T)
+
+mycoplasma_CP006916.3 <- toupper(paste0(read.GenBank(access.nb = 'CP006916.3', as.character = T)$CP006916.3, collapse = ''))
+complement_mycoplasma_CP006916.3<- as.character(Biostrings::complement(DNAString(mycoplasma_CP006916.3)))
+reverseComplement_mycoplasma_CP006916.3<- as.character(Biostrings::reverseComplement(DNAString(mycoplasma_CP006916.3)))
+
+mycoplasma_CP006916.3_char<-unlist(strsplit(mycoplasma_CP006916.3, ''))
+#####!reverseComplement_mycoplasma_CP006916.3<-unlist(strsplit(mycoplasma_CP006916.3, ''))
+
+reverseComplement_mycoplasma_CP006916.3_char<-unlist(strsplit(reverseComplement_mycoplasma_CP006916.3, ''))
+
+#checking forward and reverse complement
+
+substr(mycoplasma_CP006916.3, 1, 200)
+substr(reverseComplement_mycoplasms_CP006916.3, nchar(reverseComplement_mycoplasms_CP006916.3)-199, nchar(reverseComplement_mycoplasms_CP006916.3))
+
+mycoplasma_strings <- c()
+for (i in seq_along(mycoplasma_proms$Position)){
+  if (mycoplasma_proms$Strand[i] == '1'){ #initial strand name
+   tmp <- substr(mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-200, stop = mycoplasma_proms$Position[i]+200)
+  } else {
+    tmp <- substr(complement_mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-200, stop = mycoplasma_proms$Position[i]+200)
+   }
+   mycoplasma_strings <- c(mycoplasma_strings, tmp)  
+  
+}
+
+#one promoter is too close to a flank
+
+which(sapply(mycoplasma_strings, nchar)!=401)
+#351
+
+mycoplasma_strings <- mycoplasma_strings[-which(sapply(mycoplasma_strings, nchar)!=401)]
+
+#mycoplasma_proms_strings <- sapply(mycoplasma_strings,  function(x) {paste0(x, collapse = '')})
+mycoplasma_proms_DNAStringSet <- DNAStringSet(mycoplasma_strings)
+
+mycoplasma_proms_stringdist<- stringDist(mycoplasma_proms_DNAStringSet, method = 'levens')
+
+ward_mycoplasma_proms_stringdist <- hclust(mycoplasma_proms_stringdist, method = 'ward.D2')
+
+plot(ward_mycoplasma_proms_stringdist, labels = F) #k =6
+ward_mycoplasma_proms_stringdist %>% as.dendrogram %>% color_branches(k = 6) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_mycoplasma_proms_stringdist$height)*0.2) -> to_plot_ward_mycoplasma_proms_stringdist
+
+cut_ward_mycoplasma_proms_stringdist <- cutree(ward_mycoplasma_proms_stringdist, k = 3)
+table(cut_ward_mycoplasma_proms_stringdist)
+
+
+#for the strain used in Fisunov et al. no oriC coordinates available
+#other strains comprise  rep_origin 1..1876 /note="putative oriC"
+#the sequence appears to be present in the genome used at the same position
+#major cluster - non-vlhA promoters
+
+par(mfrow = c(3,1))
+plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum levenstien distance, 2 small clusters (both 13 members) positions')
+abline(v = 1:1876, lty =2)
+abline(v = mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 1)], col = 'black')
+
+plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum levenstien distance, 2 small clusters (both 13 members) positions')
+abline(v = 1:1876, lty =2)
+abline(v = mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 2)], col = 'darkred')
+
+plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum levenstien distance, 2 small clusters (both 13 members) positions')
+abline(v = 1:1876, lty =2)
+abline(v = mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 3)], col = 'darkblue')
+
+
+
+#logos for [-200;200] interval for major cluster (non-vlhA)
+
+tmps <- list()
+
+for (i in unique(cut_ward_mycoplasma_proms_stringdist)){
+inds <- which(cut_ward_mycoplasma_proms_stringdist == i)
+tmp <- sapply(mycoplasma_strings[inds], function(x) {substr(x, start = 1, stop = 400)})
+tmps[[i]] <-  tmp
+}
+
+
+labels <- -200:200
+labels[seq(0, 400, by = 25)]
+
+labels_new <- rep('', length(labels))
+labels_new[seq(1, 401, by = 25)] <- labels[seq(1, 401, by = 25)]
+
+ggseqlogo(tmps,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:400, labels = labels_new)+coord_fixed(ratio = 10)
+
+
+#logos for [-50;50] interval
+tmps <- list()
+
+for (i in unique(cut_ward_mycoplasma_proms_stringdist)){
+inds <- which(cut_ward_mycoplasma_proms_stringdist == 1)
+tmp <- sapply(mycoplasma_strings[inds], function(x) {substr(x, start = 1, stop = nchar(x))})
+tmps[[i]] <-  tmp
+}
+
+ggseqlogo(tmps,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)+coord_fixed(ratio = 6)
+
+ggseqlogo(tmp,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = -50:50)+coord_fixed(ratio = 50)
+
+#sweater by ape
+L <- lapply(mycoplasma_strings, function(x) {strsplit(x, split ='')[[1]]})
+df <- data.frame(matrix(unlist(L), ncol=length(L[[1]]), byrow=T))
+image(as.DNAbin((as.matrix(df))))
+abline(v = 200, col = 'white', lty = 2, lwd = 3)
+
+
+#sweater by ape, 100 nts
+L <- lapply(mycoplasma_strings, function(x) {strsplit(x, split ='')[[1]][(150):(250)]})
+df <- data.frame(matrix(unlist(L), ncol=length(L[[1]]), byrow=T))
+image(as.DNAbin((as.matrix(df))))
+
+
+#for google docs
+tmps <- list()
+groups_inds <- list()
+groups_tsss <- list()
+groups_tags <- list()
+groups_names <- list()
+groups_strands <- list()
+for (i in unique(cut_ward_mycoplasma_proms_stringdist)){
+inds <- which(cut_ward_mycoplasma_proms_stringdist == i)
+tmp <- sapply(mycoplasma_strings[inds], function(x) {substr(x, start = 1, stop = nchar(x))}) #full lenght
+tmps[[i]] <-  tmp
+#which strands
+groups_inds[[i]] <- inds
+groups_tsss[[i]] <- mycoplasma_proms$Position[inds]
+groups_strands[[i]] <- mycoplasma_proms$Strand[inds]
+groups_tags[[i]] <- mycoplasma_proms$Tag[inds]
+}
+
+paste0(as.character(groups_tags[[2]]), collapse = ', ')
+paste0(as.character(groups_tags[[3]]), collapse = ', ')
+
+paste0(as.character(groups_tsss[[2]]), collapse = ', ')
+paste0(as.character(groups_tsss[[3]]), collapse = ', ')
+
+paste0(as.character(groups_strands[[2]]), collapse = ', ')
+paste0(as.character(groups_strands[[3]]), collapse = ', ')
+
+
+
+plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum small group 1 genomic coordinates', xlab = 'Sequence (nts)', ylab = '',yaxt = 'n')
+abline(v = 1:1876, lty =2)
+abline(v = groups_tsss[[2]], col = 'darkred')
+
+plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum small group 2 genomic coordinates', xlab = 'Sequence (nts)', ylab = '',yaxt = 'n')
+abline(v = 1:1876, lty =2)
+abline(v = groups_tsss[[3]], col = 'darkblue')
+
+
+
+ggseqlogo(tmps[[2]],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:400, labels = labels_new)+coord_fixed(ratio = 40)
+
+ggseqlogo(tmps[[3]],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:400, labels = labels_new)+coord_fixed(ratio = 40)
+
+
+                                                                                                      
+Ldyn <- lapply(tmps[[1]], FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = 200, tss = 200, boundaries = c(100, 100), strand = 'forward')})
+`Sequence (nts)` <- -100:100
+matplot(`Sequence (nts)`, sapply(Ldyn, function(x) {x$E0}), type = 'l', col = 1, ylab = 'Open states activation energy')
+abline(v = 0, lty=2)
+
+matplot(`Sequence (nts)`, sapply(Ldyn, function(x) {x$gc}), type = 'l', col = 1, ylab = 'GC-content for sliding window')
+abline(v = 0, lty=2)
+
+
+
+                                                                                                      
+Ldyn <- lapply(tmps[[3]], FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = 200, tss = 200, boundaries = c(100, 100), strand = 'forward')})
+`Sequence (nts)` <- -100:100
+matplot(`Sequence (nts)`, sapply(Ldyn, function(x) {x$E0}), type = 'l', col = 1, ylab = 'Open states activation energy')
+abline(v = 0, lty=2)
+
+matplot(`Sequence (nts)`, sapply(Ldyn, function(x) {x$gc}), type = 'l', col = 1, ylab = 'GC-content for sliding window')
+abline(v = 0, lty=2)
+
+zout=-540:179
+Lep <-  sapply(tmps[[2]], FUN = function(x) {p <- lseqspline1D(s = x, bound = c(1, 400), width = 1, ref = 200)
+(p$mpot[p$x %in% zout])})
+  str(Lep)
+
+`Sequence (angstrom)` <- zout
+matplot(`Sequence (angstrom)`, Lep, type = 'l', col = 1, ylab = 'Electrostatic potential')
+abline(v = 0, lty=2)
+
+zout=-540:179
+Lep <-  sapply(tmps[[3]], FUN = function(x) {p <- lseqspline1D(s = x, bound = c(1, 400), width = 1, ref = 200)
+(p$mpot[p$x %in% zout])})
+  str(Lep)
+
+`Sequence (angstrom)` <- zout
+matplot(`Sequence (angstrom)`, Lep, type = 'l', col = 1, ylab = 'Electrostatic potential')
+abline(v = 0, lty=2)
+
+#different zout
+zout=-650:650
+Lep <-  sapply(tmps[[1]], FUN = function(x) {p <- lseqspline1D(s = x, bound = c(1, 400), width = 1, ref = 200)
+(p$mpot[p$x %in% zout])})
+  str(Lep)
+
+`Sequence (angstrom)` <- zout
+matplot(`Sequence (angstrom)`, Lep, type = 'l', col = 1, ylab = 'Electrostatic potential', lwd =0.2)
+abline(v = 0, lty=2)
+
+zout=-650:650
+Lep <-  sapply(tmps[[3]], FUN = function(x) {p <- lseqspline1D(s = x, bound = c(1, 400), width = 1, ref = 200)
+(p$mpot[p$x %in% zout])})
+  str(Lep)
+
+`Sequence (angstrom)` <- zout
+matplot(`Sequence (angstrom)`, Lep, type = 'l', col = 1, ylab = 'Electrostatic potential')
+abline(v = 0, lty=2)
+
+Lbend <-  sapply(tmps[[2]], FUN = function(x) {bendability(s = x, bound = c(1, 400), width = 1)})
+  str(Lbend)
+
+`Sequence (nts)` <- -200:199
+matplot(`Sequence (nts)`, Lbend, type = 'l', col = 1, ylab = 'Bendability')
+abline(v = 0, lty=2)
+
+Lbend <-  sapply(tmps[[3]], FUN = function(x) {bendability(s = x, bound = c(1, 400), width = 1)})
+  str(Lbend)
+
+`Sequence (nts)` <- -200:199
+matplot(`Sequence (nts)`, Lbend, type = 'l', col = 1, ylab = 'Bendability')
+abline(v = 0, lty=2)
+  
+#SIDD - bigger sequences
+mycoplasma_strings_2000_nts <- c()
+for (i in seq_along(mycoplasma_proms$Position)){
+  if (mycoplasma_proms$Strand[i] == '1'){ #initial strand name
+   tmp <- substr(mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-1000, stop = mycoplasma_proms$Position[i]+1000)
+  } else {
+    tmp <- substr(reverseComplement_mycoplasma_CP006916.3, start = mycoplasma_proms$Position[i]-1000, stop = mycoplasma_proms$Position[i]+1000)
+   }
+   mycoplasma_strings_2000_nts <- c(mycoplasma_strings_2000_nts, tmp)  
+  
+}
+
+
+# SIDDr function
+rSIDD <- function(seq, algorithm = algorithm, sigma = sigma, form = form, file.out = file.out){
+  library(seqinr)
+  sidd_dir <- paste0(getwd(), '/')
+  seq <- paste0(seq[[1]], collapse = '')
+  #  sidd_dir <- paste0(getwd(), "/TMPSIDD", as.numeric(Sys.time()))
+  # dir.create(sidd_dir)
+  writeLines(seq, con = substr(seq, 0, 25))
+  print(paste('Processing', substr(seq, 0, 25)))
+  system(paste0('cd ', '/home/mikhail/Documents/sist/
+        ',
+                'perl -X master.pl -a M -f ', paste0(sidd_dir, substr(seq, 0, 25)),' -s ', sigma, ' -o ' ,  paste0(sidd_dir, file.out,'sidd_output.tsv')))
+  tmp <- read.csv(paste0(sidd_dir, file.out,'sidd_output.tsv'), sep = '\t')
+  # #
+  tmp <- cbind(tmp, strsplit(seq, split = '')[[1]])
+  colnames(tmp)[4] <- 'Nucleotide'
+  return(tmp)
+  unlink(substr(seq, 0, 25))
+}
+
+
+
+dir_sidd_mycoplasma <- ('/home/mikhail/Documents/mol_a_2017/mycoplasma_sidds')
+dir.create(dir_sidd_mycoplasma)
+setwd(dir_sidd_mycoplasma)
+
+
+
+#SIDD calculation
+
+mycoplasma_gallisepticum_proms_sidds2 <- c()
+
+for (i in mycoplasma_strings_2000_nts[groups_inds[[2]]]) {
+  print(i)
+  tmp <- rSIDD(i, algorithm = 'M', sigma = 0.06, form = 'l', file.out = 'tmpjunk.csv')
+  mycoplasma_gallisepticum_proms_sidds2 <- cbind(mycoplasma_gallisepticum_proms_sidds2, tmp$P.x.)
+}
+
+mycoplasma_gallisepticum_proms_sidds3 <- c()
+
+for (i in mycoplasma_strings_2000_nts[groups_inds[[3]]]) {
+  print(i)
+  tmp <- rSIDD(i, algorithm = 'M', sigma = 0.06, form = 'l', file.out = 'tmpjunk.csv')
+  mycoplasma_gallisepticum_proms_sidds3 <- cbind(mycoplasma_gallisepticum_proms_sidds3, tmp$P.x.)
+}
+
+str(mycoplasma_gallisepticum_proms_sidds2)
+str(mycoplasma_gallisepticum_proms_sidds3)
+
+`Sequence (nts)` <- -1000:1000
+matplot(`Sequence (nts)`, mycoplasma_gallisepticum_proms_sidds2, type = 'l', col = 1, ylab = 'SIDD, opening probability')
+abline(v = 0, lty=2)
+
+matplot(`Sequence (nts)`, mycoplasma_gallisepticum_proms_sidds3, type = 'l', col = 1, ylab = 'SIDD, opening probability')
+abline(v = 0, lty=2)
+#sweater by ape
+L <- lapply(tmps[[2]], function(x) {strsplit(x, split ='')[[1]]})
+df <- data.frame(matrix(unlist(L), ncol=length(L[[1]]), byrow=T))
+image(as.DNAbin((as.matrix(df))))
+abline(v = 200, col = 'black', lty = 2, lwd = 3)
+
+L <- lapply(tmps[[3]], function(x) {strsplit(x, split ='')[[1]]})
+df <- data.frame(matrix(unlist(L), ncol=length(L[[1]]), byrow=T))
+image(as.DNAbin((as.matrix(df))))
+abline(v = 200, col = 'black', lty = 2, lwd = 3)
+
+L <- lapply(tmps[[2]], function(x) {strsplit(x, split ='')[[1]][150:250]})
+df <- data.frame(matrix(unlist(L), ncol=length(L[[1]]), byrow=T))
+image(as.DNAbin((as.matrix(df))))
+abline(v = 50, col = 'black', lty = 2, lwd = 3)
+
+L <- lapply(tmps[[3]], function(x) {strsplit(x, split ='')[[1]][150:250]})
+df <- data.frame(matrix(unlist(L), ncol=length(L[[1]]), byrow=T))
+image(as.DNAbin((as.matrix(df))))
+abline(v = 50, col = 'black', lty = 2, lwd = 3)
+
+
+# [-50;50]
+tmps_100nts <- list()
+
+for (i in unique(cut_ward_mycoplasma_proms_stringdist)){
+inds <- which(cut_ward_mycoplasma_proms_stringdist == i)
+tmp <- sapply(mycoplasma_strings[inds], function(x) {substr(x, start = 150, stop = 250)})
+tmps_100nts[[i]] <-  tmp
+}
+                                                    
+labels_100 <- -50:50
+nulls <- rep('', length(labels_100))
+nulls[seq(0, 100, by = 5)] <- seq(-45, 50, by = 5)
+ggseqlogo(tmps_100nts[[2]],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = nulls)+coord_fixed(ratio = 20)
+ggseqlogo(tmps_100nts[[3]],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:100, labels = nulls)+coord_fixed(ratio = 20)
+
+ggseqlogo(tmps[[3]],  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:400, labels = labels_new)+coord_fixed(ratio = 20)
+
+
+                                                                                                      
+Ldyn <- lapply(tmps[[2]], FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = 200, tss = 200, boundaries = c(100, 100), strand = 'forward')})
+
+Lep <-  lapply(tmps[[2]], FUN = function(x) {calculate_EP_on_interval(extended_string = strsplit(x, split = '')[[1]], tss_position = 200, ep_interval = c(150,50), zout = c(100, 100), strand = 'forward')})
+
+par(mfrow = c(3,2))
+
+matplot(sapply(Ldyn, function(x) {x$E0}), type = 'l', col = 1)
+matplot(sapply(Ldyn, function(x) {x$d}), type = 'l', col = 1)
+matplot(sapply(Ldyn, function(x) {x$gc}), type = 'l', col = 1)
+
+matplot(sapply(Lep, function(x) {x$E0}), type = 'l', col = 1)
+
+```
+
+```
+

@@ -1,0 +1,1374 @@
+---
+title: "Mycoplasma_vs_Synechocystis_vs_E.coli"
+author: "Mikhail Orlov"
+date: '6 ноября 2017 г '
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Clearing workspace, setting working directory and loading R packages
+```{r, message=FALSE}
+rm(list=ls())
+
+#setwd('/home/mikhail/Documents/Script_2016_all/PCA/')
+
+library(R.matlab)
+library(seqinr)
+library(factoextra)
+#library(data.table)
+library(caret)
+#library(doMC)
+library(Biostrings)
+library(ape)
+library(reldna)
+library(fastcluster)
+library(dendextend)
+library(ggplot2)
+library(ggseqlogo)
+
+
+```
+Reading in E. coli K12 genome (GenBank Accesion U00096.2), creating reverse complement genome and transforming genome into character form 
+```{r Reading in E. coli genome}
+e.coli_U00096.2<-paste0(read.GenBank(access.nb = 'U00096.2', as.character = T)$U00096.2, collapse = '')
+reverseComplement_e.coli_U00096.2<-as.character(reverseComplement(DNAString(e.coli_U00096.2)))
+
+e.coli_U00096.2_char<-unlist(strsplit(e.coli_U00096.2, ''))
+reverseComplement_e.coli_U00096.2_char<-unlist(strsplit(reverseComplement_e.coli_U00096.2, ''))
+
+```
+
+Reading in Synechocystis sp. PCC6803 complete, creating reverse complement genome and tranforming genome into character form 
+```{r Reading in Synechocystis sp. PCC6803 complete genome, in supplementary noted genbank acession NC_000911.1, warning=FALSE, message=FALSE, cache=TRUE}
+synechocystis_NC_000911.1 <- toupper(paste0(read.GenBank(access.nb = 'NC_000911.1', as.character = T)$NC_000911.1, collapse = ''))
+reverseComplement_synechocystis_NC_000911.1 <- as.character(reverseComplement(DNAString(synechocystis_NC_000911.1)))
+
+synechocystis_NC_000911.1_char<-unlist(strsplit(synechocystis_NC_000911.1, ''))
+reverseComplement_synechocystis_NC_000911.1_char<-unlist(strsplit(reverseComplement_synechocystis_NC_000911.1, ''))
+
+```
+
+Reading in M. gallisepticum strain S6 genome (CP006916.3 assembly), creating reverse complement genome and tranforming genome into character form 
+```{r Reading in M. gallisepticum strain S6 genome (CP006916.3 assembly), warning=FALSE, message=FALSE, cache=TRUE}
+
+mycoplasma_CP006916.3<- toupper(paste0(read.GenBank(access.nb = 'CP006916.3', as.character = T)$CP006916.3, collapse = ''))
+reverseComplement_mycoplasma_CP006916.3<- as.character(reverseComplement(DNAString(mycoplasma_CP006916.3)))
+
+mycoplasma_CP006916.3_char<-unlist(strsplit(mycoplasma_CP006916.3, ''))
+
+reverseComplement_mycoplasma_CP006916.3_char<-unlist(strsplit(reverseComplement_mycoplasma_CP006916.3, ''))
+
+
+```
+
+
+
+New functions for physical properties calculation 
+
+```{r dynchars function, eval=FALSE}
+if(!require(ape)){stop('Code requires library "ape".\n')}
+if(!require(reldna)){stop('Code requires library "reldna".\n')}
+if(!require(parallel)){stop('Code requires library "parallel".\n')}
+if(!require(Biostrings)){stop('Code requires library "Biostrings".\n')}
+
+get_forward_subseq <- function(seq, tss, boundaries) {
+  return(as.character(
+    DNAString(seq,
+              start = tss-boundaries[1],
+              nchar = sum(boundaries)+1)))
+}
+
+get_reverse_subseq <- function(seq, tss, boundaries) {
+  return(as.character(
+    reverseComplement(
+      DNAString(seq,
+                start = tss-boundaries[2],
+                nchar = sum(boundaries)+1))))
+}
+
+get_forward_substring <- function(seq, tss, boundaries) {
+   return(seq[(tss-boundaries[1]):(tss+boundaries[2])])
+}
+
+get_reverse_substring <- function(seq, tss, boundaries) {
+  res <- rev(chartr("ATGC", "TACG", seq[(tss-boundaries[2]):(tss+boundaries[1])]))
+  return(res)
+}
+
+cut_char_vec <- function(char_vec, tss, boundaries, strand) {
+#  res <- switch(strand,
+ #        forward = char_vec[(tss-boundaries[1]):(tss+boundaries[2])],
+  #       reverse = char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
+   #      )
+ # res <- c()
+  if (strand == 'forward'){
+    res <- char_vec[(tss-boundaries[1]):(tss+boundaries[2])]
+  } else if (strand == 'forward') {
+    res <- char_vec[(tss-boundaries[2]):(tss+boundaries[1])]
+  }
+  return(res)
+}
+
+#' Title
+#'
+#' @param seq full sequence (chromosome)
+#' @param interval requested interval
+#' @param tss
+#' @param strand DNA strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+dynchars <- function(seq, average_interval_size, tss, boundaries, strand=c('forward','reverse')) {
+
+  if (missing(average_interval_size))
+  stop("Need to specify average_interval_size")
+
+  if(!is.character(seq))
+    stop("Sequence must be a character vector containing A, C, G, T letters only")
+  #make sure no small letters are present
+  seq <- toupper(seq)
+  # if((tss - average_interval_size < 1) || (tss + average_interval_size > length(seq)))
+  #   stop("Considered average_interval_size exceeds the size of the sequence")
+  
+  # seq <- switch(strand, 
+  #               forward = seq,
+  #               reverse = as.character(reverseComplement(DNAString(seq))))
+  # seq <- unlist(strsplit(seq, ''))
+  # seq <- toupper(seq)
+  
+  boundaries <- boundaries + average_interval_size %/% 2
+  
+  seq <- cut_char_vec(seq, tss, boundaries, strand)
+
+  # strand <- match.arg(strand)
+  # seq <- switch(strand,
+  #             forward=get_forward_substring(seq, tss, boundaries),
+  #             reverse=get_forward_substring(seq, tss, boundaries))#get_reverse_substring(seq, tss, boundaries))
+
+  a<-3.4*10^(-10)
+  #I<-c(7.6, 4.8, 8.2, 4.1)*10^(-44)
+  K<-c(227, 155, 220, 149)*10^(-20)
+  V<-c(2.09, 1.43, 3.12, 2.12)*10^(-20)
+
+  csA<-cumsum(seq=='A')
+  csT<-cumsum(seq=='T')
+  csG<-cumsum(seq=='G')
+  csC<-cumsum(seq=='C')
+
+  countA = csA[average_interval_size:length(csA)]-c(0, csA[1:(length(csA)-average_interval_size)])
+  countT = csT[average_interval_size:length(csT)]-c(0, csT[1:(length(csT)-average_interval_size)])
+  countG = csG[average_interval_size:length(csG)]-c(0, csG[1:(length(csG)-average_interval_size)])
+  countC = csC[average_interval_size:length(csC)]-c(0, csC[1:(length(csC)-average_interval_size)])
+
+  M <- cbind(countA, countT, countG, countC)/average_interval_size
+
+  #Is <- as.numeric(M%*%I)#! numeric conversion
+  Ks <- as.numeric(M %*% K)
+  Vs <- as.numeric(M %*% V)
+
+  E0 <- (8*(Ks*Vs)^0.5)* 6E23 / 4184
+  d <- ((Ks*a^2)/Vs)^(0.5)/a;
+  gc = M[,3] + M[,4]
+
+  dynchars_return <- list(E0=E0, d=d, gc=gc)
+  return(dynchars_return)
+}
+
+#' Title
+#'
+#' @param tss_position
+#' @param extended_string -- vector of characters
+#' @param ep_interval
+#' @param zout
+#' @param strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_EP_on_interval <- function(tss_position, extended_string, ep_interval=c(270, 130), zout=-540:179, strand=c('forward','reverse')) {
+  #lseqspline1D(substr(e.coli_U00096.2, exp_tsss[i]-250, exp_tsss[i]+150), bound=c(50, 350), ref=251 )
+  # strand<- match.arg(strand)
+  #extended_string <- unlist(strsplit(extended_string, ''))
+  # subseq <-switch(strand,
+  #                 forward = get_forward_substring(extended_string, tss_position, ep_interval),
+  #                 reverse = get_reverse_substring(extended_string, tss_position, ep_interval))
+  # subseq <- paste0(subseq, collapse = "")
+  
+  # subseq <- switch(strand,
+  #                  forward = get_forward_subseq(extended_string, tss_position, ep_interval),
+  #                  reverse = get_reverse_subseq(extended_string, tss_position, ep_interval))
+  # subseq <- switch(strand,
+  #                  forward = get_forward_substring(extended_string, tss_position, ep_interval),
+  #                  reverse = get_reverse_substring(extended_string, tss_position, ep_interval))
+  # subseq <- as.character(subseq)
+  subseq <- as.character(cut_char_vec(extended_string, tss_position, ep_interval, strand))
+  subseq <- paste0(subseq, collapse = "")
+  p <- lseqspline1D(
+    subseq,
+    bound=c(50, 350),
+    ref=271)
+  return(p$mpot[p$x %in% zout])
+}
+
+#' Title
+#'
+#' @param dnaSeq
+#' @param dynamic_interval
+#' @param tss_position
+#' @param ep_interval
+#' @param zout
+#' @param strand
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_profile <- function(dnaSeq, average_interval_size, tss_position, dynamic_interval, ep_interval=c(270, 130), zout=-540:179, strand=c('forward','reverse')) {
+  #ep_interval = c(163, 213) for reverse, for forward c(267, 217), zout - the same
+  #seq, average_interval_size, tss, boundaries, strand=c('forward','reverse')
+  #dnaSeq <- unlist(strsplit(dnaSeq, ''))
+  dynRes <- dynchars(dnaSeq, average_interval_size, tss_position,  dynamic_interval, strand)
+  epRes <- calculate_EP_on_interval(tss_position, dnaSeq, ep_interval, zout, strand)
+  return(c(dynRes$E0, dynRes$d, epRes, dynRes$gc))
+}
+
+#average_interval_size 200
+#dynamic_interval -150;50
+
+
+```
+
+
+Custom fucntions cause problem with knitr.
+They are evaluated using separate script
+```{r, code=readLines("/home/mikhail/Documents/mol_a_2017/new_physics_functions.R")}
+```
+
+First to set parameters for dynchars and calculate genome-wide sequences.
+```{r Genome-wide characteristics profiles for three bacteria, warning=FALSE, message=FALSE, cache=TRUE}
+
+average_interval_size <- 200
+dynamic_interval <- c(150, 50)
+
+whole_e.coli_dynchars_forward <- dynchars((e.coli_U00096.2_char), average_interval_size = average_interval_size, tss = length(e.coli_U00096.2_char)/2 , boundaries = c(0,  length(e.coli_U00096.2_char)), strand = 'forward')
+
+#for genome-wide vector using pseudoTSS at the center cause error. The vector is obtained using reversed initially genome
+whole_e.coli_dynchars_reverse <- dynchars(reverseComplement_e.coli_U00096.2_char, average_interval_size = average_interval_size, tss = length(e.coli_U00096.2_char)/2 , boundaries = c(0,  length(e.coli_U00096.2_char)), strand = 'forward')
+
+# #str(whole_e.coli_dynchars_forward)
+# #str(whole_e.coli_dynchars_reverse)
+
+whole_e.coli_EP_forward <- lseqspline1D(s = e.coli_U00096.2, bound = c(1, nchar(e.coli_U00096.2)), width = 1, ref = nchar(e.coli_U00096.2)/2)
+
+whole_e.coli_EP_reverse <- lseqspline1D(s = reverseComplement_e.coli_U00096.2, bound = c(1, nchar(reverseComplement_e.coli_U00096.2)), width = 1, ref = nchar(reverseComplement_e.coli_U00096.2)/2)
+
+#same for Synechocystis
+
+whole_synechocystis_dynchars_forward <- dynchars((synechocystis_NC_000911.1_char), average_interval_size = average_interval_size, tss = length(synechocystis_NC_000911.1_char)/2 , boundaries = c(0,  length(synechocystis_NC_000911.1_char)), strand = 'forward')
+whole_synechocystis_dynchars_reverse <- dynchars(reverseComplement_synechocystis_NC_000911.1_char, average_interval_size = average_interval_size, tss = length(reverseComplement_synechocystis_NC_000911.1_char)/2 , boundaries = c(0,  length(reverseComplement_synechocystis_NC_000911.1_char)), strand = 'forward')
+
+whole_synechocystis_EP_forward <- lseqspline1D(s = e.coli_U00096.2, bound = c(1, nchar(synechocystis_NC_000911.1)), width = 1, ref = nchar(e.coli_U00096.2)/2)
+
+whole_synechocystis_EP_reverse <- lseqspline1D(s = reverseComplement_synechocystis_NC_000911.1, bound = c(1, nchar(reverseComplement_synechocystis_NC_000911.1)), width = 1, ref = nchar(reverseComplement_synechocystis_NC_000911.1)/2)
+#same for mycoplasma
+
+whole_mycoplasma_dynchars_forward <- dynchars((mycoplasma_CP006916.3_char), average_interval_size = average_interval_size, tss = length(mycoplasma_CP006916.3_char)/2 , boundaries = c(0,  length(mycoplasma_CP006916.3_char)), strand = 'forward')
+whole_mycoplasma_dynchars_reverse <- dynchars(reverseComplement_mycoplasma_CP006916.3_char, average_interval_size = average_interval_size, tss = length(reverseComplement_mycoplasma_CP006916.3_char)/2 , boundaries = c(0,  length(reverseComplement_mycoplasma_CP006916.3_char)), strand = 'forward')
+
+whole_mycoplasma_EP_forward <- lseqspline1D(s = mycoplasma_CP006916.3, bound = c(1, nchar(mycoplasma_CP006916.3)), width = 1, ref = nchar(mycoplasma_CP006916.3)/2)
+
+whole_mycoplasma_EP_reverse <- lseqspline1D(s = reverseComplement_mycoplasma_CP006916.3, bound = c(1, nchar(reverseComplement_mycoplasma_CP006916.3)), width = 1, ref = nchar(reverseComplement_mycoplasma_CP006916.3)/2)
+# #plot(whole_e.coli_dynchars$E0, ty = 'l')
+```
+
+```{r Genome-wide properties statistics}
+
+par(mfrow = c(4,3),
+    mar = rep(1,4),
+    oma = rep(1.25,4))
+ylim_E0 <- c(200, 250)
+boxplot(c(whole_e.coli_dynchars_forward$E0, whole_e.coli_dynchars_reverse$E0), main = 'E. coli whole genome: E0', ylim = ylim_E0)
+boxplot(c(whole_synechocystis_dynchars_forward$E0, whole_synechocystis_dynchars_reverse$E0), main = 'Synechocystis sp. whole genome: E0', ylim = ylim_E0)
+boxplot(c(whole_mycoplasma_dynchars_forward$E0, whole_mycoplasma_dynchars_reverse$E0), main = 'Mycoplasma whole genome: E0', ylim = ylim_E0)
+
+
+ylim_d <- c(8, 10)
+boxplot(c(whole_e.coli_dynchars_forward$d, whole_e.coli_dynchars_reverse$d), main = 'E. coli whole genome: d', ylim = ylim_d)
+boxplot(c(whole_synechocystis_dynchars_forward$d, whole_synechocystis_dynchars_reverse$d), main = 'Synechocystis sp. whole genome: d', ylim = ylim_d)
+boxplot(c(whole_mycoplasma_dynchars_forward$d, whole_mycoplasma_dynchars_reverse$d), main = 'Mycoplasma whole genome: d', ylim = ylim_d)
+
+ylim_gc <- c(0, 1)
+boxplot(c(whole_e.coli_dynchars_forward$gc, whole_e.coli_dynchars_reverse$gc), main = 'E. coli whole genome: gc', ylim = ylim_gc)
+boxplot(c(whole_synechocystis_dynchars_forward$gc, whole_synechocystis_dynchars_reverse$gc), main = 'Synechocystis sp. whole genome: gc', ylim = ylim_gc)
+boxplot(c(whole_mycoplasma_dynchars_forward$gc, whole_mycoplasma_dynchars_reverse$gc), main = 'Mycoplasma whole genome: gc', ylim = ylim_gc)
+
+ylim_EP <- c(-0.07, -0.005)
+boxplot(c(whole_e.coli_EP_forward$mpot, whole_e.coli_EP_reverse$mpot), main = 'E. coli whole genome: EP', ylim = ylim_EP)
+boxplot(c(whole_synechocystis_EP_forward$mpot, whole_synechocystis_EP_reverse$mpot), main = 'Synechocystis sp. whole genome: EP', ylim = ylim_EP)
+boxplot(c(whole_mycoplasma_EP_forward$mpot, whole_mycoplasma_EP_reverse$mpot ), main = 'Mycoplasma whole genome: EP', ylim = ylim_EP)
+
+
+
+```
+
+
+Loading data on sequences of different types (promoters, non-promoters, genes, islands, and lowscore) frm Github (or from additional .Rdata files)
+Alternatively dataset_pro as data frame is available on github
+```{r dataset_pro as df from Github}
+
+# #load('/home/jane/Документы/Misha/Lab/mol_a-16/spline_dataset_pro.Rdata')
+dataset_pro_df <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/dataset_pro_df.csv')
+# #str(dataset_pro_df)
+```
+
+Extracting data on promoters.
+```{r}
+pro_names <- as.character(dataset_pro_df$X)
+which.experimental <- sapply(dataset_pro_df$evidence, function(x) {x == 'experimental'})
+exp_names <- as.character(dataset_pro_df$X[which.experimental])
+exp_tsss <- dataset_pro_df$TSS[which.experimental]
+exp_strands <- as.character(dataset_pro_df$strand[which.experimental])
+```
+
+# # # Changing genomic coordinate used for dataset_... - TSS is according to 5'-end of forward strand for both strands as it is in RegulonDB
+```{r}
+
+exp_tsss[which(exp_strands=='reverse')] <- nchar(e.coli_U00096.2)-exp_tsss[which(exp_strands=='reverse')]
+#exp_tsss<--exp_tsss
+```
+
+
+```{r strReverse funtcion}
+## a useful function: rev() for strings
+strReverse <- function(x)
+        sapply(lapply(strsplit(x, NULL), rev), paste, collapse="")
+```
+
+
+Creating matrices for data on activation energy ('E01') and size ('d1'). The matrices is 699*201 - 699 promoters sequences, 201 value for a physical property profile
+to 5'-end for both strands 
+
+
+Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
+```{r E. coli promoters physics, warning=FALSE, message=FALSE, cache=FALSE}
+
+average_interval_size <- 200
+dynamic_interval <- c(150, 50)
+
+
+
+for (i in paste0('ecoli_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
+  assign(i, c())
+}
+# #zout<- -480:239 #better use default
+#halfsize of the genome to use in a fucntion run
+interv <- 500
+for (i in 1:length(exp_tsss)) {
+  if (exp_strands[i]=='forward') {
+    
+    ecoli_seqsforward <- c(ecoli_seqsforward, get_forward_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(150, 50)))
+   # # 
+
+    seq_tmp_forward <- strsplit(get_forward_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(interv, interv-1)), split = '')[[1]] #used in profiles calculation
+    
+    ecoli_E01forward<-rbind(ecoli_E01forward, dynchars(seq = seq_tmp_forward , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    ecoli_d1forward<-rbind(ecoli_d1forward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    ecoli_GCforward<-rbind(ecoli_GCforward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
+   
+    ecoli_EPforward <- rbind(ecoli_EPforward, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_forward, tss_position = interv+1, strand = 'forward' ))
+    
+     } else {
+    ecoli_seqsreverse <- c(ecoli_seqsreverse, get_reverse_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(150, 50)))
+    
+    seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = e.coli_U00096.2, tss = exp_tsss[i], boundaries = c(interv, interv-1)), split = '')[[1]] #used in profiles calculation
+    
+    ecoli_E01reverse<-rbind(ecoli_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0) #strings are already reversed
+    ecoli_d1reverse<-rbind(ecoli_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    ecoli_GCreverse<-rbind(ecoli_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
+   
+    ecoli_EPreverse <- rbind(ecoli_EPreverse, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'forward' ))
+    
+    }
+}
+
+
+#merging matrices for forward and reverse strands  together
+ecoli_seqs <- toupper(c(ecoli_seqsforward, ecoli_seqsreverse))
+ecoli_E01<-rbind(ecoli_E01forward, ecoli_E01reverse)
+#aeos2<-rbind(aeos2forward, aeos2reverse)
+ecoli_d1<-rbind(ecoli_d1forward, ecoli_d1reverse)
+#aeos4<-rbind(aeos4forward, aeos4reverse)
+ecoli_GC <- rbind(ecoli_GCforward, ecoli_GCreverse)
+ecoli_EP<-rbind(ecoli_EPforward, ecoli_EPreverse)
+```
+
+
+```{r Datasets from An experimentally anchored map of transcriptional start sites in the model cyanobacterium Synechocystis sp. PCC6803 Jan Mitschke, 2011}
+
+synechocystis_proms <- (read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/synechocystis_proms_datasets_1015154108_sd01.csv', skip = 14, header = T))
+colnames(synechocystis_proms) <- c('TSS', 'p.start', 'p.end', 'strand', 'read', 'observed sequence')
+
+#to unify strands names for all bacteria
+levels(synechocystis_proms$strand) <- c('forward', 'reverse')
+
+```
+
+Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
+```{r Synechocystis proms physics, warning=FALSE, message=FALSE, cache=FALSE}
+for (i in paste0('synechocystis_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
+  assign(i, c())
+}
+# #zout<- -480:239 #better use default
+#halfsize of the genome to use in a fucntion run
+interv <- 500
+for (i in 1:length(synechocystis_proms$TSS)) {
+  if (synechocystis_proms$strand[i]=='forward') {
+    
+    synechocystis_seqsforward <- c(synechocystis_seqsforward, get_forward_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(150, 50)))
+   # # 
+
+    seq_tmp_forward <- strsplit(get_forward_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    synechocystis_E01forward<-rbind(synechocystis_E01forward, dynchars(seq = seq_tmp_forward , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    synechocystis_d1forward<-rbind(synechocystis_d1forward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    synechocystis_GCforward<-rbind(synechocystis_GCforward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
+   
+    synechocystis_EPforward <- rbind(synechocystis_EPforward, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_forward, tss_position = interv+1, strand = 'forward' ))
+    
+     } else {
+    synechocystis_seqsreverse <- c(synechocystis_seqsreverse, get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(150, 50)))
+    
+    seq_tmp_reverse <- strsplit(get_reverse_subseq(seq = synechocystis_NC_000911.1, tss = synechocystis_proms$TSS[i], boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    synechocystis_E01reverse<-rbind(synechocystis_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    synechocystis_d1reverse<-rbind(synechocystis_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    synechocystis_GCreverse<-rbind(synechocystis_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
+   
+    synechocystis_EPreverse <- rbind(synechocystis_EPreverse, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1,  strand = 'forward' )) #strings themselves are reversed
+    
+    }
+}
+
+
+#merging matrices for forward and reverse strands  together
+synechocystis_seqs <- toupper(c(synechocystis_seqsforward, synechocystis_seqsreverse))
+synechocystis_E01 <- rbind(synechocystis_E01forward, synechocystis_E01reverse)
+#aeos2<-rbind(aeos2forward, aeos2reverse)
+synechocystis_d1 <- rbind(synechocystis_d1forward, synechocystis_d1reverse)
+#aeos4<-rbind(aeos4forward, aeos4reverse)
+synechocystis_GC <- rbind(synechocystis_GCforward, synechocystis_GCreverse)
+synechocystis_EP <- rbind(synechocystis_EPforward, synechocystis_EPreverse)
+```
+
+
+```{r  Reading in M. gallisepticum strain S6 promoters from Fisunov et al., 2016}
+
+mycoplasma_proms <- read.csv('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/mycoplasma_gallisepticum_fisunov_2016.csv', header = T)
+colnames(mycoplasma_proms)[1:2] <- c('strand', 'TSS')
+#to unify strands names
+tmp <- (factor(mycoplasma_proms$strand))
+levels(tmp) <- c('forward', 'reverse')
+mycoplasma_proms$strand <- tmp
+```
+
+Right flank needs to be extended by 500 nts
+```{r Mycoplasma extension}
+extended_by <- 500 #both flanks
+extended_mycoplasma_CP006916.3 <- paste0(substr(mycoplasma_CP006916.3, nchar(mycoplasma_CP006916.3)-extended_by, nchar(mycoplasma_CP006916.3)),
+                                         mycoplasma_CP006916.3,
+                                         substr(mycoplasma_CP006916.3, 1, extended_by))
+                            
+complement_extended_mycoplasma_CP006916.3 <- Biostrings::complement(DNAString(extended_mycoplasma_CP006916.3))           
+reverseComplement_extended_mycoplasma_CP006916.3 <- reverseComplement(DNAString(extended_mycoplasma_CP006916.3))           
+
+extended_mycoplasma_CP006916.3_char <- strsplit(extended_mycoplasma_CP006916.3, split = '')[[1]]
+```
+
+Creating matrices of dynamical properties and GC-content for intervals [-150; 50] nts
+```{r mycoplasma proms physics, warning=FALSE, message=FALSE, cache=TRUE}
+for (i in paste0('mycoplasma_', c('seqsforward', 'seqsreverse', 'E01forward', 'E01reverse', 'd1forward', 'd1reverse', 'GCforward', 'GCreverse', 'EPforward', 'EPreverse'))) {
+  assign(i, c())
+}
+# #zout<- -480:239 #better use default
+#halfsize of the genome to use in a fucntion run
+interv <- 500
+for (i in 1:length(mycoplasma_proms$TSS)) {
+  if (mycoplasma_proms$strand[i]=='forward') {
+    
+    mycoplasma_seqsforward <- c(mycoplasma_seqsforward, get_forward_subseq(seq = extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i] + extended_by, boundaries = c(150, 50)))
+   # #! note all TSS are shifted
+
+    seq_tmp_forward <- strsplit(get_forward_subseq(seq = extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i]+ extended_by, boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    mycoplasma_E01forward<-rbind(mycoplasma_E01forward, dynchars(seq = seq_tmp_forward , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    mycoplasma_d1forward<-rbind(mycoplasma_d1forward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    mycoplasma_GCforward<-rbind(mycoplasma_GCforward, dynchars(seq = seq_tmp_forward, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
+   
+    mycoplasma_EPforward <- rbind(mycoplasma_EPforward, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_forward, tss_position = interv+1, strand = 'forward' ))
+    
+     } else {
+    mycoplasma_seqsreverse <- c(mycoplasma_seqsreverse, get_forward_subseq(seq = complement_extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i]+ extended_by, boundaries = c(150, 50)))
+    
+    seq_tmp_reverse <- strsplit(get_forward_subseq(seq = complement_extended_mycoplasma_CP006916.3, tss = mycoplasma_proms$TSS[i]+ extended_by, boundaries = c(interv, interv-2)), split = '')[[1]] #used in profiles calculation
+    
+    mycoplasma_E01reverse<-rbind(mycoplasma_E01reverse, dynchars(seq = seq_tmp_reverse , average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$E0)
+    mycoplasma_d1reverse<-rbind(mycoplasma_d1reverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$d)
+    mycoplasma_GCreverse<-rbind(mycoplasma_GCreverse, dynchars(seq = seq_tmp_reverse, average_interval_size = average_interval_size, tss = interv+1, boundaries = c(150, 50), strand = 'forward')$gc)
+   
+    mycoplasma_EPreverse <- rbind(mycoplasma_EPreverse, 
+                       calculate_EP_on_interval(extended_string = seq_tmp_reverse, tss_position = interv+1, strand = 'forward' )) #strings themselves are reversed
+    
+    }
+}
+
+
+#merging matrices for forward and reverse strands  together
+mycoplasma_seqs <- toupper(c(mycoplasma_seqsforward, mycoplasma_seqsreverse))
+mycoplasma_E01<-rbind(mycoplasma_E01forward, mycoplasma_E01reverse)
+#aeos2<-rbind(aeos2forward, aeos2reverse)
+mycoplasma_d1<-rbind(mycoplasma_d1forward, mycoplasma_d1reverse)
+#aeos4<-rbind(aeos4forward, aeos4reverse)
+mycoplasma_GC <- rbind(mycoplasma_GCforward, mycoplasma_GCreverse)
+mycoplasma_EP<-rbind(mycoplasma_EPforward, mycoplasma_EPreverse)
+
+```
+
+Textual analysis - string distance
+```{r string distance for 3 bacteria together, warning=FALSE, message=FALSE, cache=TRUE}
+
+mycoplasma_synechocystis_e.coli_proms_strings <- sapply(c(mycoplasma_seqs, synechocystis_seqs, ecoli_seqs),  function(x) {paste0(x, collapse = '')})
+mycoplasma_synechocystis_e.coli_proms_DNAStringSet <- DNAStringSet(mycoplasma_synechocystis_e.coli_proms_strings)
+
+mycoplasma_synechocystis_e.coli_proms_stringdist<- stringDist(mycoplasma_synechocystis_e.coli_proms_DNAStringSet, method = 'levenshtein')
+
+ward_mycoplasma_synechocystis_e.coli_proms_stringdist<- hclust(mycoplasma_synechocystis_e.coli_proms_stringdist, method = 'ward.D2')
+
+colvec_mycoplasma_synechocystis_e.coli_proms<- c(rep('magenta', length(mycoplasma_proms$TSS)), rep('darkgreen', length(synechocystis_proms$TSS)),rep('orange', length(exp_tsss)))
+
+ward_mycoplasma_synechocystis_e.coli_proms_stringdist %>% as.dendrogram %>% color_branches(k = length(ward_mycoplasma_synechocystis_e.coli_proms_stringdist$order), col = colvec_mycoplasma_synechocystis_e.coli_proms[order.dendrogram(ward_mycoplasma_synechocystis_e.coli_proms_stringdist %>% as.dendrogram)]) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_mycoplasma_synechocystis_e.coli_proms_stringdist$height)*0.2) -> to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist
+
+
+# #plot(to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist, main = 'E. coli, Synechocystis sp., and Mycoplasma gallisepticum promoters:\n DNA Levenshtein distance')
+```
+
+
+
+```{r three bacteria promoters mixture - all the characteristics, warning=FALSE, message=FALSE, cache=TRUE, fig.width = 10, fig.asp = 1}
+
+cex.main = 2
+
+
+par(mfrow = c(5,1),
+    mar = rep(1.2,4),
+    oma = rep(1.2,4))
+
+to_plot_wards <- list()
+for (i in c('E01', 'd1', 'GC', 'EP')){
+  three_tmp <- rbind(get(paste0('ecoli_', i)), get(paste0('synechocystis_', i)), get(paste0('mycoplasma_', i)))
+  ward_three_tmp<- hclust.vector(t(scale(t(three_tmp), center = T, scale = T)), method = 'ward') #!!
+
+  colvec_ward_three_tmp <- c(rep('orange', length(exp_tsss)), rep('darkgreen',length(synechocystis_proms$TSS)), rep('magenta',length(mycoplasma_proms$TSS)))[order.dendrogram(ward_three_tmp %>% as.dendrogram )]
+
+  ward_three_tmp %>% as.dendrogram %>% color_branches(k = length(ward_three_tmp$order), col = colvec_ward_three_tmp) %>% set('labels_cex', 0.000001) %>% raise.dendrogram(max(ward_three_tmp$height)*.2) -> to_plot_ward_three_tmp
+
+  plot(to_plot_ward_three_tmp, labels = F, main = paste0('E. coli, Synechocystis sp., and Mycoplasma gallisepticum promoters (', i, ')'), cex.main = cex.main )
+  
+  assign(paste0('to_plot_wards', i), ward_three_tmp)
+}
+
+plot(to_plot_ward_mycoplasma_synechocystis_e.coli_proms_stringdist, main = 'E. coli, Synechocystis sp., and Mycoplasma gallisepticum promoters: Levenshtein distance', cex.main = cex.main )
+
+legend('topright', legend = c('E. coli', 'Synechocystis sp.', 'Mycoplasma gallisepticum'), fill = rev(unique(colvec_mycoplasma_synechocystis_e.coli_proms)), bty = 'n')
+```
+
+
+
+```{r substring occurences, warning=FALSE, message=FALSE, cache=TRUE, fig.width = 10, fig.asp = 1}
+
+#better way to find oligos frequnces with biostrings
+all_seqs_oligos_freq <- c()
+for (i in list(ecoli_seqs, synechocystis_seqs, mycoplasma_seqs, e.coli_U00096.2, synechocystis_NC_000911.1, mycoplasma_CP006916.3)){
+  ###print(length(i))
+  tmp <- DNAString(paste0(unlist(i), collapse = ''))
+  
+  #tmp_StringSet <- DNAStringSet(sapply(t(tmp), function(x) {paste0(x, collapse = '')}))
+
+all_seqs_oligos_freq <- cbind(all_seqs_oligos_freq, oligonucleotideFrequency(tmp, 6, as.prob = T))
+}
+
+
+
+colnames(all_seqs_oligos_freq) <- c('E. coli\n promoters', 'Synechocystis sp.\n promoters', 'Mycoplasma gallisepticum\n promoters', 'E. coli\n complete genome', 'Synechocystis sp.\n complete genome', 'Mycoplasma gallisepticum\n complete genome')
+# #View(all_seqs_oligos_freq)
+#phrasetables_6 <- lapply(grep('*_ng6', x = ls(), value = T), FUN = function(x) {get.phrasetable(get(x))}) #no [1:20,]
+
+
+par(mfrow = c(2,3))
+ylim = range(all_seqs_oligos_freq)
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+  barplot(sort(all_seqs_oligos_freq[1:20,i], decreasing = T), las = 2, ylim = ylim, main = colnames(all_seqs_oligos_freq) [i])
+}
+
+```
+
+
+```{r hexamers occurences PCA, pca 1-2, warning=FALSE, message=FALSE, cache=TRUE}
+PCA <- prcomp(all_seqs_oligos_freq, scale = T)
+#fviz_pca_biplot(PCA12, col.var = 2, labelsize = 0.8)+ggtitle('PCA result on hexamers occurences')
+
+label.size <- 1.7
+#library(ggfortify)
+#autoplot(PCA,
+    #     shape = FALSE,
+   #      loadings = TRUE,
+  #       label = TRUE,
+ #        loadings.label = TRUE,
+#         label.size = label.size)+
+ # theme_bw()
+
+fviz_pca_biplot(PCA, 
+             axes = c (1,2),
+             #labelsize = label.size,
+             #alpha.ind="contrib",
+             col.ind = 'contrib'
+             ) + scale_color_gradient2(low="white", 
+                                       mid="blue",
+                                       high="red", 
+                                       midpoint=0.8)
+  
+```
+
+## hexanucleotides vs their frequences
+```{r Other text representation, warning=FALSE, message=FALSE, cache=TRUE, results = 'hide'}
+
+#panel.cor function
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor) 
+{
+    usr <- par("usr"); on.exit(par(usr)) 
+    par(usr = c(0, 1, 0, 1)) 
+    r <- abs(cor(x, y)) 
+    txt <- format(c(r, 0.123456789), digits=digits)[1] 
+    txt <- paste(prefix, txt, sep="") 
+    if(missing(cex.cor)) cex <- 0.8/strwidth(txt) 
+ 
+    test <- cor.test(x,y) 
+    # borrowed from printCoefmat
+    Signif <- symnum(test$p.value, corr = FALSE, na = FALSE, 
+                  cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1),
+                  symbols = c("***", "**", "*", ".", " ")) 
+ 
+    text(0.5, 0.5, txt, cex = cex * r) 
+    text(.8, .8, Signif, cex=cex, col=2) 
+}
+
+pairs(all_seqs_oligos_freq, lower.panel=panel.smooth, upper.panel=panel.cor)
+
+```
+
+
+```{r Oligonucleotide occurences, warning=FALSE, message=FALSE, cache=TRUE, fig.width = 10, fig.asp = 1}
+
+#par(mfrow = c(2,4))
+#apply(all_seqs_oligos_freq, 2, function(x) {
+ # boxplot(x, ylim = range(all_seqs_oligos_freq))
+#  }
+ # )
+
+for (i in 1:ncol(all_seqs_oligos_freq)){
+  assign(paste0('lm', i), lm(all_seqs_oligos_freq[,i] ~ seq_along(all_seqs_oligos_freq[,i])))
+}
+```
+
+```{r Descriptive statistics for hexanucleotide frequences, warning=FALSE, message=FALSE, cache=TRUE}
+
+par(mfrow = c(6,5),
+    mar = rep(2,4))
+plotnames <- c('E. coli\n promoters', 'Synechocystis sp.\n promoters', 'Mycoplasma gallisepticum\n promoters', 'E. coli\n complete genome', 'Synechocystis sp.\n complete genome', 'Mycoplasma gallisepticum\n complete genome')
+for (i in 1:ncol(all_seqs_oligos_freq)){
+ 
+  plot(1, type="n", axes=F, xlab="", ylab="")
+  mtext(plotnames[i], side = 3, col = 2, cex= 0.7, line = -3)
+
+  plot(get(paste0('lm', i)))
+ 
+}
+#boxplot(all_seqs_oligos_freq[,1])
+#identify(rep(1, length(all_seqs_oligos_freq[,1])), all_seqs_oligos_freq[,1], labels = #seq_along(all_seqs_oligos_freq[,1]))
+```
+
+
+```{r cuplcl usage}
+#source('/home/mikhail/Documents/Script_2016_all/cut_and_plot_clusters.R')
+
+#function to cut heirarchical clusterization results at given clusters numer and plot all pfrofiles from each
+
+cuplcl <- function(data, method, k, main) {
+  library(fastcluster)
+  library(dendextend)
+  hclust <- hclust.vector(data, method = method)
+  cut_hclust<-cutree(hclust, k=k)
+  m <- rbind(rep(1, k), c(2:(k+1)))
+  layout(m)
+  par(mar = c(1.5,1.5, 1, 1),
+      oma = c(2,2,2,2))
+
+  dend <- color_branches(as.dendrogram(hclust), col = cut_hclust[order.dendrogram(as.dendrogram(hclust))])
+plot(dend%>%set('labels_cex', NA), main = main, cex.main = 1.75)
+  
+  ylim <- range(data)
+  for (i in unique(cut_hclust[order.dendrogram(as.dendrogram(hclust))])) {
+    matplot(t(data[which(cut_hclust==i),]), type='l', col=i, ylim = ylim)
+ # #   print(c(i, names(which(cut_hclust==i))))
+  }
+}
+```
+
+
+
+
+
+#Separate characteristics for separate bacteria clusterization
+```{r cluster analysis for various properties and 3 bacteria on E01, warning=FALSE, message=FALSE, cache=TRUE}
+
+ward_ecoli_E01 <- hclust.vector(ecoli_E01, method = 'ward')
+ward_synechocystis_E01 <- hclust.vector(synechocystis_E01, method = 'ward')
+ward_mycoplasma_E01 <- hclust.vector(mycoplasma_E01, method = 'ward')
+
+#plot(ward_ecoli_E01, labels = F)
+#plot(ward_synechocystis_E01, labels = F)
+#plot(ward_mycoplasma_E01, labels = F)
+
+cuplcl(ecoli_E01, method = 'ward', k = 3, main = 'E. coli, E01')
+cuplcl(synechocystis_E01, method = 'ward', k = 4, main = 'Synechocystis, E01')
+cuplcl(mycoplasma_E01, method = 'ward', k = 3, main = 'Mycoplasma gallisepticum, E01')
+
+```
+
+
+```{r Same for scaled versions E01, warning=FALSE, message=FALSE, cache=TRUE}
+cuplcl(t(scale(t(ecoli_E01), center = T, scale = T)), method = 'ward', main = 'Scaled E01, E. coli', k = 4)
+cuplcl(t(scale(t(synechocystis_E01), center = T, scale = T)), method = 'ward', main = 'Scaled E01, Synechocystis', k = 3)
+cuplcl(t(scale(t(mycoplasma_E01), center = T, scale = T)), method = 'ward', main = 'Scaled E01, Mycoplasma gallisepticum', k = 3)
+
+```
+
+```{r cluster analysis for various properties and 3 bacteria on EP, warning=FALSE, message=FALSE, cache=TRUE} 
+ward_ecoli_EP <- hclust.vector(ecoli_EP, method = 'ward')
+ward_synechocystis_EP <- hclust.vector(synechocystis_EP, method = 'ward')
+ward_mycoplasma_EP <- hclust.vector(mycoplasma_EP, method = 'ward')
+
+#plot(ward_ecoli_EP, labels = F)
+#plot(ward_synechocystis_EP, labels = F)
+#plot(ward_mycoplasma_EP, labels = F)
+
+cuplcl(ecoli_EP, method = 'ward', k = 3, main = 'E. coli, EP')
+cuplcl(synechocystis_EP, method = 'ward', k = 4, main = 'Synechocystis, EP')
+cuplcl(mycoplasma_EP, method = 'ward', k = 4, main = 'Mycoplasma gallisepticum, EP')
+```
+
+
+```{r Same for scaled versions EP, warning=FALSE, message=FALSE, cache=TRUE}
+cuplcl(t(scale(t(ecoli_EP), center = T, scale = T)), method = 'ward', main = 'Scaled EP, E. coli', k = 5)
+cuplcl(t(scale(t(synechocystis_EP), center = T, scale = T)), method = 'ward', main = 'Scaled EP, Synechocystis sp.', k = 3)
+cuplcl(t(scale(t(mycoplasma_EP), center = T, scale = T)), method = 'ward', main = 'Scaled EP, Mycoplasma gallisepticum', k = 4)
+
+```
+
+
+
+```{r cluster analysis for various properties and 3 bacteria on GC, warning=FALSE, message=FALSE, cache=TRUE}
+library(fastcluster)
+ward_ecoli_GC <- hclust.vector(ecoli_GC, method = 'ward')
+ward_synechocystis_GC <- hclust.vector(synechocystis_GC, method = 'ward')
+ward_mycoplasma_GC <- hclust.vector(mycoplasma_GC, method = 'ward')
+
+#plot(ward_ecoli_GC, labels = F)
+#plot(ward_synechocystis_GC, labels = F)
+#plot(ward_mycoplasma_GC, labels = F)
+
+cuplcl((ecoli_GC), method = 'ward', k = 4, main = 'E. coli, GC')
+cuplcl((synechocystis_GC), method = 'ward', k = 4, main = 'Synechocystis, GC')
+cuplcl((mycoplasma_GC), method = 'ward', k = 4, main = 'Mycoplasma gallisepticum, GC')
+
+```
+
+```{r Same for scaled versions GC, warning=FALSE, message=FALSE, cache=TRUE}
+cuplcl(t(scale(t(ecoli_GC), center = T, scale = T)), method = 'ward', main = 'Scaled GC, E. coli', k = 4)
+cuplcl(t(scale(t(synechocystis_GC), center = T, scale = T)), method = 'ward', main = 'Scaled GC, Synechocystis', k = 3)
+cuplcl(t(scale(t(mycoplasma_GC), center = T, scale = T)), method = 'ward', main = 'Scaled GC, Mycoplasma gallisepticum', k = 3)
+
+```
+
+
+```{r Mycoplasma small peculiar cluster sequences, message=FALSE, fig.width = 10, fig.asp = 1}
+
+mycoplasma_proms_strings <- sapply(mycoplasma_seqs,  function(x) {paste0(x, collapse = '')})
+mycoplasma_proms_DNAStringSet <- DNAStringSet(mycoplasma_proms_strings)
+
+mycoplasma_proms_stringdist<- stringDist(mycoplasma_proms_DNAStringSet, method = 'levenshtein')
+
+ward_mycoplasma_proms_stringdist <- hclust(mycoplasma_proms_stringdist, method = 'ward.D2')
+
+plot(ward_mycoplasma_proms_stringdist, labels = F, xlab = '', main ='Mycoplasma gallisepticum, levenshtein string distance') #k =6
+ward_mycoplasma_proms_stringdist %>% as.dendrogram %>% color_branches(k = 6) %>% set('labels_cex', 1E-5) %>% raise.dendrogram(max(ward_mycoplasma_proms_stringdist$height)*0.2) -> to_plot_ward_mycoplasma_proms_stringdist
+
+cut_ward_mycoplasma_proms_stringdist <- cutree(ward_mycoplasma_proms_stringdist, k = 3)
+table(cut_ward_mycoplasma_proms_stringdist)
+
+
+#for the strain used in Fisunov et al. no oriC coordinates available
+#other strains comprise  rep_origin 1..1876 /note="putative oriC"
+#the sequence appears to be present in the genome used at the same position
+
+plot(seq_along(mycoplasma_CP006916.3_char), type = 'n', ylim = 0:1, main ='Mycoplasma gallisepticum levenstien distance, 2 small clusters (both 13 members) positions', asp = 2)
+abline(v = 1:1876, lty =2)
+abline(v = mycoplasma_proms$TSS[which(cut_ward_mycoplasma_proms_stringdist == 2)], col = 'darkred')
+abline(v = mycoplasma_proms$TSS[which(cut_ward_mycoplasma_proms_stringdist == 3)], col = 'darkblue')
+
+#both clusters fall into 2 two groups. What is the distance between their location?
+
+range(mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 2)])
+range(mycoplasma_proms$Position[which(cut_ward_mycoplasma_proms_stringdist == 3)])
+#logos for [-50;50] interval
+    tmps <- list()
+
+for (i in unique(cut_ward_mycoplasma_proms_stringdist)){
+    inds <- which(cut_ward_mycoplasma_proms_stringdist == i)
+    tmp <- sapply(mycoplasma_seqs[inds], function(x) {substr(x, start = 1, stop = 400)})
+    tmps[[i]] <-  tmp
+}
+
+    
+names(tmps) <- c('Mycoplasma gallispeticum, string distance major cluster', 'Small cluster 1', 'Small cluster 2')
+# to labelso only certain positions
+vec <- rep('', length(-150:50))
+labels <- -150:50
+vec[seq(1, length(-150:50), 25)] <- labels[seq(1, length(-150:50), 25)]
+
+ggseqlogo(tmps,  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:201, labels = vec)+coord_fixed(ratio = 10)
+```
+
+Transcription units data for conversion promoters to genenames.
+```{r Reading in transription units data, warning=FALSE, message=FALSE, cache=TRUE}
+
+TUSet <- read.table('https://raw.githubusercontent.com/FVortex/different_bacteria_physics_and_text/master/regulondb_TUSet_html_line_removed.txt', header = T, sep = '\t')
+```
+
+##GO enrichment, E0
+Promoter numbers and genenames
+```{r E01 clusters population and GOstats, warning=FALSE, message=FALSE, cache=TRUE}
+
+library(org.EcK12.eg.db)
+cut_ward_ecoli_E01 <- cutree(ward_ecoli_E01, k = 3)
+
+#table(cut_ward_ecoli_E01)
+
+ecoli_E01_promoters_clusters <- c()
+for (i in unique(cut_ward_ecoli_E01)) {
+ assign(paste0('ecoli_E01_clust_', i),
+       exp_names[which(cut_ward_ecoli_E01 ==i)])
+  
+  #alternatively
+  tmp <- exp_names[which(cut_ward_ecoli_E01 ==i)]
+  tmp1 <- cbind(rep(i, length(tmp)), tmp)
+  
+  ecoli_E01_promoters_clusters <- rbind(ecoli_E01_promoters_clusters, tmp1)
+}
+
+
+#promoters to genes (complete set)
+
+genes_from_promoters_list <- c()
+for (i in seq_along(exp_names)){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == exp_names[i])])
+  if(length(tmp) ==0) {tmp <- NA}
+  tmp <- paste0(tmp, collapse = ',')
+  genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
+}
+
+
+#all the genes universe without repeating and 2 or more names in 1 vector member
+
+fixed_vectors_genes_from_promoters_list <- strsplit(paste0(genes_from_promoters_list, collapse = ','), split = ',')[[1]]
+fixed_vectors_genes_from_promoters_list <-fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
+
+#clusters of genes as fixed vectors
+for (i in unique(cut_ward_ecoli_E01)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_ecoli_E01 == i)], collapse = ','), split = ',')[[1]]
+  if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
+  assign(paste0('genes_clust', i), unique(genes_clust_tmp))
+}
+
+
+## Bimap interface:
+# Convert the object to a list
+xx <- as.list(org.EcK12.egALIAS2EG)
+# Remove pathway identifiers that do not map to any entrez gene id
+xx <- xx[!is.na(xx)]
+
+#common names in universe (xx) and the samples
+
+setdiffed <- setdiff(fixed_vectors_genes_from_promoters_list, names(xx))
+fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[!fixed_vectors_genes_from_promoters_list%in%setdiffed]
+entrezIds <- mget(fixed_vectors_genes_from_promoters_list, envir=org.EcK12.egALIAS2EG)
+  ###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+
+#common names in universe (xx) and the clusters 1-4
+
+setdiffed_clust1 <- setdiff(genes_clust1, names(xx))
+fixed_genes_clust1 <- genes_clust1[!genes_clust1%in%setdiffed_clust1]
+entrezIds_clust1 <- mget(fixed_genes_clust1, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust2 <- setdiff(genes_clust2, names(xx))
+fixed_genes_clust2 <- genes_clust2[!genes_clust2%in%setdiffed_clust2]
+entrezIds_clust2 <- mget(fixed_genes_clust2, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust3 <- setdiff(genes_clust3, names(xx))
+fixed_genes_clust3 <- genes_clust3[!genes_clust3%in%setdiffed_clust3]
+entrezIds_clust3 <- mget(fixed_genes_clust3, envir=org.EcK12.egALIAS2EG)
+
+# #setdiffed_clust4 <- setdiff(genes_clust4, names(xx))
+# #fixed_genes_clust4 <- genes_clust4[!genes_clust4%in%setdiffed_clust4]
+# #entrezIds_clust4 <- mget(fixed_genes_clust4, envir=org.EcK12.egALIAS2EG)
+
+dfGO_ecoli_E01 <- as.data.frame(rbind(cbind(rep(1, length(entrezIds_clust1)), as.character(entrezIds_clust1)),
+      cbind(rep(2, length(entrezIds_clust2)), as.character(entrezIds_clust2)),
+      cbind(rep(3, length(entrezIds_clust3)), as.character(entrezIds_clust3))# #,
+      # #cbind(rep(4, length(entrezIds_clust4)), as.character(entrezIds_clust4))
+))
+
+colnames(dfGO_ecoli_E01) <- c('group', 'Entrezid')
+  
+# #save(dfGO_ecoli_E01, file = '/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_E01.rda')
+###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+```
+
+
+
+
+```{r GO statistics using GOstats for E01, warning=FALSE, message=FALSE, cache=TRUE}
+library(GOstats)
+library(Category)
+library(DBI)
+library(org.EcK12.eg.db)
+
+# #load('/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_E01.rda')
+
+entrezUniverse <- as.character(dfGO_ecoli_E01$Entrezid)
+
+selectedEntrezIds_clust1 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 1)])
+selectedEntrezIds_clust2 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 2)])
+selectedEntrezIds_clust3 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 3)])
+# #selectedEntrezIds_clust4 <- as.character(dfGO_ecoli_E01$Entrezid[which(dfGO_ecoli_E01$group == 4)])
+
+#setting cutoff value
+hgCutoff <- 0.0005
+#hgCutoff <- 0.1
+
+#selecting onthology
+
+ontology <- 'BP'
+#ontology <- 'MF'
+
+for (i in unique(cut_ward_ecoli_E01)) {
+params <- new("GOHyperGParams",
+ geneIds=get(paste0('selectedEntrezIds_clust', i)),
+ universeGeneIds=entrezUniverse,
+ annotation="org.EcK12.eg.db",
+ ontology=ontology,
+ pvalueCutoff=hgCutoff,
+ conditional=FALSE,
+ testDirection="over")
+
+  hgOver_clust <- hyperGTest(params)
+  
+  assign(x = paste0('df_summary_clust', i), summary(hgOver_clust))
+}
+```
+
+GO enrichment  for clusters on E0 profiles
+```{r GO, E0}
+head(df_summary_clust1,  20) #primarly nucleoside metabolisim and ion transport
+head(df_summary_clust2,  20) #suflur,bicarbonic acid, aldehyde metabolism
+head(df_summary_clust3,  20) #biogenesis, aerobic respiration
+# #head(df_summary_clust4,  20) #sugar metabolism
+#We would also like to perform a conditional test.  Instead of having to de ne a new
+#GO-HyperGParamsinstance  by  hand,  we  can  create  a  copy  and  update  just  the  parameter  of interest.
+#paramsCond <- params
+#conditional(paramsCond) <- TRUE
+#hgCondOver <- hyperGTest(paramsCond)
+
+
+#hgOver_clust1 <- hyperGTest(params_clust1)
+#hgOver_clust2 <- hyperGTest(params_clust2)
+#hgOver_clust3 <- hyperGTest(params_clust3)
+#hgOver_clust4 <- hyperGTest(params_clust4)
+
+
+#df_clust1 <- summary(hgOver_clust1)
+#df_clust2 <- summary(hgOver_clust2)
+#df_clust3 <- summary(hgOver_clust3)
+#df_clust4 <- summary(hgOver_clust4)
+
+########cbind(rbind(df_clust2, df_clust3, df_clust4), (df_clust2, df_clust3, df_clust4)
+
+#names(df_clust2)
+
+```
+
+
+##GO enrichment, EP
+Promoter numbers and genenames
+```{r EP, clusters population and GOstats, warning=FALSE, message=FALSE, cache=TRUE}
+cut_ward_ecoli_EP <- cutree(ward_ecoli_EP, k = 3)
+
+#table(cut_ward_ecoli_EP)
+
+ecoli_EP_promoters_clusters <- c()
+for (i in unique(cut_ward_ecoli_EP)) {
+ assign(paste0('ecoli_EP_clust_', i),
+       exp_names[which(cut_ward_ecoli_EP ==i)])
+  
+  #alternatively
+  tmp <- exp_names[which(cut_ward_ecoli_EP ==i)]
+  tmp1 <- cbind(rep(i, length(tmp)), tmp)
+  
+  ecoli_EP_promoters_clusters <- rbind(ecoli_EP_promoters_clusters, tmp1)
+}
+
+
+#promoters to genes (complete set)
+
+genes_from_promoters_list <- c()
+for (i in seq_along(exp_names)){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == exp_names[i])])
+  if(length(tmp) ==0) {tmp <- NA}
+  tmp <- paste0(tmp, collapse = ',')
+  genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
+}
+
+
+#all the genes universe without repeating and 2 jr more names in 1 vector member
+
+fixed_vectors_genes_from_promoters_list <- strsplit(paste0(genes_from_promoters_list, collapse = ','), split = ',')[[1]]
+fixed_vectors_genes_from_promoters_list <-fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
+
+#clusters of genes as fixed vectors
+for (i in unique(cut_ward_ecoli_EP)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_ecoli_EP == i)], collapse = ','), split = ',')[[1]]
+  if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
+  assign(paste0('genes_clust', i), unique(genes_clust_tmp))
+}
+
+
+## Bimap interface:
+# Convert the object to a list
+xx <- as.list(org.EcK12.egALIAS2EG)
+# Remove pathway identifiers that do not map to any entrez gene id
+xx <- xx[!is.na(xx)]
+
+#common names in universe (xx) and the samples
+
+setdiffed <- setdiff(fixed_vectors_genes_from_promoters_list, names(xx))
+fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[!fixed_vectors_genes_from_promoters_list%in%setdiffed]
+entrezIds <- mget(fixed_vectors_genes_from_promoters_list, envir=org.EcK12.egALIAS2EG)
+  ###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+
+#common names in universe (xx) and the clusters 1-4
+
+setdiffed_clust1 <- setdiff(genes_clust1, names(xx))
+fixed_genes_clust1 <- genes_clust1[!genes_clust1%in%setdiffed_clust1]
+entrezIds_clust1 <- mget(fixed_genes_clust1, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust2 <- setdiff(genes_clust2, names(xx))
+fixed_genes_clust2 <- genes_clust2[!genes_clust2%in%setdiffed_clust2]
+entrezIds_clust2 <- mget(fixed_genes_clust2, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust3 <- setdiff(genes_clust3, names(xx))
+fixed_genes_clust3 <- genes_clust3[!genes_clust3%in%setdiffed_clust3]
+entrezIds_clust3 <- mget(fixed_genes_clust3, envir=org.EcK12.egALIAS2EG)
+
+# #setdiffed_clust4 <- setdiff(genes_clust4, names(xx))
+# #fixed_genes_clust4 <- genes_clust4[!genes_clust4%in%setdiffed_clust4]
+# #entrezIds_clust4 <- mget(fixed_genes_clust4, envir=org.EcK12.egALIAS2EG)
+
+dfGO_ecoli_EP <- as.data.frame(rbind(cbind(rep(1, length(entrezIds_clust1)), as.character(entrezIds_clust1)),
+      cbind(rep(2, length(entrezIds_clust2)), as.character(entrezIds_clust2)),
+      cbind(rep(3, length(entrezIds_clust3)), as.character(entrezIds_clust3))# #,
+   # #   cbind(rep(4, length(entrezIds_clust4)), as.character(entrezIds_clust4))
+))
+
+colnames(dfGO_ecoli_EP) <- c('group', 'Entrezid')
+  
+# #save(dfGO_ecoli_EP, file = '/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_EP.rda')
+###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+```
+
+
+
+
+```{r GO statistics using GOstats for EP, warning=FALSE, message=FALSE, cache=TRUE}
+library(GOstats)
+library(Category)
+library(DBI)
+library(org.EcK12.eg.db)
+
+# #load('/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_EP.rda')
+
+entrezUniverse <- as.character(dfGO_ecoli_EP$Entrezid)
+
+selectedEntrezIds_clust1 <- as.character(dfGO_ecoli_EP$Entrezid[which(dfGO_ecoli_EP$group == 1)])
+selectedEntrezIds_clust2 <- as.character(dfGO_ecoli_EP$Entrezid[which(dfGO_ecoli_EP$group == 2)])
+selectedEntrezIds_clust3 <- as.character(dfGO_ecoli_EP$Entrezid[which(dfGO_ecoli_EP$group == 3)])
+# #selectedEntrezIds_clust4 <- as.character(dfGO_ecoli_EP$Entrezid[which(dfGO_ecoli_EP$group == 4)])
+
+#setting cutoff value
+hgCutoff <- 0.0005
+#hgCutoff <- 0.1
+
+#selecting onthology
+
+ontology <- 'BP'
+#ontology <- 'MF'
+
+for (i in unique(cut_ward_ecoli_EP)) {
+params <- new("GOHyperGParams",
+ geneIds=get(paste0('selectedEntrezIds_clust', i)),
+ universeGeneIds=entrezUniverse,
+ annotation="org.EcK12.eg.db",
+ ontology=ontology,
+ pvalueCutoff=hgCutoff,
+ conditional=FALSE,
+ testDirection="over")
+
+  hgOver_clust <- hyperGTest(params)
+  
+  assign(x = paste0('df_summary_clust', i), summary(hgOver_clust))
+}
+
+
+#View(df_summary_clust1) #-
+#View(df_summary_clust2) #ion transport
+#View(df_summary_clust3) # citrate cycle, monosacharide
+# #View(df_summary_clust4) #lipid metabolism
+```
+GO enrichment  for clusters on EP profiles
+```{r GO, EP}
+
+head(df_summary_clust1,  20)  #-
+head(df_summary_clust2,  20)#ion transport
+head(df_summary_clust3,  20)# citrate cycle, monosacharide
+# #head(df_summary_clust4,  20) #lipid metabolism
+
+#We would also like to perform a conditional test.  Instead of having to de ne a new
+#GO-HyperGParamsinstance  by  hand,  we  can  create  a  copy  and  update  just  the  parameter  of interest.
+#paramsCond <- params
+#conditional(paramsCond) <- TRUE
+#hgCondOver <- hyperGTest(paramsCond)
+
+
+#hgOver_clust1 <- hyperGTest(params_clust1)
+#hgOver_clust2 <- hyperGTest(params_clust2)
+#hgOver_clust3 <- hyperGTest(params_clust3)
+#hgOver_clust4 <- hyperGTest(params_clust4)
+
+
+#df_clust1 <- summary(hgOver_clust1)
+#df_clust2 <- summary(hgOver_clust2)
+#df_clust3 <- summary(hgOver_clust3)
+#df_clust4 <- summary(hgOver_clust4)
+
+########cbind(rbind(df_clust2, df_clust3, df_clust4), (df_clust2, df_clust3, df_clust4)
+
+#names(df_clust2)
+
+```
+
+
+##GO enrichment, GC
+Promoter numbers and genenames
+```{r GC, clusters population and GOstats, warning=FALSE, message=FALSE, cache=TRUE}
+cut_ward_ecoli_GC <- cutree(ward_ecoli_GC, k = 3)
+
+#table(cut_ward_ecoli_GC)
+
+ecoli_GC_promoters_clusters <- c()
+for (i in unique(cut_ward_ecoli_GC)) {
+ assign(paste0('ecoli_GC_clust_', i),
+       exp_names[which(cut_ward_ecoli_GC ==i)])
+  
+  #alternatively
+  tmp <- exp_names[which(cut_ward_ecoli_GC ==i)]
+  tmp1 <- cbind(rep(i, length(tmp)), tmp)
+  
+  ecoli_GC_promoters_clusters <- rbind(ecoli_GC_promoters_clusters, tmp1)
+}
+
+
+#promoters to genes (complete set)
+
+genes_from_promoters_list <- c()
+for (i in seq_along(exp_names)){
+  tmp <- as.character(TUSet$Name.of.the.gene.s..contained.in.the.transcription.unit[which(TUSet$Promoter.Name == exp_names[i])])
+  if(length(tmp) ==0) {tmp <- NA}
+  tmp <- paste0(tmp, collapse = ',')
+  genes_from_promoters_list <- c(genes_from_promoters_list, tmp)
+}
+
+
+#all the genes universe without repeating and 2 jr more names in 1 vector member
+
+fixed_vectors_genes_from_promoters_list <- strsplit(paste0(genes_from_promoters_list, collapse = ','), split = ',')[[1]]
+fixed_vectors_genes_from_promoters_list <-fixed_vectors_genes_from_promoters_list[(fixed_vectors_genes_from_promoters_list)!='NA']
+
+#clusters of genes as fixed vectors
+for (i in unique(cut_ward_ecoli_GC)){
+  genes_clust_tmp <- strsplit(paste0(genes_from_promoters_list[which(cut_ward_ecoli_GC == i)], collapse = ','), split = ',')[[1]]
+  if ('NA' %in% genes_clust_tmp) {genes_clust_tmp <- genes_clust_tmp[-which(genes_clust_tmp =='NA')]}
+  assign(paste0('genes_clust', i), unique(genes_clust_tmp))
+}
+
+
+## Bimap interface:
+# Convert the object to a list
+xx <- as.list(org.EcK12.egALIAS2EG)
+# Remove pathway identifiers that do not map to any entrez gene id
+xx <- xx[!is.na(xx)]
+
+#common names in universe (xx) and the samples
+
+setdiffed <- setdiff(fixed_vectors_genes_from_promoters_list, names(xx))
+fixed_vectors_genes_from_promoters_list <- fixed_vectors_genes_from_promoters_list[!fixed_vectors_genes_from_promoters_list%in%setdiffed]
+entrezIds <- mget(fixed_vectors_genes_from_promoters_list, envir=org.EcK12.egALIAS2EG)
+  ###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+
+#common names in universe (xx) and the clusters 1-4
+
+setdiffed_clust1 <- setdiff(genes_clust1, names(xx))
+fixed_genes_clust1 <- genes_clust1[!genes_clust1%in%setdiffed_clust1]
+entrezIds_clust1 <- mget(fixed_genes_clust1, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust2 <- setdiff(genes_clust2, names(xx))
+fixed_genes_clust2 <- genes_clust2[!genes_clust2%in%setdiffed_clust2]
+entrezIds_clust2 <- mget(fixed_genes_clust2, envir=org.EcK12.egALIAS2EG)
+
+
+setdiffed_clust3 <- setdiff(genes_clust3, names(xx))
+fixed_genes_clust3 <- genes_clust3[!genes_clust3%in%setdiffed_clust3]
+entrezIds_clust3 <- mget(fixed_genes_clust3, envir=org.EcK12.egALIAS2EG)
+
+# #setdiffed_clust4 <- setdiff(genes_clust4, names(xx))
+# #fixed_genes_clust4 <- genes_clust4[!genes_clust4%in%setdiffed_clust4]
+# #entrezIds_clust4 <- mget(fixed_genes_clust4, envir=org.EcK12.egALIAS2EG)
+
+dfGO_ecoli_GC <- as.data.frame(rbind(cbind(rep(1, length(entrezIds_clust1)), as.character(entrezIds_clust1)),
+      cbind(rep(2, length(entrezIds_clust2)), as.character(entrezIds_clust2)),
+      cbind(rep(3, length(entrezIds_clust3)), as.character(entrezIds_clust3))# #,
+   # #   cbind(rep(4, length(entrezIds_clust4)), as.character(entrezIds_clust4))
+))
+
+colnames(dfGO_ecoli_GC) <- c('group', 'Entrezid')
+  
+# #save(dfGO_ecoli_GC, file = '/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_GC.rda')
+###   haveEntrezId <- names(entrezIds)[sapply(entrezIds, function(x) !is.na(x))]
+```
+
+
+
+
+```{r GO statistics using GOstats for GC, warning=FALSE, message=FALSE, cache=TRUE}
+library(GOstats)
+library(Category)
+library(DBI)
+library(org.EcK12.eg.db)
+
+# #load('/home/jane/Документы/Misha/mol_a_2018/dfGO_ecoli_GC.rda')
+
+entrezUniverse <- as.character(dfGO_ecoli_GC$Entrezid)
+
+selectedEntrezIds_clust1 <- as.character(dfGO_ecoli_GC$Entrezid[which(dfGO_ecoli_GC$group == 1)])
+selectedEntrezIds_clust2 <- as.character(dfGO_ecoli_GC$Entrezid[which(dfGO_ecoli_GC$group == 2)])
+selectedEntrezIds_clust3 <- as.character(dfGO_ecoli_GC$Entrezid[which(dfGO_ecoli_GC$group == 3)])
+# #selectedEntrezIds_clust4 <- as.character(dfGO_ecoli_GC$Entrezid[which(dfGO_ecoli_GC$group == 4)])
+
+#setting cutoff value
+hgCutoff <- 0.0005
+#hgCutoff <- 0.1
+
+#selecting onthology
+
+ontology <- 'BP'
+#ontology <- 'MF'
+
+for (i in unique(cut_ward_ecoli_GC)) {
+params <- new("GOHyperGParams",
+ geneIds=get(paste0('selectedEntrezIds_clust', i)),
+ universeGeneIds=entrezUniverse,
+ annotation="org.EcK12.eg.db",
+ ontology=ontology,
+ pvalueCutoff=hgCutoff,
+ conditional=FALSE,
+ testDirection="over")
+
+  hgOver_clust <- hyperGTest(params)
+  
+  assign(x = paste0('df_summary_clust', i), summary(hgOver_clust))
+}
+
+
+#View(df_summary_clust1) #-
+#View(df_summary_clust2) #ion transport
+#View(df_summary_clust3) # citrate cycle, monosacharide
+# #View(df_summary_clust4) #lipid metabolism
+```
+GO enrichment  for clusters on d profiles
+```{r GO, GC}
+
+head(df_summary_clust1,  20) # alcohol metabolic process, translation
+head(df_summary_clust2,  20) #organic acid and sulfur
+head(df_summary_clust3,  20)  # tricarboxylic acid cycle
+# #head(df_summary_clust4,  20)  # carbohydrates metabolism
+
+#We would also like to perform a conditional test.  Instead of having to de ne a new
+#GO-HyperGParamsinstance  by  hand,  we  can  create  a  copy  and  update  just  the  parameter  of interest.
+#paramsCond <- params
+#conditional(paramsCond) <- TRUE
+#hgCondOver <- hyperGTest(paramsCond)
+
+
+#hgOver_clust1 <- hyperGTest(params_clust1)
+#hgOver_clust2 <- hyperGTest(params_clust2)
+#hgOver_clust3 <- hyperGTest(params_clust3)
+#hgOver_clust4 <- hyperGTest(params_clust4)
+
+
+#df_clust1 <- summary(hgOver_clust1)
+#df_clust2 <- summary(hgOver_clust2)
+#df_clust3 <- summary(hgOver_clust3)
+#df_clust4 <- summary(hgOver_clust4)
+
+########cbind(rbind(df_clust2, df_clust3, df_clust4), (df_clust2, df_clust3, df_clust4)
+
+#names(df_clust2)
+
+```
+
