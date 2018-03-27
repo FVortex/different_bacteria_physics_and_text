@@ -448,13 +448,13 @@ boxplot(lapply(vlha_600, Biostrings::GC))
 
 dyn_int <- 25
 
-Ldyn <- lapply(mycoplasma_strings, FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = dyn_int, tss = 600-80, boundaries = c(160, 70), strand = 'forward')})
+Ldyn <- lapply(mycoplasma_strings_major_cluster, FUN = function(x) {dynchars(seq = strsplit(x, split = '')[[1]], average_interval_size = dyn_int, tss = 600-80, boundaries = c(160, 70), strand = 'forward')})
 #E0
 mat_dyn <- sapply(Ldyn, function(x) {x$E0})
 means_to_mat <- c( apply((mat_dyn),  MARGIN = 1, FUN = median))
 `Sequence (nts)` <- -rev(seq_along(means_to_mat))
 
-matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.1,  col = 1, ylab = 'Open states activation energy (kcal/mole)', main = paste('Open states activation energy (sliding window', dyn_int, 'nts)\n for 396 non-vlhA promoter sequences'))
+matplot(`Sequence (nts)`, mat_dyn, type = 'l', lwd = 0.1,  col = 1, ylab = 'Open states activation energy (kcal/mole)', main = paste('Open states activation energy (sliding window', dyn_int, 'nts)\n for 370 non-vlhA promoter sequences'))
 lines(`Sequence (nts)`, means_to_mat, col = 'magenta', lwd = 2)
 
 gaa_repeats <- -155:-130
@@ -485,7 +485,7 @@ legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values')
 
 #bendability
 
-Lbend <- lapply(vlha_600, FUN = function(x) {bendability(s = x, bound =  c(600-250, nchar(vlha_600$HFMG94VAA_RS01210)), width = 1)})
+Lbend <- lapply(mycoplasma_strings_major_cluster, FUN = function(x) {bendability(s = x, bound =  c(600-250, nchar(vlha_600$HFMG94VAA_RS01210)), width = 1)})
 
 mat_bend <- sapply(Lbend, function(x) {x})
 means_to_mat <- c(apply((mat_bend),  MARGIN = 1, FUN = median))
@@ -503,7 +503,7 @@ legend('topright', legend = c('GAA-repeats', 'Approximate TSS', 'Median values')
 
 #EP
 zout <- -(540/1.5):(270/1.5)
-Lep <- lapply(vlha_600, FUN = function(x) {
+Lep <- lapply(mycoplasma_strings_major_cluster, FUN = function(x) {
   p <- lseqspline1D(s = x, bound = c(1, nchar(vlha_600$HFMG94VAA_RS01210)), width = 1, ref = 600-80)
 (p$mpot[p$x %in% zout]) #!boundary
 })
