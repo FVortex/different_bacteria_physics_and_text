@@ -226,7 +226,7 @@ substr(reverseComplement_mycoplasma_CP006916.3, nchar(reverseComplement_mycoplas
 ```
 
 ```{r All the vlhA}
-vlha_600 <- read.fasta('/home/jane/Документы/Misha/mol_a_2018/new_different_bacteria_physics_an_text /vlhA_600nts.fasta', seqonly = F, as.string = T)
+vlha_600 <- read.fasta('/home/mikhail/Documents/mol_a_2017/Vlh_600.fasta', seqonly = F, as.string = T)
 length(vlha_600)
 str(vlha_600)
 table(sapply(vlha_600, nchar))
@@ -725,10 +725,41 @@ matplot(sapply(Lep, function(x) {x$E0}), type = 'l', col = 1)
 
 ```{r vlhA groups accroding GAA-repeats length}
 
+#number of sequences having 8+ sequences is
+length(vlha_600[grep(pattern = '(gaa){8}', x = vlha_600)])
+#number of sequences having 9+ sequences is
+length(vlha_600[grep(pattern = '(gaa){9}', x = vlha_600)])
+#number of sequences having 10+ sequences is
+length(vlha_600[grep(pattern = '(gaa){10}', x = vlha_600)])
+#number of sequences having 11+ sequences is
+length(vlha_600[grep(pattern = '(gaa){11}', x = vlha_600)])
+#number of sequences having 12+ sequences is
+length(vlha_600[grep(pattern = '(gaa){12}', x = vlha_600)])
+
+#number of sequences having 12+ sequences is
+length(vlha_600[grep(pattern = '[^(gaa)](gaa){12}[^(gaa)]', x = vlha_600)])
 
 vlha_600[grep(pattern = '[^(gaa)](gaa){12}[^(gaa)]', x = vlha_600)]
 
+
 ggseqlogo(vlha_600[grep(pattern = '[^(gaa)](gaa){11}[^(gaa)]', x = vlha_600)][[1]][1], ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно ТСТ (п.н.)", limits=1:nchar(vlha_600$HFMG94VAA_RS00305), labels = 1:nchar(vlha_600$HFMG94VAA_RS00305))+coord_fixed(ratio = 40)
+
+
+gaa_counts <- sapply(2:35, FUN = function(x) {
+  grep(pattern = paste0('[^(gaa)](gaa){', x, '}[^(gaa)]'), x = tolower(vlha_600))
+})
+
+unlist(gaa_counts)
+#how much consequetive (3 nts way each other) GAA-repeats is there? more than 1 repeat regions is possible
+table(sapply(gregexpr(pattern = 'gaa', text = vlha_600), FUN = function(x){
+  table(diff(x))['3']}))
+#checking for GAA-repeats on the reverse strand ?
+# #gaa_counts_rev <- sapply(3:18, FUN = function(x) {
+  #grep(pattern = paste0('[^(ctt)](gaa){', x, '}[^(ctt)]'), x = lapply(vlha_600, FUN = function(x) {}))
+#})
+
+sapply(gaa_counts, length)
+# #sapply(gaa_counts_rev, length)
 #which_10 <- grep(pattern = '[^(gaa)](gaa){10}[^(gaa)]', x = vlha_600)
 which_11 <- grep(pattern = '[^(gaa)](gaa){11}[^(gaa)]', x = vlha_600)
 which_12 <- grep(pattern = '[^(gaa)](gaa){12}[^(gaa)]', x = vlha_600)
@@ -751,11 +782,29 @@ DNAbin <- as.DNAbin(lapply(vlha_600_chars, FUN = function(x) {x[350:600]}))
 labels(DNAbin) <- NULL
 image.DNAbin(DNAbin)
 
-regexpr(pattern='[^(gaa)](gaa){3}[^(gaa)]', text = 'hjhjhjgaagaagaahjhjgaaaaaaahj')
 
 ```
 
 
 
 
+
+```{r}
+library(stringr)
+
+
+which(str_detect(vlha_600, pattern = '[^(aa)](gaa){12}[^(gaa)]'))
+which(str_detect(vlha_600, pattern = '[^(gaa)](gaa){12}(?!(gaa))'))
+#12 GAA-repeats exactly
+exactlty12 <- c(
+which(str_detect(vlha_600, pattern = '[^(aa)](gaa){12}[^(gaa)]')),
+(which(str_detect(vlha_600, pattern = '[^(aa)](gaa){12}g[^(aa)]'))))
+#0which(str_detect(vlha_600, pattern = '[^(ga)]a(gaa){12}[^(gaa)]'))
+
+sapply(vlha_600[exactlty12], nchar)
+ggseqlogo(sapply(vlha_600[exactlty12], FUN = function(x) {paste0(toupper(x), collapse = '')}),  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно начала кодирующей последовательности (п.н.)", limits=1:nchar(vlha_600$HFMG94VAA_RS01210), labels =labels_new)+coord_fixed(ratio = 40)
+
+
+which(grepl(pattern = '[^(?!gaa)](gaa){12}[^(?!gaa)]', vlha_600, perl = TRUE))
+```
 

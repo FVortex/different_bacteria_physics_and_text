@@ -3,8 +3,8 @@ title: "Mycoplasma_vs_Synechocystis_vs_E.coli"
 author: "Mikhail Orlov"
 date: '6 ноября 2017 г '
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
