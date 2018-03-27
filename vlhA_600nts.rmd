@@ -413,7 +413,7 @@ ggseqlogo(sapply(mycoplasma_strings[which(cut_ward_mycoplasma_proms_stringdist =
 ggseqlogo(sapply(mycoplasma_strings[which(cut_ward_mycoplasma_proms_stringdist == 3 )], FUN = function(x) {paste0(toupper(x), collapse = '')}),  ncol = 1)+ scale_y_continuous(name="Информационнное содержание (бит)")+scale_x_discrete(name ="Последовательность относительно приблизительного положения ТСТ(п.н.)", limits=seq_along(new_labels), labels =new_labels)+coord_fixed(ratio = 40)
 
 #getting rid of 2 small interferring clusters
-mycoplasma_strings_major_cluster <- mycoplasma_strings[which(cut_ward_mycoplasma_proms_stringdist == 1 )]
+mycoplasma_strings_major_cluster <- mycoplasma_strings[which(cut_ward_mycoplasma_proms_stringdist !=3 )]
 #sweater plot for all non-vlhA promoters
 
 
